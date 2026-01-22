@@ -18,7 +18,9 @@ GLFWwindow *window;
 
 using namespace glm;
 
+#define STB_IMAGE_IMPLEMENTATION
 #include "lib/shader.hpp"
+#include "lib/stb_image.h"
 
 using namespace std;
 using ushort = unsigned short;
@@ -76,18 +78,22 @@ void generateTerrain(vector<vector<ushort>> &triangles,
                      vector<glm::vec2> &textures_coords) {
     const ushort nombreVertices = 16;
     const ushort nombreCases = nombreVertices - 1;
-    const float minX = -0.9;
-    const float maxX = 0.9;
-    const float minY = -0.9;
-    const float maxY = 0.9;
+    const float minX = -1;
+    const float maxX = 1;
+    const float minY = -1;
+    const float maxY = 1;
 
     const float stepX = (maxX - minX) / nombreCases;
     const float stepY = (maxY - minY) / nombreCases;
 
     for (ushort i = 0; i < nombreVertices; i++) {
         for (ushort j = 0; j < nombreVertices; j++) {
+            float half = (nombreVertices - 1) / 2.;
+            float iWeight = (1 - abs(i - half) / half) * 0.25;
+            float jWeight = (1 - abs(j - half) / half) * 0.25;
+
             indexed_vertices.push_back(glm::vec3(
-                i * stepX + minX, random(-0.2, 0.2), j * stepY + minY));
+                i * stepX + minX, iWeight + jWeight, j * stepY + minY));
             textures_coords.push_back(
                 glm::vec2(((float)i) / (nombreVertices - 1),
                           ((float)j) / (nombreVertices - 1)));
@@ -118,13 +124,9 @@ void buildScene(vector<ushort> &indices, vector<vector<ushort>> &triangles,
     indices = flatten(triangles);
 }
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "lib/stb_image.h"
-
-uint loadTexture(GLuint programID, uint VAO) {
-    uint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
+void loadTexture(GLuint programID, uint *texture, const char *path) {
+    glGenTextures(1, texture);
+    glBindTexture(GL_TEXTURE_2D, *texture);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -133,8 +135,7 @@ uint loadTexture(GLuint programID, uint VAO) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     int width, height, nrChannels;
-    unsigned char *data =
-        stbi_load("assets/rock.png", &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 0);
 
     if (data != nullptr) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
@@ -145,8 +146,13 @@ uint loadTexture(GLuint programID, uint VAO) {
     }
 
     stbi_image_free(data);
+}
 
-    return texture;
+void loadThreeTextures(GLuint programID, uint *grassTexture, uint *rockTexture,
+                       uint *snowTexture) {
+    loadTexture(programID, grassTexture, "assets/grass.png");
+    loadTexture(programID, rockTexture, "assets/rock.png");
+    loadTexture(programID, snowTexture, "assets/snowrocks.png");
 }
 
 int main(void) {
@@ -254,7 +260,8 @@ int main(void) {
     GLuint LightID =
         glGetUniformLocation(programID, "LightPosition_worldspace");
 
-    uint textureID = loadTexture(programID, VertexArrayID);
+    uint grassTexture, rockTexture, snowTexture;
+    loadThreeTextures(programID, &grassTexture, &rockTexture, &snowTexture);
 
     // For speed computation
     double lastTime = glfwGetTime();
@@ -302,7 +309,18 @@ int main(void) {
                               (void *)0 // array buffer offset
         );
 
-        glBindTexture(GL_TEXTURE_2D, textureID);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, grassTexture);
+        glUniform1i(glGetUniformLocation(programID, "grassTexture"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, rockTexture);
+        glUniform1i(glGetUniformLocation(programID, "rockTexture"), 1);
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, snowTexture);
+        glUniform1i(glGetUniformLocation(programID, "snowTexture"), 2);
+
         // Index buffer
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
 
