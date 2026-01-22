@@ -55,7 +55,7 @@ add_definitions(
 
 # src
 add_executable(src
-        src/TP1.cpp
+        src/main.cpp
 	common/shader.cpp
 	common/shader.hpp
 	common/controls.cpp

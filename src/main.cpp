@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <vector>
 #include <iostream>
+#include <random>
+#include <memory>
 
 // Include GLEW
 #include <GL/glew.h>
@@ -14,7 +16,7 @@ GLFWwindow* window;
 // Include GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <iostream>
+#include <glm/ext.hpp>
 
 using namespace glm;
 
@@ -22,14 +24,18 @@ using namespace glm;
 #include <common/objloader.hpp>
 #include <common/vboindexer.hpp>
 
+using namespace std;
+using ushort = unsigned short;
+using uint = unsigned int;
+
 void processInput(GLFWwindow *window);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const uint SCR_WIDTH = 800;
+const uint SCR_HEIGHT = 600;
 
 // camera
-glm::vec3 camera_position   = glm::vec3(0.0f, 0.0f,  3.0f);
+glm::vec3 camera_position   = glm::vec3(0.0f, 3.0f,  3.0f);
 glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 camera_up    = glm::vec3(0.0f, 1.0f,  0.0f);
 
@@ -41,6 +47,107 @@ float lastFrame = 0.0f;
 float angle = 0.;
 float zoom = 1.;
 /*******************************************************************************/
+
+template <typename T>
+T random(T min, T max) {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+
+    if constexpr (std::is_integral<T>::value) {
+        std::uniform_int_distribution<T> dist(min, max);
+        return dist(gen);
+    } else if constexpr (std::is_floating_point<T>::value) {
+        std::uniform_real_distribution<T> dist(min, max);
+        return dist(gen);
+    } else {
+        static_assert(std::is_integral<T>::value || std::is_floating_point<T>::value,
+                      "randomBetween only supports integral or floating point types");
+    }
+}
+
+vector<ushort> flatten(vector<vector<ushort>> &values) {
+    vector<ushort> result;
+
+    for (vector<ushort> value : values) {
+        result.insert(result.end(), value.begin(), value.end());
+    }
+
+    return result;
+}
+
+void generateTerrain(vector<vector<ushort>> &triangles, vector<glm::vec3> &indexed_vertices) {
+    const ushort nombreVertices = 16;
+    const ushort nombreCases = nombreVertices - 1;
+    const float minX = -0.9;
+    const float maxX = 0.9;
+    const float minY = -0.9;
+    const float maxY = 0.9;
+
+    const float stepX = (maxX - minX) / nombreCases;
+    const float stepY = (maxY - minY) / nombreCases;
+
+    for (ushort i = 0; i < nombreVertices; i++) {
+        for (ushort j = 0; j < nombreVertices; j++) {
+            indexed_vertices.push_back(glm::vec3(i * stepX + minX, random(-0.2, 0.2), j * stepY + minY));
+        }
+    }
+
+    for (ushort i = 0; i < nombreCases; i++) {
+        for (ushort j = 0; j < nombreCases; j++) {
+            triangles.push_back({
+                (ushort) (i * nombreVertices + j), 
+                (ushort) (i * nombreVertices + (j + 1)), 
+                (ushort) ((i + 1) * nombreVertices + j)
+            });
+            
+            triangles.push_back({
+                (ushort) (i * nombreVertices + (j + 1)), 
+                (ushort) ((i + 1) * nombreVertices + (j + 1)), 
+                (ushort) ((i + 1) * nombreVertices + j)
+            });
+        }
+    }
+}
+
+void buildScene(vector<ushort> &indices, vector<vector<ushort>> &triangles, vector<glm::vec3> &indexed_vertices) {
+    // string filename("chair.off");
+    // loadOFF(filename, indexed_vertices, indices, triangles);
+
+    generateTerrain(triangles, indexed_vertices);
+    
+    indices = flatten(triangles);
+}
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "lib/stb_image.h"
+
+uint loadTexture(GLuint programID, uint VAO) {
+    uint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load("../textures/rock.png", &width, &height, &nrChannels, 0);
+
+    if (data != nullptr) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    } else {
+        cout << "Failed to load texture" << endl;
+    }
+
+    stbi_image_free(data);
+    //TODO: https://learnopengl.com/Getting-started/Textures
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    return texture;
+}
 
 int main( void )
 {
@@ -108,13 +215,11 @@ int main( void )
     // Get a handle for our "Model View Projection" matrices uniforms
 
     /****************************************/
-    std::vector<unsigned short> indices; //Triangles concaténés dans une liste
-    std::vector<std::vector<unsigned short> > triangles;
-    std::vector<glm::vec3> indexed_vertices;
+    vector<ushort> indices; //Triangles concaténés dans une liste
+    vector<vector<ushort> > triangles;
+    vector<glm::vec3> indexed_vertices;
 
-    //Chargement du fichier de maillage
-    std::string filename("chair.off");
-    loadOFF(filename, indexed_vertices, indices, triangles );
+    buildScene(indices, triangles, indexed_vertices);
 
     // Load it into a VBO
 
@@ -127,13 +232,13 @@ int main( void )
     GLuint elementbuffer;
     glGenBuffers(1, &elementbuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0] , GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(ushort), &indices[0] , GL_STATIC_DRAW);
 
     // Get a handle for our "LightPosition" uniform
     glUseProgram(programID);
     GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
-
+    uint textureID = loadTexture(programID, VertexArrayID);
 
     // For speed computation
     double lastTime = glfwGetTime();
@@ -152,28 +257,20 @@ int main( void )
         // -----
         processInput(window);
 
-
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Use our shader
         glUseProgram(programID);
 
+        glm::mat4 model = glm::mat4();
+        glUniformMatrix4fv(glGetUniformLocation(programID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
-        /*****************TODO***********************/
-        // Model matrix : an identity matrix (model will be at the origin) then change
+        glm::mat4 view = glm::lookAt(camera_position, camera_target, camera_up);
+        glUniformMatrix4fv(glGetUniformLocation(programID, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
-        // View matrix : camera/view transformation lookat() utiliser camera_position camera_target camera_up
-
-        // Projection matrix : 45 Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-
-        // Send our transformation to the currently bound shader,
-        // in the "Model View Projection" to the shader uniforms
-
-        /****************************************/
-
-
-
+        glm::mat4 projection = glm::perspective(glm::radians(45.), ((double) SCR_WIDTH) / SCR_HEIGHT, 0.1, 100.);
+        glUniformMatrix4fv(glGetUniformLocation(programID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
         // 1rst attribute buffer : vertices
         glEnableVertexAttribArray(0);
@@ -187,6 +284,7 @@ int main( void )
                     (void*)0            // array buffer offset
                     );
 
+        glBindTexture(GL_TEXTURE_2D, textureID);
         // Index buffer
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
 
