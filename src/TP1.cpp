@@ -15,12 +15,20 @@ GLFWwindow* window;
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include <glm/ext.hpp>
+
+#include <random>
+#include "Camera.h"
+#include "stb_image.h"
 
 using namespace glm;
 
 #include <common/shader.hpp>
 #include <common/objloader.hpp>
 #include <common/vboindexer.hpp>
+
+
+
 
 void processInput(GLFWwindow *window);
 
@@ -29,7 +37,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 // camera
-glm::vec3 camera_position   = glm::vec3(0.0f, 0.0f,  3.0f);
+glm::vec3 camera_position   = glm::vec3(0.0f, 3.0f,  3.0f);
 glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 camera_up    = glm::vec3(0.0f, 1.0f,  0.0f);
 
@@ -41,6 +49,70 @@ float lastFrame = 0.0f;
 float angle = 0.;
 float zoom = 1.;
 /*******************************************************************************/
+float randomFloat()
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> dist(0.0f, 2.f);
+    return dist(gen);
+}
+
+void generate_scene(std::vector<unsigned short> &indices, std::vector<std::vector<unsigned short> > &triangles, std::vector<glm::vec3> &indexed_vertices){
+    // std::string filename("chair.off");
+    // loadOFF(filename, indexed_vertices, indices, triangles );
+
+    int nX= 16;
+    int nZ= 16;
+    
+    float minX = -1.f;
+    float minZ = -1.f;
+
+    for(unsigned int i =0; i<nX;i++){
+        for(unsigned int j =0; j<nZ;j++){
+
+            float x = minX+2.0*i/(nX-1);
+            float z = minZ+2.0*j/(nZ-1);
+            float y = 0.f;
+
+            //float y = randomFloat();
+            indexed_vertices.push_back(glm::vec3(x,y,z));
+        }
+    }
+
+    for(float i=0; i<nX-1; i++){
+        for(float j=0; j<nZ-1; j++){
+
+            triangles.push_back({i*nZ+j,
+                (i+1)*nZ+j,
+                (i+1)*nZ+(j+1)}
+            );
+
+            triangles.push_back({i*nZ+j,
+                (i+1)*nZ+(j+1),
+                i*nZ+(j+1)}
+            );
+        }
+    }
+
+    for(std::vector<unsigned short> triangle : triangles){
+        indices.insert(indices.end(), triangle.begin(), triangle.end());
+    }
+
+}
+
+void loadTexture(GLuint programID){
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load("container.jpg", &width, &height, &nrChannels, 0); 
+
+
+
+}
+
+
+
+/*******************************************************************************/
+
+
 
 int main( void )
 {
@@ -107,14 +179,21 @@ int main( void )
     /*****************TODO***********************/
     // Get a handle for our "Model View Projection" matrices uniforms
 
+
+
+
+
+
+
     /****************************************/
     std::vector<unsigned short> indices; //Triangles concaténés dans une liste
     std::vector<std::vector<unsigned short> > triangles;
     std::vector<glm::vec3> indexed_vertices;
 
-    //Chargement du fichier de maillage
-    std::string filename("chair.off");
-    loadOFF(filename, indexed_vertices, indices, triangles );
+
+    generate_scene(indices,triangles,indexed_vertices);
+
+
 
     // Load it into a VBO
 
@@ -162,13 +241,29 @@ int main( void )
 
         /*****************TODO***********************/
         // Model matrix : an identity matrix (model will be at the origin) then change
+        glm::mat4 model = glm::mat4();
 
         // View matrix : camera/view transformation lookat() utiliser camera_position camera_target camera_up
+        glm::mat4 view = glm::lookAt(camera_position,camera_target,camera_up);
 
         // Projection matrix : 45 Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
+        glm::mat4 proj = glm::perspective(glm::radians(45.), ((double)SCR_WIDTH)/SCR_HEIGHT, 0.1, 100.);
 
         // Send our transformation to the currently bound shader,
         // in the "Model View Projection" to the shader uniforms
+
+        GLfloat modelLocation = glGetUniformLocation(programID,"model");
+        glUniformMatrix4fv(modelLocation,1,GL_FALSE,glm::value_ptr(model));
+
+        GLfloat projLocation = glGetUniformLocation(programID,"proj");
+        glUniformMatrix4fv(projLocation,1,GL_FALSE,glm::value_ptr(proj));
+
+        GLfloat viewLocation = glGetUniformLocation(programID,"view");
+        glUniformMatrix4fv(viewLocation,1,GL_FALSE,glm::value_ptr(view));
+
+
+        
+
 
         /****************************************/
 
