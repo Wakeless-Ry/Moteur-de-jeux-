@@ -1,0 +1,238 @@
+TP1: \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o \
+  /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o \
+  CMakeFiles/TP1.dir/TP1/TP1.cpp.o \
+  CMakeFiles/TP1.dir/common/shader.cpp.o \
+  CMakeFiles/TP1.dir/common/controls.cpp.o \
+  CMakeFiles/TP1.dir/common/texture.cpp.o \
+  CMakeFiles/TP1.dir/common/objloader.cpp.o \
+  CMakeFiles/TP1.dir/common/vboindexer.cpp.o \
+  /usr/lib/x86_64-linux-gnu/libGL.so \
+  /usr/lib/x86_64-linux-gnu/libGLU.so \
+  external/glfw-3.1.2/src/libglfw3.a \
+  external/libGLEW_1130.a \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libGL.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libGLU.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libXrandr.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libXext.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libX11.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/librt.a \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libdl.a \
+  /usr/lib/x86_64-linux-gnu/librt.a \
+  /usr/lib/x86_64-linux-gnu/libX11.so \
+  /usr/lib/x86_64-linux-gnu/libXrandr.so \
+  /usr/lib/x86_64-linux-gnu/libXinerama.so \
+  /usr/lib/x86_64-linux-gnu/libXi.so \
+  /usr/lib/x86_64-linux-gnu/libXxf86vm.so \
+  /usr/lib/x86_64-linux-gnu/libXcursor.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libdl.a \
+  /usr/lib/x86_64-linux-gnu/librt.a \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libm.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libm.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libm.so \
+  /lib/x86_64-linux-gnu/libm.so.6 \
+  /lib/x86_64-linux-gnu/libmvec.so.1 \
+  /usr/lib/x86_64-linux-gnu/libX11.so \
+  /usr/lib/x86_64-linux-gnu/libXrandr.so \
+  /usr/lib/x86_64-linux-gnu/libXinerama.so \
+  /usr/lib/x86_64-linux-gnu/libXi.so \
+  /usr/lib/x86_64-linux-gnu/libXxf86vm.so \
+  /usr/lib/x86_64-linux-gnu/libXcursor.so \
+  /usr/lib/x86_64-linux-gnu/libGL.so \
+  /usr/lib/x86_64-linux-gnu/libGLU.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/libstdc++.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libm.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libm.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libm.so \
+  /lib/x86_64-linux-gnu/libm.so.6 \
+  /lib/x86_64-linux-gnu/libmvec.so.1 \
+  /usr/lib/gcc/x86_64-linux-gnu/13/libgcc_s.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/libgcc_s.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/libgcc_s.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libgcc_s.so.1 \
+  /usr/lib/gcc/x86_64-linux-gnu/13/libgcc.a \
+  /usr/lib/gcc/x86_64-linux-gnu/13/libgcc.a \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libc.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libc.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libc.so \
+  /lib/x86_64-linux-gnu/libc.so.6 \
+  /usr/lib/x86_64-linux-gnu/libc_nonshared.a \
+  /lib64/ld-linux-x86-64.so.2 \
+  /usr/lib/gcc/x86_64-linux-gnu/13/libgcc_s.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/libgcc_s.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/libgcc_s.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libgcc_s.so.1 \
+  /usr/lib/gcc/x86_64-linux-gnu/13/libgcc.a \
+  /usr/lib/gcc/x86_64-linux-gnu/13/libgcc.a \
+  /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o \
+  /lib/x86_64-linux-gnu/libGLdispatch.so.0 \
+  /lib/x86_64-linux-gnu/libGLX.so.0 \
+  /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libXext.so \
+  /lib/x86_64-linux-gnu/libXrender.so.1 \
+  /lib/x86_64-linux-gnu/libxcb.so.1 \
+  /lib/x86_64-linux-gnu/libXfixes.so.3 \
+  /lib64/ld-linux-x86-64.so.2 \
+  /lib/x86_64-linux-gnu/libXau.so.6 \
+  /lib/x86_64-linux-gnu/libXdmcp.so.6 \
+  /lib/x86_64-linux-gnu/libbsd.so.0 \
+  /lib/x86_64-linux-gnu/libmd.so.0
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o:
+
+CMakeFiles/TP1.dir/TP1/TP1.cpp.o:
+
+CMakeFiles/TP1.dir/common/shader.cpp.o:
+
+CMakeFiles/TP1.dir/common/controls.cpp.o:
+
+CMakeFiles/TP1.dir/common/texture.cpp.o:
+
+CMakeFiles/TP1.dir/common/objloader.cpp.o:
+
+CMakeFiles/TP1.dir/common/vboindexer.cpp.o:
+
+/usr/lib/x86_64-linux-gnu/libGL.so:
+
+/usr/lib/x86_64-linux-gnu/libGLU.so:
+
+external/glfw-3.1.2/src/libglfw3.a:
+
+external/libGLEW_1130.a:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libGL.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libGLU.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libXrandr.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libXext.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libX11.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/librt.a:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libdl.a:
+
+/usr/lib/x86_64-linux-gnu/librt.a:
+
+/usr/lib/x86_64-linux-gnu/libX11.so:
+
+/usr/lib/x86_64-linux-gnu/libXrandr.so:
+
+/usr/lib/x86_64-linux-gnu/libXinerama.so:
+
+/usr/lib/x86_64-linux-gnu/libXi.so:
+
+/usr/lib/x86_64-linux-gnu/libXxf86vm.so:
+
+/usr/lib/x86_64-linux-gnu/libXcursor.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libdl.a:
+
+/usr/lib/x86_64-linux-gnu/librt.a:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libm.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libm.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libm.so:
+
+/lib/x86_64-linux-gnu/libm.so.6:
+
+/lib/x86_64-linux-gnu/libmvec.so.1:
+
+/usr/lib/x86_64-linux-gnu/libX11.so:
+
+/usr/lib/x86_64-linux-gnu/libXrandr.so:
+
+/usr/lib/x86_64-linux-gnu/libXinerama.so:
+
+/usr/lib/x86_64-linux-gnu/libXi.so:
+
+/usr/lib/x86_64-linux-gnu/libXxf86vm.so:
+
+/usr/lib/x86_64-linux-gnu/libXcursor.so:
+
+/usr/lib/x86_64-linux-gnu/libGL.so:
+
+/usr/lib/x86_64-linux-gnu/libGLU.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/libstdc++.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libm.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libm.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libm.so:
+
+/lib/x86_64-linux-gnu/libm.so.6:
+
+/lib/x86_64-linux-gnu/libmvec.so.1:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/libgcc_s.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/libgcc_s.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/libgcc_s.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libgcc_s.so.1:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/libgcc.a:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/libgcc.a:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libc.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libc.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libc.so:
+
+/lib/x86_64-linux-gnu/libc.so.6:
+
+/usr/lib/x86_64-linux-gnu/libc_nonshared.a:
+
+/lib64/ld-linux-x86-64.so.2:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/libgcc_s.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/libgcc_s.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/libgcc_s.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libgcc_s.so.1:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/libgcc.a:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/libgcc.a:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crtn.o:
+
+/lib/x86_64-linux-gnu/libGLdispatch.so.0:
+
+/lib/x86_64-linux-gnu/libGLX.so.0:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/libXext.so:
+
+/lib/x86_64-linux-gnu/libXrender.so.1:
+
+/lib/x86_64-linux-gnu/libxcb.so.1:
+
+/lib/x86_64-linux-gnu/libXfixes.so.3:
+
+/lib64/ld-linux-x86-64.so.2:
+
+/lib/x86_64-linux-gnu/libXau.so.6:
+
+/lib/x86_64-linux-gnu/libXdmcp.so.6:
+
+/lib/x86_64-linux-gnu/libbsd.so.0:
+
+/lib/x86_64-linux-gnu/libmd.so.0:
