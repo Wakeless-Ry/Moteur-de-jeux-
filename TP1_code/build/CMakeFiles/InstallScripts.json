@@ -1,12 +1,12 @@
 {
 	"InstallScripts" : 
 	[
-		"/home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/build/cmake_install.cmake",
-		"/home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/build/external/cmake_install.cmake",
-		"/home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/build/external/glfw-3.1.2/cmake_install.cmake",
-		"/home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/build/external/glfw-3.1.2/src/cmake_install.cmake",
-		"/home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/build/external/glfw-3.1.2/examples/cmake_install.cmake",
-		"/home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/build/external/glfw-3.1.2/tests/cmake_install.cmake"
+		"/home/cleme/C++/Moteur_jeu/TP1_code/build/cmake_install.cmake",
+		"/home/cleme/C++/Moteur_jeu/TP1_code/build/external/cmake_install.cmake",
+		"/home/cleme/C++/Moteur_jeu/TP1_code/build/external/glfw-3.1.2/cmake_install.cmake",
+		"/home/cleme/C++/Moteur_jeu/TP1_code/build/external/glfw-3.1.2/src/cmake_install.cmake",
+		"/home/cleme/C++/Moteur_jeu/TP1_code/build/external/glfw-3.1.2/examples/cmake_install.cmake",
+		"/home/cleme/C++/Moteur_jeu/TP1_code/build/external/glfw-3.1.2/tests/cmake_install.cmake"
 	],
 	"Parallel" : false
 }

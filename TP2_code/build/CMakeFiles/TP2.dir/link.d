@@ -1,13 +1,13 @@
-TP1: \
+TP2: \
   /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/Scrt1.o \
   /usr/lib/gcc/x86_64-linux-gnu/13/../../../x86_64-linux-gnu/crti.o \
   /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o \
-  CMakeFiles/TP1.dir/TP1/TP1.cpp.o \
-  CMakeFiles/TP1.dir/common/shader.cpp.o \
-  CMakeFiles/TP1.dir/common/controls.cpp.o \
-  CMakeFiles/TP1.dir/common/texture.cpp.o \
-  CMakeFiles/TP1.dir/common/objloader.cpp.o \
-  CMakeFiles/TP1.dir/common/vboindexer.cpp.o \
+  CMakeFiles/TP2.dir/TP2/TP2.cpp.o \
+  CMakeFiles/TP2.dir/common/shader.cpp.o \
+  CMakeFiles/TP2.dir/common/controls.cpp.o \
+  CMakeFiles/TP2.dir/common/texture.cpp.o \
+  CMakeFiles/TP2.dir/common/objloader.cpp.o \
+  CMakeFiles/TP2.dir/common/vboindexer.cpp.o \
   /usr/lib/x86_64-linux-gnu/libGL.so \
   /usr/lib/x86_64-linux-gnu/libGLU.so \
   external/glfw-3.1.2/src/libglfw3.a \
@@ -85,17 +85,17 @@ TP1: \
 
 /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o:
 
-CMakeFiles/TP1.dir/TP1/TP1.cpp.o:
+CMakeFiles/TP2.dir/TP2/TP2.cpp.o:
 
-CMakeFiles/TP1.dir/common/shader.cpp.o:
+CMakeFiles/TP2.dir/common/shader.cpp.o:
 
-CMakeFiles/TP1.dir/common/controls.cpp.o:
+CMakeFiles/TP2.dir/common/controls.cpp.o:
 
-CMakeFiles/TP1.dir/common/texture.cpp.o:
+CMakeFiles/TP2.dir/common/texture.cpp.o:
 
-CMakeFiles/TP1.dir/common/objloader.cpp.o:
+CMakeFiles/TP2.dir/common/objloader.cpp.o:
 
-CMakeFiles/TP1.dir/common/vboindexer.cpp.o:
+CMakeFiles/TP2.dir/common/vboindexer.cpp.o:
 
 /usr/lib/x86_64-linux-gnu/libGL.so:
 

@@ -1,9 +1,9 @@
 
-if (NOT EXISTS "/home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/build/external/glfw-3.1.2/install_manifest.txt")
-  message(FATAL_ERROR "Cannot find install manifest: \"/home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/build/external/glfw-3.1.2/install_manifest.txt\"")
+if (NOT EXISTS "/home/cleme/C++/Moteur_jeu/TP2_code/build/external/glfw-3.1.2/install_manifest.txt")
+  message(FATAL_ERROR "Cannot find install manifest: \"/home/cleme/C++/Moteur_jeu/TP2_code/build/external/glfw-3.1.2/install_manifest.txt\"")
 endif()
 
-file(READ "/home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/build/external/glfw-3.1.2/install_manifest.txt" files)
+file(READ "/home/cleme/C++/Moteur_jeu/TP2_code/build/external/glfw-3.1.2/install_manifest.txt" files)
 string(REGEX REPLACE "\n" ";" files "${files}")
 
 foreach (file ${files})

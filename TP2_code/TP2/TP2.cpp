@@ -22,6 +22,8 @@ using namespace glm;
 #include <common/objloader.hpp>
 #include <common/vboindexer.hpp>
 #include <common/texture.hpp>
+#define STB_IMAGE_IMPLEMENTATION
+#include <common/png.hpp>
 
 void processInput(GLFWwindow *window);
 
@@ -41,6 +43,10 @@ float lastFrame = 0.0f;
 //rotation
 float angle = 0.;
 float zoom = 1.;
+
+// test
+int l, L, c;
+unsigned char* data = stbi_load("../texture/heightmap.png", &l, &L, &c, 0);
 /*******************************************************************************/
 
 void generatePlane(
@@ -105,7 +111,7 @@ int main( void )
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Open a window and create its OpenGL context
-    window = glfwCreateWindow( 1024, 768, "TP1 - GLFW", NULL, NULL);
+    window = glfwCreateWindow( 1024, 768, "TP2 - GLFW", NULL, NULL);
     if( window == NULL ){
         fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
         getchar();

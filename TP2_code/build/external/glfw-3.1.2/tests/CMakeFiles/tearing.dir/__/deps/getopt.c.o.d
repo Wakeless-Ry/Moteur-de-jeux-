@@ -1,7 +1,7 @@
 external/glfw-3.1.2/tests/CMakeFiles/tearing.dir/__/deps/getopt.c.o: \
- /home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/external/glfw-3.1.2/deps/getopt.c \
+ /home/cleme/C++/Moteur_jeu/TP2_code/external/glfw-3.1.2/deps/getopt.c \
  /usr/include/stdc-predef.h \
- /home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/external/glfw-3.1.2/deps/getopt.h \
+ /home/cleme/C++/Moteur_jeu/TP2_code/external/glfw-3.1.2/deps/getopt.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h /usr/include/string.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
  /usr/include/features.h /usr/include/features-time64.h \

@@ -1,4 +1,4 @@
-# Install script for directory: /home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/external/glfw-3.1.2/tests
+# Install script for directory: /home/cleme/C++/Moteur_jeu/TP1_code/external/glfw-3.1.2/tests
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,6 +45,6 @@ endif()
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
 if(CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "/home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/build/external/glfw-3.1.2/tests/install_local_manifest.txt"
+  file(WRITE "/home/cleme/C++/Moteur_jeu/TP1_code/build/external/glfw-3.1.2/tests/install_local_manifest.txt"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()

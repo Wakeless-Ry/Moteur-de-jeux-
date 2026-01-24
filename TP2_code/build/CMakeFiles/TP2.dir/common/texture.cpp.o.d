@@ -1,5 +1,5 @@
-CMakeFiles/TP1.dir/common/texture.cpp.o: \
- /home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/common/texture.cpp \
+CMakeFiles/TP2.dir/common/texture.cpp.o: \
+ /home/cleme/C++/Moteur_jeu/TP2_code/common/texture.cpp \
  /usr/include/stdc-predef.h /usr/include/stdio.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
  /usr/include/features.h /usr/include/features-time64.h \
@@ -58,10 +58,10 @@ CMakeFiles/TP1.dir/common/texture.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
  /usr/include/c++/13/bits/std_abs.h /usr/include/string.h \
  /usr/include/strings.h \
- /home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/external/glew-1.13.0/include/GL/glew.h \
+ /home/cleme/C++/Moteur_jeu/TP2_code/external/glew-1.13.0/include/GL/glew.h \
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/wchar.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-least.h /usr/include/GL/glu.h \
  /usr/include/GL/gl.h \
- /home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/external/glfw-3.1.2/include/GLFW/glfw3.h
+ /home/cleme/C++/Moteur_jeu/TP2_code/external/glfw-3.1.2/include/GLFW/glfw3.h

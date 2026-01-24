@@ -1,13 +1,13 @@
 #!/bin/sh
 
 bindir=$(pwd)
-cd /home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/TP1/
+cd /home/cleme/C++/Moteur_jeu/TP2_code/TP2
 
 if test "x$1" = "x--debugger"; then
     shift
     echo "r"  >  $bindir/gdbscript
     echo "bt" >> $bindir/gdbscript
-    gdb -batch -command=$bindir/gdbscript ./TP1
+    gdb -batch -command=$bindir/gdbscript ./TP2
 else
-    ./TP1
+    ./TP2
 fi

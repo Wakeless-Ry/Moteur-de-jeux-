@@ -1,7 +1,7 @@
 #!/bin/sh
 
 bindir=$(pwd)
-cd /home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/TP1/
+cd /home/cleme/C++/Moteur_jeu/TP1_code/TP1
 
 if test "x$1" = "x--debugger"; then
     shift

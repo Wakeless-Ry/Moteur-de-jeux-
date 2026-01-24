@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/cleme/C++/Master_Imagine/Moteur_jeu/TP1_code/external/glfw-3.1.2/examples/wave.c" "external/glfw-3.1.2/examples/CMakeFiles/wave.dir/wave.c.o" "gcc" "external/glfw-3.1.2/examples/CMakeFiles/wave.dir/wave.c.o.d"
+  "/home/cleme/C++/Moteur_jeu/TP2_code/external/glfw-3.1.2/examples/wave.c" "external/glfw-3.1.2/examples/CMakeFiles/wave.dir/wave.c.o" "gcc" "external/glfw-3.1.2/examples/CMakeFiles/wave.dir/wave.c.o.d"
   "" "external/glfw-3.1.2/examples/wave" "gcc" "external/glfw-3.1.2/examples/CMakeFiles/wave.dir/link.d"
   )
 
