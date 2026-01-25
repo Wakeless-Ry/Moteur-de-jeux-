@@ -182,6 +182,7 @@ CMakeFiles/TP2.dir/TP2/TP2.cpp.o
  /usr/include/c++/13/iostream
  /usr/include/c++/13/istream
  /usr/include/c++/13/limits
+ /usr/include/c++/13/math.h
  /usr/include/c++/13/new
  /usr/include/c++/13/ostream
  /usr/include/c++/13/pstl/pstl_config.h
@@ -223,6 +224,8 @@ CMakeFiles/TP2.dir/TP2/TP2.cpp.o
  /usr/include/stdint.h
  /usr/include/stdio.h
  /usr/include/stdlib.h
+ /usr/include/string.h
+ /usr/include/strings.h
  /usr/include/time.h
  /usr/include/wchar.h
  /usr/include/wctype.h
@@ -1086,6 +1089,7 @@ CMakeFiles/TP2.dir/common/shader.cpp.o
 
 CMakeFiles/TP2.dir/common/texture.cpp.o
  /home/cleme/C++/Moteur_jeu/TP2_code/common/texture.cpp
+ /home/cleme/C++/Moteur_jeu/TP2_code/common/png.hpp
  /home/cleme/C++/Moteur_jeu/TP2_code/external/glew-1.13.0/include/GL/glew.h
  /home/cleme/C++/Moteur_jeu/TP2_code/external/glfw-3.1.2/include/GLFW/glfw3.h
  /usr/include/GL/gl.h

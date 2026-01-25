@@ -64,4 +64,5 @@ CMakeFiles/TP2.dir/common/texture.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-least.h /usr/include/GL/glu.h \
  /usr/include/GL/gl.h \
- /home/cleme/C++/Moteur_jeu/TP2_code/external/glfw-3.1.2/include/GLFW/glfw3.h
+ /home/cleme/C++/Moteur_jeu/TP2_code/external/glfw-3.1.2/include/GLFW/glfw3.h \
+ /home/cleme/C++/Moteur_jeu/TP2_code/./common/png.hpp

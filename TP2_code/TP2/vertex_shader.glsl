@@ -4,6 +4,7 @@
 layout(location = 0) in vec3 vertices_position_modelspace;
 layout(location = 1) in vec2 vertexUV;
 out vec2 UV;
+out float height;
 //TODO create uniform transformations matrices Model View Projection
 // Values that stay constant for the whole mesh.
 uniform mat4 MVP;
@@ -12,5 +13,6 @@ void main(){
         // TODO : Output position of the vertex, in clip space : MVP * position
         gl_Position = MVP * vec4(vertices_position_modelspace, 1);
         UV = vertexUV;
+        height = vertices_position_modelspace.y;
 }
 

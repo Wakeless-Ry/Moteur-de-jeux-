@@ -181,6 +181,7 @@ CMakeFiles/TP2.dir/TP2/TP2.cpp.o: /home/cleme/C++/Moteur_jeu/TP2_code/TP2/TP2.cp
   /usr/include/c++/13/iostream \
   /usr/include/c++/13/istream \
   /usr/include/c++/13/limits \
+  /usr/include/c++/13/math.h \
   /usr/include/c++/13/new \
   /usr/include/c++/13/ostream \
   /usr/include/c++/13/pstl/pstl_config.h \
@@ -222,6 +223,8 @@ CMakeFiles/TP2.dir/TP2/TP2.cpp.o: /home/cleme/C++/Moteur_jeu/TP2_code/TP2/TP2.cp
   /usr/include/stdint.h \
   /usr/include/stdio.h \
   /usr/include/stdlib.h \
+  /usr/include/string.h \
+  /usr/include/strings.h \
   /usr/include/time.h \
   /usr/include/wchar.h \
   /usr/include/wctype.h \
@@ -1081,6 +1084,7 @@ CMakeFiles/TP2.dir/common/shader.cpp.o: /home/cleme/C++/Moteur_jeu/TP2_code/comm
   /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h
 
 CMakeFiles/TP2.dir/common/texture.cpp.o: /home/cleme/C++/Moteur_jeu/TP2_code/common/texture.cpp \
+  /home/cleme/C++/Moteur_jeu/TP2_code/common/png.hpp \
   /home/cleme/C++/Moteur_jeu/TP2_code/external/glew-1.13.0/include/GL/glew.h \
   /home/cleme/C++/Moteur_jeu/TP2_code/external/glfw-3.1.2/include/GLFW/glfw3.h \
   /usr/include/GL/gl.h \
@@ -1513,7 +1517,7 @@ CMakeFiles/TP2.dir/common/objloader.cpp.o:
 
 /usr/include/x86_64-linux-gnu/c++/13/bits/c++io.h:
 
-/usr/include/strings.h:
+/usr/include/c++/13/cstring:
 
 /home/cleme/C++/Moteur_jeu/TP2_code/external/glm-0.9.7.1/glm/detail/_vectorize.hpp:
 
@@ -1935,6 +1939,10 @@ CMakeFiles/TP2.dir/TP2/TP2.cpp.o:
 
 /usr/include/x86_64-linux-gnu/bits/fp-fast.h:
 
+/usr/include/c++/13/bits/fstream.tcc:
+
+/usr/include/c++/13/bits/codecvt.h:
+
 /usr/include/c++/13/bits/locale_classes.tcc:
 
 /usr/include/c++/13/cmath:
@@ -1980,6 +1988,8 @@ CMakeFiles/TP2.dir/TP2/TP2.cpp.o:
 /usr/include/c++/13/iostream:
 
 /usr/include/c++/13/istream:
+
+/usr/include/c++/13/math.h:
 
 /home/cleme/C++/Moteur_jeu/TP2_code/external/glm-0.9.7.1/glm/common.hpp:
 
@@ -2029,11 +2039,11 @@ CMakeFiles/TP2.dir/TP2/TP2.cpp.o:
 
 /usr/include/x86_64-linux-gnu/gnu/stubs-64.h:
 
+/usr/include/c++/13/fstream:
+
 /usr/include/c++/13/bits/predefined_ops.h:
 
 /usr/include/c++/13/bits/exception.h:
-
-/usr/include/c++/13/fstream:
 
 /usr/include/c++/13/type_traits:
 
@@ -2042,10 +2052,6 @@ CMakeFiles/TP2.dir/TP2/TP2.cpp.o:
 /home/cleme/C++/Moteur_jeu/TP2_code/external/glm-0.9.7.1/glm/geometric.hpp:
 
 /usr/include/c++/13/vector:
-
-/usr/include/c++/13/bits/codecvt.h:
-
-/usr/include/c++/13/bits/fstream.tcc:
 
 /usr/include/assert.h:
 
@@ -2080,6 +2086,8 @@ CMakeFiles/TP2.dir/TP2/TP2.cpp.o:
 /home/cleme/C++/Moteur_jeu/TP2_code/external/glm-0.9.7.1/glm/integer.hpp:
 
 /usr/include/stdint.h:
+
+/usr/include/strings.h:
 
 /usr/include/c++/13/bit:
 
@@ -2248,5 +2256,3 @@ CMakeFiles/TP2.dir/common/controls.cpp.o:
 /usr/include/GL/glext.h:
 
 /home/cleme/C++/Moteur_jeu/TP2_code/common/objloader.cpp:
-
-/usr/include/c++/13/cstring:

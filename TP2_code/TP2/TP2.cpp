@@ -30,7 +30,15 @@ void processInput(GLFWwindow *window);
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+unsigned short NB_triangles = 16;
+int old_NB_triangles = NB_triangles;
+std::vector<glm::vec3> planeVertices;
+std::vector<unsigned short> planeIndices;
+std::vector<glm::vec2> planeUVs;
 
+GLuint vertexbuffer;
+GLuint uvbuffer;
+GLuint elementbuffer;
 // camera
 glm::vec3 camera_position   = glm::vec3(0.0f, 13.0f,  0.0f);
 glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -44,9 +52,10 @@ float lastFrame = 0.0f;
 float angle = 0.;
 float zoom = 1.;
 
-// test
+// heighmap load
 int l, L, c;
-unsigned char* data = stbi_load("../texture/heightmap.png", &l, &L, &c, 0);
+unsigned char* data = nullptr;
+
 /*******************************************************************************/
 
 void generatePlane(
@@ -65,9 +74,15 @@ void generatePlane(
 
     for (int z = 0; z < N; z++) {
         for (int x = 0; x < N; x++) {
+            // height
+            int px = x * (l - 1) / (N - 1);
+            int py = z * (L - 1) / (N - 1);
+            unsigned char pixel = data[(py * l + px) * c];
+            float height = (pixel / 255.0f) * maxHeight;
+            //vertex
             float xpos = -size / 2 + x * step;
             float zpos = -size / 2 + z * step;
-            float height = ((float)rand() / RAND_MAX) * maxHeight;
+            // uv
             vertices.push_back(glm::vec3(xpos, height, zpos));
             uvs.push_back(glm::vec2(
                 (float)x / (N - 1),
@@ -130,7 +145,6 @@ int main( void )
         glfwTerminate();
         return -1;
     }
-
     // Ensure we can capture the escape key being pressed below
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
     // Hide the mouse and enable unlimited mouvement
@@ -145,12 +159,21 @@ int main( void )
 
     // Enable depth test
     glEnable(GL_DEPTH_TEST);
-    // Accept fragment if it closer to the camera than the former one
-    glDepthFunc(GL_LESS);
-    GLuint textureID = loadDDS("../texture/pixelart.dds");
+    // heightmap load
+    data = stbi_load("../texture/heightmap-1024x1024.png", &l, &L, &c, 0);
+    if (!data) {
+        std::cerr << "Path ?" << std::endl;
+        return -1;
+    }
+    // chargement texture 
+    // GLuint textureID = loadDDS("../texture/pixelart.dds");
+    GLuint grassTex = loadPNG("../texture/grass.png");
+    GLuint rockTex  = loadPNG("../texture/rock.png");
+    GLuint snowTex  = loadPNG("../texture/snowrocks.png");
     // Cull triangles which normal is not towards the camera
     //glEnable(GL_CULL_FACE);
-
+    // Accept fragment if it closer to the camera than the former one
+    glDepthFunc(GL_LESS);
     GLuint VertexArrayID;
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
@@ -169,27 +192,20 @@ int main( void )
     //Chargement du fichier de maillage
     // std::string filename("chair.off");
     // loadOFF(filename, indexed_vertices, indices, triangles );
-    std::vector<glm::vec3> planeVertices;
-    std::vector<unsigned short> planeIndices;
-    std::vector<glm::vec2> planeUVs;
-
-    generatePlane(16, 10.f, planeVertices, planeIndices, planeUVs, 1.f);
+    generatePlane(NB_triangles, 10.f, planeVertices, planeIndices, planeUVs, 2.f);
     // Load it into a VBO
 
-    GLuint vertexbuffer;
     glGenBuffers(1, &vertexbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
     // glBufferData(GL_ARRAY_BUFFER, indexed_vertices.size() * sizeof(glm::vec3), &indexed_vertices[0], GL_STATIC_DRAW);
     glBufferData(GL_ARRAY_BUFFER,  planeVertices.size() * sizeof(glm::vec3), &planeVertices[0], GL_STATIC_DRAW);
 
     // uv
-    GLuint uvbuffer;
     glGenBuffers(1, &uvbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
     glBufferData(GL_ARRAY_BUFFER, planeUVs.size() * sizeof(glm::vec2), &planeUVs[0], GL_STATIC_DRAW);
 
     // Generate a buffer for the indices as well
-    GLuint elementbuffer;
     glGenBuffers(1, &elementbuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
     // glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0] , GL_STATIC_DRAW);
@@ -198,11 +214,6 @@ int main( void )
     glUseProgram(programID);
     GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
-    // texture
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textureID);
-    GLuint textureLoc = glGetUniformLocation(programID, "myTextureSampler");
-    glUniform1i(textureLoc, 0);
     // For speed computation
     double lastTime = glfwGetTime();
     int nbFrames = 0;
@@ -265,9 +276,16 @@ int main( void )
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        GLuint textureLoc = glGetUniformLocation(programID, "myTextureSampler");
-        glUniform1i(textureLoc, 0);
+        glBindTexture(GL_TEXTURE_2D, grassTex);
+        glUniform1i(glGetUniformLocation(programID, "grassTex"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, rockTex);
+        glUniform1i(glGetUniformLocation(programID, "rockTex"), 1);
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, snowTex);
+        glUniform1i(glGetUniformLocation(programID, "snowTex"), 2);
         // Draw the triangles !
         glDrawElements(
                     GL_TRIANGLES,      // mode
@@ -292,7 +310,7 @@ int main( void )
     glDeleteBuffers(1, &elementbuffer);
     glDeleteProgram(programID);
     glDeleteVertexArrays(1, &VertexArrayID);
-
+    stbi_image_free(data);
     // Close OpenGL window and terminate GLFW
     glfwTerminate();
 
@@ -302,20 +320,104 @@ int main( void )
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
+void update()
+    {
+        NB_triangles = static_cast<unsigned short>(glm::clamp(static_cast<int>(NB_triangles), 2, 128));
+
+        if (NB_triangles != old_NB_triangles) {
+            printf("Nb triangles: %d\n", NB_triangles);
+            old_NB_triangles = NB_triangles;
+
+            generatePlane(NB_triangles, 10.f, planeVertices, planeIndices, planeUVs, 3.f);
+
+            glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+            glBufferData(GL_ARRAY_BUFFER, planeVertices.size() * sizeof(glm::vec3), &planeVertices[0], GL_STATIC_DRAW);
+
+            glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
+            glBufferData(GL_ARRAY_BUFFER, planeUVs.size() * sizeof(glm::vec2), &planeUVs[0], GL_STATIC_DRAW);
+
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, planeIndices.size() * sizeof(unsigned short), &planeIndices[0], GL_STATIC_DRAW);
+        }
+    }
+unsigned short mode = 0;
+float angleMode1 = 0.f;
+float cameraSpeed = 0.5f;
+float rotationSpeed = 0.3f;
 void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-
-    //Camera zoom in and out
-    float cameraSpeed = 2.5 * deltaTime;
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera_position += cameraSpeed * camera_target;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera_position -= cameraSpeed * camera_target;
-
+    static bool cPressedLastFrame = false;
+    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS && !cPressedLastFrame)
+    {
+        mode = (mode + 1) % 3;
+        if (mode == 0) printf("Mode Libre\n");
+        else if (mode == 1) printf("Angle 45° fixe\n");
+        else printf("Mode Orbital\n");
+        cPressedLastFrame = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_RELEASE)
+        cPressedLastFrame = false;
+    // speed
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) 
+    {
+        rotationSpeed += 0.1f * deltaTime;
+        cameraSpeed += 1.1f * deltaTime;
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+    {
+        rotationSpeed -= 0.1f * deltaTime;
+        cameraSpeed -= 1.1f * deltaTime;
+    }
+    cameraSpeed = glm::clamp(cameraSpeed, 0.1f, 3.f);
+    rotationSpeed = glm::clamp(rotationSpeed, 0.1f, 3.f);
+    // res
+    if (glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS)
+    {
+        NB_triangles += 1;
+        update();
+    }
+    if (glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS)
+    {
+        NB_triangles -= 1;
+        update();
+    }
     //TODO add translations
+    if (mode == 0)
+    {
+        glm::vec3 direction = glm::normalize(camera_target - camera_position);
+        glm::vec3 side = glm::normalize(glm::cross(direction, camera_up));
+        glm::vec3 moveDir(0.f);
 
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) moveDir += direction;
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) moveDir -= direction;
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) moveDir += side;
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) moveDir -= side;
+        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) moveDir += camera_up;
+        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) moveDir -= camera_up;
+        if (glm::length(moveDir) > 0)
+            camera_position += glm::normalize(moveDir) * cameraSpeed;
+    } else if (mode == 1) {
+            angleMode1 += rotationSpeed * deltaTime;
+            float radius = 10.f;
+            float height = 10.f;
+            camera_position = glm::vec3(
+                radius * sin(angleMode1),
+                height,
+                radius * cos(angleMode1)
+            );
+            camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
+            camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
+    } else {
+        static float theta = 0.f;
+        float radius = 20.f;
+        float height = 20.f;
+        theta += rotationSpeed * deltaTime;
+        camera_position = glm::vec3(radius * sin(theta), height, radius * cos(theta));
+        camera_target = glm::vec3(0.f, 0.f, 0.f);
+        camera_up = glm::vec3(0.f, 1.f, 0.f);
+    }
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
