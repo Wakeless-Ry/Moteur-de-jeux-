@@ -344,6 +344,7 @@ unsigned short mode = 0;
 float angleMode1 = 0.f;
 float cameraSpeed = 0.5f;
 float rotationSpeed = 0.3f;
+float angleMode2 = 0.f;
 void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -399,22 +400,17 @@ void processInput(GLFWwindow *window)
         if (glm::length(moveDir) > 0)
             camera_position += glm::normalize(moveDir) * cameraSpeed;
     } else if (mode == 1) {
-            angleMode1 += rotationSpeed * deltaTime;
-            float radius = 10.f;
-            float height = 10.f;
-            camera_position = glm::vec3(
-                radius * sin(angleMode1),
-                height,
-                radius * cos(angleMode1)
-            );
-            camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
-            camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
+        angleMode1 += rotationSpeed * deltaTime;
+        float radius = 10.f;
+        float height = 10.f;
+        camera_position = glm::vec3(radius * sin(angleMode1), height, radius * cos(angleMode1));
+        camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
+        camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
     } else {
-        static float theta = 0.f;
         float radius = 20.f;
         float height = 20.f;
-        theta += rotationSpeed * deltaTime;
-        camera_position = glm::vec3(radius * sin(theta), height, radius * cos(theta));
+        angleMode2 += rotationSpeed * deltaTime;
+        camera_position = glm::vec3(radius * sin(angleMode2), height, radius * cos(angleMode2));
         camera_target = glm::vec3(0.f, 0.f, 0.f);
         camera_up = glm::vec3(0.f, 1.f, 0.f);
     }
