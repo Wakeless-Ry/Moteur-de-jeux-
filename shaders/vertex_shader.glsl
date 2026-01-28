@@ -10,14 +10,21 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection; 
 
+uniform sampler2D grassTexture;
+uniform sampler2D rockTexture;
+uniform sampler2D snowTexture;
+uniform sampler2D heightMap;
+
 void main(){
     texCoord = aTexCoord;
-    gl_Position = projection * view * model * vec4(vertices_position_modelspace, 1);
+    vec3 pos = vertices_position_modelspace;
+    pos.y = texture(heightMap, texCoord).r - 0.2;
+    gl_Position = projection * view * model * vec4(pos, 1);
 
     whichTexture = 0;
 
-    if (vertices_position_modelspace.y > 0.2) {
-        if (vertices_position_modelspace.y < 0.35) {
+    if (pos.y > 0.2) {
+        if (pos.y < 0.35) {
             whichTexture = 1;
         } else {
             whichTexture = 2;

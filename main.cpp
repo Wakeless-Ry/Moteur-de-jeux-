@@ -76,7 +76,7 @@ vector<ushort> flatten(vector<vector<ushort>> &values) {
 void generateTerrain(vector<vector<ushort>> &triangles,
                      vector<glm::vec3> &indexed_vertices,
                      vector<glm::vec2> &textures_coords) {
-    const ushort nombreVertices = 16;
+    const ushort nombreVertices = 128;
     const ushort nombreCases = nombreVertices - 1;
     const float minX = -1;
     const float maxX = 1;
@@ -93,10 +93,10 @@ void generateTerrain(vector<vector<ushort>> &triangles,
             float jWeight = (1 - abs(j - half) / half) * 0.25;
 
             indexed_vertices.push_back(glm::vec3(
-                i * stepX + minX, iWeight + jWeight, j * stepY + minY));
+                i * stepX + minX, 0, j * stepY + minY));
             textures_coords.push_back(
-                glm::vec2(((float)i) / (nombreVertices - 1),
-                          ((float)j) / (nombreVertices - 1)));
+                glm::vec2((i + 0.5) / nombreVertices,
+                          (j + 0.5) / nombreVertices));
         }
     }
 
@@ -149,10 +149,11 @@ void loadTexture(GLuint programID, uint *texture, const char *path) {
 }
 
 void loadThreeTextures(GLuint programID, uint *grassTexture, uint *rockTexture,
-                       uint *snowTexture) {
+                       uint *snowTexture, uint *heightMap) {
     loadTexture(programID, grassTexture, "assets/grass.png");
     loadTexture(programID, rockTexture, "assets/rock.png");
     loadTexture(programID, snowTexture, "assets/snowrocks.png");
+    loadTexture(programID, heightMap, "assets/noiseTexture.png");
 }
 
 int main(void) {
@@ -260,8 +261,8 @@ int main(void) {
     GLuint LightID =
         glGetUniformLocation(programID, "LightPosition_worldspace");
 
-    uint grassTexture, rockTexture, snowTexture;
-    loadThreeTextures(programID, &grassTexture, &rockTexture, &snowTexture);
+    uint grassTexture, rockTexture, snowTexture, heightMap;
+    loadThreeTextures(programID, &grassTexture, &rockTexture, &snowTexture, &heightMap);
 
     // For speed computation
     double lastTime = glfwGetTime();
@@ -309,6 +310,7 @@ int main(void) {
                               (void *)0 // array buffer offset
         );
 
+
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, grassTexture);
         glUniform1i(glGetUniformLocation(programID, "grassTexture"), 0);
@@ -320,6 +322,10 @@ int main(void) {
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, snowTexture);
         glUniform1i(glGetUniformLocation(programID, "snowTexture"), 2);
+
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, heightMap);
+        glUniform1i(glGetUniformLocation(programID, "heightMap"), 3);
 
         // Index buffer
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
