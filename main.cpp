@@ -18,14 +18,16 @@ GLFWwindow* window;
 #include <glm/ext.hpp>
 
 #include <random>
-#include "Camera.h"
-#include "stb_image.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "src/Camera.h"
+#include "src/stb_image.h"
 
 using namespace glm;
 
-#include <common/shader.hpp>
-#include <common/objloader.hpp>
-#include <common/vboindexer.hpp>
+#include <lib/shader.hpp>
+#include <lib/objloader.hpp>
+#include <lib/vboindexer.hpp>
 
 
 
@@ -57,7 +59,7 @@ float randomFloat()
     return dist(gen);
 }
 
-void generate_scene(std::vector<unsigned short> &indices, std::vector<std::vector<unsigned short> > &triangles, std::vector<glm::vec3> &indexed_vertices){
+void generate_scene(std::vector<unsigned short> &indices, std::vector<std::vector<unsigned short> > &triangles, std::vector<glm::vec3> &indexed_vertices,std::vector<glm::vec2> &textures_coords){
     // std::string filename("chair.off");
     // loadOFF(filename, indexed_vertices, indices, triangles );
 
@@ -76,6 +78,7 @@ void generate_scene(std::vector<unsigned short> &indices, std::vector<std::vecto
 
             //float y = randomFloat();
             indexed_vertices.push_back(glm::vec3(x,y,z));
+            textures_coords.push_back(glm::vec2((i + 0.5)/nX,(j + 0.5)/nZ));
         }
     }
 
@@ -100,13 +103,6 @@ void generate_scene(std::vector<unsigned short> &indices, std::vector<std::vecto
 
 }
 
-void loadTexture(GLuint programID){
-    int width, height, nrChannels;
-    unsigned char *data = stbi_load("container.jpg", &width, &height, &nrChannels, 0); 
-
-
-
-}
 
 
 
@@ -174,7 +170,7 @@ int main( void )
     glBindVertexArray(VertexArrayID);
 
     // Create and compile our GLSL program from the shaders
-    GLuint programID = LoadShaders( "vertex_shader.glsl", "fragment_shader.glsl" );
+    GLuint programID = LoadShaders( "shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl" );
 
     /*****************TODO***********************/
     // Get a handle for our "Model View Projection" matrices uniforms
@@ -189,11 +185,9 @@ int main( void )
     std::vector<unsigned short> indices; //Triangles concaténés dans une liste
     std::vector<std::vector<unsigned short> > triangles;
     std::vector<glm::vec3> indexed_vertices;
+    std::vector<glm::vec2> textures_coords;
 
-
-    generate_scene(indices,triangles,indexed_vertices);
-
-
+    generate_scene(indices,triangles,indexed_vertices,textures_coords);
 
     // Load it into a VBO
 
@@ -208,9 +202,44 @@ int main( void )
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0] , GL_STATIC_DRAW);
 
+    GLuint texturebuffer;
+    glGenBuffers(1, &texturebuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, texturebuffer);
+    glBufferData(GL_ARRAY_BUFFER, textures_coords.size() * sizeof(glm::vec2), &textures_coords[0] , GL_STATIC_DRAW);
+
     // Get a handle for our "LightPosition" uniform
     glUseProgram(programID);
     GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
+
+
+
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load("Textures/grass.png", &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D,texture);
+    glUniform1i(glGetUniformLocation(programID,"ourTexture"),0);
+
 
 
 
@@ -268,8 +297,6 @@ int main( void )
         /****************************************/
 
 
-
-
         // 1rst attribute buffer : vertices
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
@@ -293,7 +320,23 @@ int main( void )
                     (void*)0           // element array buffer offset
                     );
 
+
+
+        // 2nd attribute buffer : texture coordinates
+        glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ARRAY_BUFFER, texturebuffer);
+        glVertexAttribPointer(
+            1,                  // attribute location
+            2,                  // size (vec2)
+            GL_FLOAT,           // type
+            GL_FALSE,           // normalized?
+            0,                  // stride
+            (void*)0            // offset
+        );
+
         glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
+
 
         // Swap buffers
         glfwSwapBuffers(window);
@@ -307,10 +350,15 @@ int main( void )
     glDeleteBuffers(1, &vertexbuffer);
     glDeleteBuffers(1, &elementbuffer);
     glDeleteProgram(programID);
+
+
+
     glDeleteVertexArrays(1, &VertexArrayID);
 
     // Close OpenGL window and terminate GLFW
     glfwTerminate();
+
+
 
     return 0;
 }
