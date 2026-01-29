@@ -55,7 +55,7 @@ float randomFloat()
 {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<float> dist(0.0f, 2.f);
+    std::uniform_real_distribution<float> dist(0.0f, 0.4f);
     return dist(gen);
 }
 
@@ -74,9 +74,9 @@ void generate_scene(std::vector<unsigned short> &indices, std::vector<std::vecto
 
             float x = minX+2.0*i/(nX-1);
             float z = minZ+2.0*j/(nZ-1);
-            float y = 0.f;
+            //float y = 0.f;
 
-            //float y = randomFloat();
+            float y = randomFloat();
             indexed_vertices.push_back(glm::vec3(x,y,z));
             textures_coords.push_back(glm::vec2((i + 0.5)/nX,(j + 0.5)/nZ));
         }
@@ -102,7 +102,6 @@ void generate_scene(std::vector<unsigned short> &indices, std::vector<std::vecto
     }
 
 }
-
 
 
 
@@ -312,16 +311,6 @@ int main( void )
         // Index buffer
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
 
-        // Draw the triangles !
-        glDrawElements(
-                    GL_TRIANGLES,      // mode
-                    indices.size(),    // count
-                    GL_UNSIGNED_SHORT,   // type
-                    (void*)0           // element array buffer offset
-                    );
-
-
-
         // 2nd attribute buffer : texture coordinates
         glEnableVertexAttribArray(1);
         glBindBuffer(GL_ARRAY_BUFFER, texturebuffer);
@@ -333,6 +322,15 @@ int main( void )
             0,                  // stride
             (void*)0            // offset
         );
+
+        // Draw the triangles !
+        glDrawElements(
+                    GL_TRIANGLES,      // mode
+                    indices.size(),    // count
+                    GL_UNSIGNED_SHORT,   // type
+                    (void*)0           // element array buffer offset
+                    );
+
 
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
