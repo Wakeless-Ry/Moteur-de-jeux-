@@ -7,12 +7,14 @@ layout (location = 1) in vec2 aTexCoord;
 out vec2 TexCoord;
 
 uniform mat4 proj, model, view; 
-
+uniform sampler2D heightMap;
 
 void main(){
 
         // TODO : Output position of the vertex, in clip space : MVP * position
-        gl_Position = proj * view * model * vec4(vertices_position_modelspace,1);
+        vec3 pos = vertices_position_modelspace;
+        pos.y=texture(heightMap,aTexCoord).r;
+        gl_Position = proj * view * model * vec4(pos,1);
         TexCoord = aTexCoord;
 }
 

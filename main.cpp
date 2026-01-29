@@ -102,7 +102,37 @@ void generate_scene(std::vector<unsigned short> &indices, std::vector<std::vecto
     }
 
 }
+/*******************************************************************************/
 
+void loadTexture(char *filename, GLuint programID, char *varName){
+    static int textureidx=0;
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load(filename, &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+
+    glActiveTexture(GL_TEXTURE0 + textureidx);
+    glBindTexture(GL_TEXTURE_2D,texture);
+    glUniform1i(glGetUniformLocation(programID,varName),textureidx);
+    textureidx++;
+}
 
 
 /*******************************************************************************/
@@ -206,40 +236,15 @@ int main( void )
     glBindBuffer(GL_ARRAY_BUFFER, texturebuffer);
     glBufferData(GL_ARRAY_BUFFER, textures_coords.size() * sizeof(glm::vec2), &textures_coords[0] , GL_STATIC_DRAW);
 
+    glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,0,(void *)0);
+    glEnableVertexAttribArray(1);
+
     // Get a handle for our "LightPosition" uniform
     glUseProgram(programID);
     GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
-
-
-
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    int width, height, nrChannels;
-    unsigned char *data = stbi_load("Textures/grass.png", &width, &height, &nrChannels, 0);
-    if (data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
-    {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-    stbi_image_free(data);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D,texture);
-    glUniform1i(glGetUniformLocation(programID,"ourTexture"),0);
-
-
+    
+    loadTexture("Textures/heightmap-1024x1024.png",programID, "heightMap");
+    loadTexture("Textures/grass.png",programID, "ourTexture");
 
 
     // For speed computation
@@ -312,16 +317,16 @@ int main( void )
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
 
         // 2nd attribute buffer : texture coordinates
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, texturebuffer);
-        glVertexAttribPointer(
-            1,                  // attribute location
-            2,                  // size (vec2)
-            GL_FLOAT,           // type
-            GL_FALSE,           // normalized?
-            0,                  // stride
-            (void*)0            // offset
-        );
+        // glEnableVertexAttribArray(1);
+        // glBindBuffer(GL_ARRAY_BUFFER, texturebuffer);
+        // glVertexAttribPointer(
+        //     1,                  // attribute location
+        //     2,                  // size (vec2)
+        //     GL_FLOAT,           // type
+        //     GL_FALSE,           // normalized?
+        //     0,                  // stride
+        //     (void*)0            // offset
+        // );
 
         // Draw the triangles !
         glDrawElements(
@@ -333,7 +338,7 @@ int main( void )
 
 
         glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
+        // glDisableVertexAttribArray(1);
 
 
         // Swap buffers
