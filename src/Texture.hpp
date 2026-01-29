@@ -6,6 +6,8 @@
 
 using namespace std;
 
+using uint = unsigned int;
+
 class Texture {
     static uint currentPos;
 

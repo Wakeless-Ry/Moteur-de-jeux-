@@ -21,6 +21,7 @@ using namespace glm;
 #include "lib/shader.hpp"
 
 #include "src/Texture.hpp"
+#include "src/Mesh.hpp"
 
 using namespace std;
 using ushort = unsigned short;
@@ -189,9 +190,6 @@ int main(void) {
     GLuint programID = LoadShaders("shaders/vertex_shader.glsl",
                                    "shaders/fragment_shader.glsl");
 
-    /*****************TODO***********************/
-    // Get a handle for our "Model View Projection" matrices uniforms
-
     /****************************************/
     vector<ushort> indices; // Triangles concaténés dans une liste
     vector<vector<ushort>> triangles;
@@ -308,6 +306,7 @@ int main(void) {
     // Cleanup VBO and shader
     glDeleteBuffers(1, &vertexbuffer);
     glDeleteBuffers(1, &elementbuffer);
+    glDeleteBuffers(1, &texturebuffer);
     glDeleteProgram(programID);
     glDeleteVertexArrays(1, &VertexArrayID);
 

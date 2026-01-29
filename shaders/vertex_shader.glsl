@@ -10,9 +10,6 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection; 
 
-uniform sampler2D grassTexture;
-uniform sampler2D rockTexture;
-uniform sampler2D snowTexture;
 uniform sampler2D heightMap;
 
 void main(){
