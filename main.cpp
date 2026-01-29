@@ -18,9 +18,9 @@ GLFWwindow *window;
 
 using namespace glm;
 
-#define STB_IMAGE_IMPLEMENTATION
 #include "lib/shader.hpp"
-#include "lib/stb_image.h"
+
+#include "src/Texture.hpp"
 
 using namespace std;
 using ushort = unsigned short;
@@ -122,38 +122,6 @@ void buildScene(vector<ushort> &indices, vector<vector<ushort>> &triangles,
     generateTerrain(triangles, indexed_vertices, textures_coords);
 
     indices = flatten(triangles);
-}
-
-void loadTexture(GLuint programID, uint *texture, const char *path) {
-    glGenTextures(1, texture);
-    glBindTexture(GL_TEXTURE_2D, *texture);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                    GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    int width, height, nrChannels;
-    unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 0);
-
-    if (data != nullptr) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
-                     GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    } else {
-        cout << "Failed to load texture" << endl;
-    }
-
-    stbi_image_free(data);
-}
-
-void loadThreeTextures(GLuint programID, uint *grassTexture, uint *rockTexture,
-                       uint *snowTexture, uint *heightMap) {
-    loadTexture(programID, grassTexture, "assets/grass.png");
-    loadTexture(programID, rockTexture, "assets/rock.png");
-    loadTexture(programID, snowTexture, "assets/snowrocks.png");
-    loadTexture(programID, heightMap, "assets/noiseTexture.png");
 }
 
 int main(void) {
@@ -261,8 +229,15 @@ int main(void) {
     GLuint LightID =
         glGetUniformLocation(programID, "LightPosition_worldspace");
 
-    uint grassTexture, rockTexture, snowTexture, heightMap;
-    loadThreeTextures(programID, &grassTexture, &rockTexture, &snowTexture, &heightMap);
+    Texture grassTexture = Texture("assets/grass.png");
+    Texture rockTexture = Texture("assets/rock.png");
+    Texture snowTexture = Texture("assets/snowrocks.png");
+    Texture heightMapTexture = Texture("assets/noiseTexture.png");
+
+    grassTexture.bind(programID, "grassTexture");
+    rockTexture.bind(programID, "rockTexture");
+    snowTexture.bind(programID, "snowTexture");
+    heightMapTexture.bind(programID, "heightMap");
 
     // For speed computation
     double lastTime = glfwGetTime();
@@ -309,23 +284,6 @@ int main(void) {
                               0,        // stride
                               (void *)0 // array buffer offset
         );
-
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, grassTexture);
-        glUniform1i(glGetUniformLocation(programID, "grassTexture"), 0);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, rockTexture);
-        glUniform1i(glGetUniformLocation(programID, "rockTexture"), 1);
-
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, snowTexture);
-        glUniform1i(glGetUniformLocation(programID, "snowTexture"), 2);
-
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, heightMap);
-        glUniform1i(glGetUniformLocation(programID, "heightMap"), 3);
 
         // Index buffer
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
