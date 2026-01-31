@@ -1,6 +1,11 @@
+#ifndef MESH
+#define MESH
+
 #include <map>
 
 #include "lib/shader.hpp"
+
+#include "Camera.hpp"
 
 using namespace std;
 
@@ -119,8 +124,20 @@ public:
         this->textures.push_back(newTexture);
     }
 
-    void draw() const {
+    void draw(Camera camera) const {
         glUseProgram(this->programId);
+
+        glm::mat4 model = glm::mat4();
+        glUniformMatrix4fv(glGetUniformLocation(this->programId, "model"), 1,
+                           GL_FALSE, glm::value_ptr(model));
+
+        glm::mat4 view = camera.getView();
+        glUniformMatrix4fv(glGetUniformLocation(this->programId, "view"), 1, GL_FALSE,
+                           glm::value_ptr(view));
+
+        glm::mat4 projection = camera.getProjection();
+        glUniformMatrix4fv(glGetUniformLocation(this->programId, "projection"), 1,
+                           GL_FALSE, glm::value_ptr(projection));
 
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, this->vertexBuffer);
@@ -152,3 +169,5 @@ public:
         glDeleteProgram(this->programId);
     }
 };
+
+#endif //MESH

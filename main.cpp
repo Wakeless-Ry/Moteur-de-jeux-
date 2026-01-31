@@ -16,34 +16,22 @@ GLFWwindow *window;
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-using namespace glm;
-
 #include "src/Texture.hpp"
 #include "src/Mesh.hpp"
+#include "src/Camera.hpp"
 
 using namespace std;
+using namespace glm;
 using ushort = unsigned short;
 using uint = unsigned int;
 
 void processInput(GLFWwindow *window);
 
-// settings
-const uint SCR_WIDTH = 800;
-const uint SCR_HEIGHT = 600;
-
-// camera
-glm::vec3 camera_position = glm::vec3(0.0f, 3.0f, 3.0f);
-glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
-
 // timing
 float deltaTime = 0.0f; // time between current frame and last frame
 float lastFrame = 0.0f;
 
-// rotation
-float angle = 0.;
-float zoom = 1.;
-/*******************************************************************************/
+Camera camera(800, 600);
 
 template <typename T> T random(T min, T max) {
     static std::random_device rd;
@@ -209,20 +197,7 @@ int main(void) {
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        terrain.draw();
-
-        glm::mat4 model = glm::mat4();
-        glUniformMatrix4fv(glGetUniformLocation(terrain.getId(), "model"), 1,
-                           GL_FALSE, glm::value_ptr(model));
-
-        glm::mat4 view = glm::lookAt(camera_position, camera_target, camera_up);
-        glUniformMatrix4fv(glGetUniformLocation(terrain.getId(), "view"), 1, GL_FALSE,
-                           glm::value_ptr(view));
-
-        glm::mat4 projection = glm::perspective(
-            glm::radians(45.), ((double)SCR_WIDTH) / SCR_HEIGHT, 0.1, 100.);
-        glUniformMatrix4fv(glGetUniformLocation(terrain.getId(), "projection"), 1,
-                           GL_FALSE, glm::value_ptr(projection));
+        terrain.draw(camera);
 
         // Swap buffers
         glfwSwapBuffers(window);
@@ -248,14 +223,11 @@ void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    // Camera zoom in and out
-    float cameraSpeed = 2.5 * deltaTime;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera_position += cameraSpeed * camera_target;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera_position -= cameraSpeed * camera_target;
+        camera.move(deltaTime);
 
-    // TODO add translations
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera.move(-deltaTime);
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback

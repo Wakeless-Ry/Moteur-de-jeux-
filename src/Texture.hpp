@@ -1,3 +1,5 @@
+#ifndef TEXTURE
+#define TEXTURE
 
 #include <stdio.h>
 #include <iostream>
@@ -53,3 +55,5 @@ public:
         glUniform1i(glGetUniformLocation(programId, name), this->pos);
     }
 };
+
+#endif //TEXTURE
