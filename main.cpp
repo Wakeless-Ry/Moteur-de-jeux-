@@ -30,6 +30,7 @@ using namespace glm;
 #include <lib/vboindexer.hpp>
 
 void processInput(GLFWwindow *window);
+GLuint vertexbuffer, elementbuffer, texturebuffer;
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -56,13 +57,13 @@ float randomFloat()
     return dist(gen);
 }
 
+int nX = 64;
+int nZ = 64;
+
 void generate_scene(std::vector<unsigned short> &indices, std::vector<std::vector<unsigned short>> &triangles, std::vector<glm::vec3> &indexed_vertices, std::vector<glm::vec2> &textures_coords)
 {
     // std::string filename("chair.off");
     // loadOFF(filename, indexed_vertices, indices, triangles );
-
-    int nX = 128;
-    int nZ = 128;
 
     float minX = -1.f;
     float minZ = -1.f;
@@ -76,7 +77,8 @@ void generate_scene(std::vector<unsigned short> &indices, std::vector<std::vecto
             float z = minZ + 2.0 * j / (nZ - 1);
             // float y = 0.f;
 
-            float y = randomFloat();
+            // float y = randomFloat();
+            float y = 0.f;
             indexed_vertices.push_back(glm::vec3(x, y, z));
             textures_coords.push_back(glm::vec2((i + 0.5) / nX, (j + 0.5) / nZ));
         }
@@ -136,6 +138,11 @@ void loadTexture(char *filename, GLuint programID, char *varName)
 }
 
 /*******************************************************************************/
+
+std::vector<unsigned short> indices; // Triangles concaténés dans une liste
+std::vector<std::vector<unsigned short>> triangles;
+std::vector<glm::vec3> indexed_vertices;
+std::vector<glm::vec2> textures_coords;
 
 int main(void)
 {
@@ -205,27 +212,23 @@ int main(void)
     // Get a handle for our "Model View Projection" matrices uniforms
 
     /****************************************/
-    std::vector<unsigned short> indices; // Triangles concaténés dans une liste
-    std::vector<std::vector<unsigned short>> triangles;
-    std::vector<glm::vec3> indexed_vertices;
-    std::vector<glm::vec2> textures_coords;
 
     generate_scene(indices, triangles, indexed_vertices, textures_coords);
 
     // Load it into a VBO
 
-    GLuint vertexbuffer;
+    // GLuint vertexbuffer;
     glGenBuffers(1, &vertexbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
     glBufferData(GL_ARRAY_BUFFER, indexed_vertices.size() * sizeof(glm::vec3), &indexed_vertices[0], GL_STATIC_DRAW);
 
     // Generate a buffer for the indices as well
-    GLuint elementbuffer;
+    // GLuint elementbuffer;
     glGenBuffers(1, &elementbuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0], GL_STATIC_DRAW);
 
-    GLuint texturebuffer;
+    // GLuint texturebuffer;
     glGenBuffers(1, &texturebuffer);
     glBindBuffer(GL_ARRAY_BUFFER, texturebuffer);
     glBufferData(GL_ARRAY_BUFFER, textures_coords.size() * sizeof(glm::vec2), &textures_coords[0], GL_STATIC_DRAW);
@@ -351,6 +354,46 @@ int main(void)
     return 0;
 }
 
+// ---------------------------------------------------------------------------------------------------------
+
+void regenerateTerrain()
+{
+    indices.clear();
+    triangles.clear();
+    indexed_vertices.clear();
+    textures_coords.clear();
+
+    generate_scene(indices, triangles, indexed_vertices, textures_coords);
+
+    glDeleteBuffers(1, &vertexbuffer);
+    glDeleteBuffers(1, &texturebuffer);
+    glDeleteBuffers(1, &elementbuffer);
+
+    glGenBuffers(1, &vertexbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glBufferData(GL_ARRAY_BUFFER, indexed_vertices.size() * sizeof(glm::vec3), &indexed_vertices[0], GL_STATIC_DRAW);
+
+    glGenBuffers(1, &texturebuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, texturebuffer);
+    glBufferData(GL_ARRAY_BUFFER, textures_coords.size() * sizeof(glm::vec2), &textures_coords[0], GL_STATIC_DRAW);
+
+    glGenBuffers(1, &elementbuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0], GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, texturebuffer);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    glEnableVertexAttribArray(1);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+
+    std::cout << "Terrain regenerated: " << nX << " x " << nZ << std::endl;
+}
+
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window)
@@ -364,6 +407,39 @@ void processInput(GLFWwindow *window)
         camera_position += cameraSpeed * camera_target;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
         camera_position -= cameraSpeed * camera_target;
+
+    static bool plusPressed = false;
+    static bool minusPressed = false;
+
+    if (glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS)
+    {
+        if (!plusPressed)
+        {
+            nX += 1;
+            nZ += 1;
+            plusPressed = true;
+            regenerateTerrain();
+        }
+    }
+    else
+    {
+        plusPressed = false;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS)
+    {
+        if (!minusPressed)
+        {
+            nX = std::max(4, nX - 1);
+            nZ = std::max(4, nZ - 1);
+            minusPressed = true;
+            regenerateTerrain();
+        }
+    }
+    else
+    {
+        minusPressed = false;
+    }
 
     // TODO add translations
 }
