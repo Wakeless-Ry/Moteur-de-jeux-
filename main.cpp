@@ -18,8 +18,6 @@ GLFWwindow *window;
 
 using namespace glm;
 
-#include "lib/shader.hpp"
-
 #include "src/Texture.hpp"
 #include "src/Mesh.hpp"
 
@@ -74,9 +72,7 @@ vector<ushort> flatten(vector<vector<ushort>> &values) {
     return result;
 }
 
-void generateTerrain(vector<vector<ushort>> &triangles,
-                     vector<glm::vec3> &indexed_vertices,
-                     vector<glm::vec2> &textures_coords) {
+void generateTerrain(vector<Triangle> &triangles, map<glm::vec3, glm::vec2, VecCompare> &textureCoords) {
     const ushort nombreVertices = 128;
     const ushort nombreCases = nombreVertices - 1;
     const float minX = -1;
@@ -87,42 +83,48 @@ void generateTerrain(vector<vector<ushort>> &triangles,
     const float stepX = (maxX - minX) / nombreCases;
     const float stepY = (maxY - minY) / nombreCases;
 
+    vector<glm::vec3> indexedVertices;
+
     for (ushort i = 0; i < nombreVertices; i++) {
         for (ushort j = 0; j < nombreVertices; j++) {
             float half = (nombreVertices - 1) / 2.;
             float iWeight = (1 - abs(i - half) / half) * 0.25;
             float jWeight = (1 - abs(j - half) / half) * 0.25;
 
-            indexed_vertices.push_back(glm::vec3(
-                i * stepX + minX, 0, j * stepY + minY));
-            textures_coords.push_back(
-                glm::vec2((i + 0.5) / nombreVertices,
-                          (j + 0.5) / nombreVertices));
+            glm::vec3 pos = glm::vec3(i * stepX + minX, 0, j * stepY + minY);
+
+            indexedVertices.push_back(pos);
+            textureCoords[pos] = glm::vec2((i + 0.5) / nombreVertices, (j + 0.5) / nombreVertices);
         }
     }
 
     for (ushort i = 0; i < nombreCases; i++) {
         for (ushort j = 0; j < nombreCases; j++) {
-            triangles.push_back({(ushort)(i * nombreVertices + j),
-                                 (ushort)(i * nombreVertices + (j + 1)),
-                                 (ushort)((i + 1) * nombreVertices + j)});
+            glm::vec3 a = indexedVertices[(i + 0) * nombreVertices + (j + 0)];
+            glm::vec3 b = indexedVertices[(i + 0) * nombreVertices + (j + 1)];
+            glm::vec3 c = indexedVertices[(i + 1) * nombreVertices + (j + 0)];
+            glm::vec3 d = indexedVertices[(i + 1) * nombreVertices + (j + 1)];
 
-            triangles.push_back({(ushort)(i * nombreVertices + (j + 1)),
-                                 (ushort)((i + 1) * nombreVertices + (j + 1)),
-                                 (ushort)((i + 1) * nombreVertices + j)});
+            triangles.push_back(Triangle(a, b, c));
+            triangles.push_back(Triangle(b, d, c));
         }
     }
 }
 
-void buildScene(vector<ushort> &indices, vector<vector<ushort>> &triangles,
-                vector<glm::vec3> &indexed_vertices,
-                vector<glm::vec2> &textures_coords) {
-    // string filename("chair.off");
-    // loadOFF(filename, indexed_vertices, indices, triangles);
+Mesh buildTerrain() {
+    vector<Triangle> triangles;
+    map<glm::vec3, glm::vec2, VecCompare> textureCoords;
 
-    generateTerrain(triangles, indexed_vertices, textures_coords);
+    generateTerrain(triangles, textureCoords);
 
-    indices = flatten(triangles);
+    Mesh mesh("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl", triangles);
+    mesh.addTextureCoords(textureCoords);
+    mesh.addTexture("assets/noiseTexture.png", "heightMap");
+    mesh.addTexture("assets/grass.png", "grassTexture");
+    mesh.addTexture("assets/rock.png", "rockTexture");
+    mesh.addTexture("assets/snowrocks.png", "snowTexture");
+
+    return mesh;
 }
 
 int main(void) {
@@ -186,56 +188,7 @@ int main(void) {
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
 
-    // Create and compile our GLSL program from the shaders
-    GLuint programID = LoadShaders("shaders/vertex_shader.glsl",
-                                   "shaders/fragment_shader.glsl");
-
-    /****************************************/
-    vector<ushort> indices; // Triangles concaténés dans une liste
-    vector<vector<ushort>> triangles;
-    vector<glm::vec3> indexed_vertices;
-    vector<glm::vec2> textures_coords;
-
-    buildScene(indices, triangles, indexed_vertices, textures_coords);
-
-    // Load it into a VBO
-
-    GLuint vertexbuffer;
-    glGenBuffers(1, &vertexbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, indexed_vertices.size() * sizeof(glm::vec3),
-                 &indexed_vertices[0], GL_STATIC_DRAW);
-
-    // Generate a buffer for the indices as well
-    GLuint elementbuffer;
-    glGenBuffers(1, &elementbuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(ushort),
-                 &indices[0], GL_STATIC_DRAW);
-
-    GLuint texturebuffer;
-    glGenBuffers(1, &texturebuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, texturebuffer);
-    glBufferData(GL_ARRAY_BUFFER, textures_coords.size() * sizeof(glm::vec2),
-                 &textures_coords[0], GL_STATIC_DRAW);
-
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
-    glEnableVertexAttribArray(1);
-
-    // Get a handle for our "LightPosition" uniform
-    glUseProgram(programID);
-    GLuint LightID =
-        glGetUniformLocation(programID, "LightPosition_worldspace");
-
-    Texture grassTexture = Texture("assets/grass.png");
-    Texture rockTexture = Texture("assets/rock.png");
-    Texture snowTexture = Texture("assets/snowrocks.png");
-    Texture heightMapTexture = Texture("assets/noiseTexture.png");
-
-    grassTexture.bind(programID, "grassTexture");
-    rockTexture.bind(programID, "rockTexture");
-    snowTexture.bind(programID, "snowTexture");
-    heightMapTexture.bind(programID, "heightMap");
+    Mesh terrain = buildTerrain();
 
     // For speed computation
     double lastTime = glfwGetTime();
@@ -256,44 +209,20 @@ int main(void) {
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Use our shader
-        glUseProgram(programID);
+        terrain.draw();
 
         glm::mat4 model = glm::mat4();
-        glUniformMatrix4fv(glGetUniformLocation(programID, "model"), 1,
+        glUniformMatrix4fv(glGetUniformLocation(terrain.getId(), "model"), 1,
                            GL_FALSE, glm::value_ptr(model));
 
         glm::mat4 view = glm::lookAt(camera_position, camera_target, camera_up);
-        glUniformMatrix4fv(glGetUniformLocation(programID, "view"), 1, GL_FALSE,
+        glUniformMatrix4fv(glGetUniformLocation(terrain.getId(), "view"), 1, GL_FALSE,
                            glm::value_ptr(view));
 
         glm::mat4 projection = glm::perspective(
             glm::radians(45.), ((double)SCR_WIDTH) / SCR_HEIGHT, 0.1, 100.);
-        glUniformMatrix4fv(glGetUniformLocation(programID, "projection"), 1,
+        glUniformMatrix4fv(glGetUniformLocation(terrain.getId(), "projection"), 1,
                            GL_FALSE, glm::value_ptr(projection));
-
-        // 1rst attribute buffer : vertices
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-        glVertexAttribPointer(0,        // attribute
-                              3,        // size
-                              GL_FLOAT, // type
-                              GL_FALSE, // normalized?
-                              0,        // stride
-                              (void *)0 // array buffer offset
-        );
-
-        // Index buffer
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-
-        // Draw the triangles !
-        glDrawElements(GL_TRIANGLES,      // mode
-                       indices.size(),    // count
-                       GL_UNSIGNED_SHORT, // type
-                       (void *)0          // element array buffer offset
-        );
-
-        glDisableVertexAttribArray(0);
 
         // Swap buffers
         glfwSwapBuffers(window);
@@ -303,11 +232,7 @@ int main(void) {
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
            glfwWindowShouldClose(window) == 0);
 
-    // Cleanup VBO and shader
-    glDeleteBuffers(1, &vertexbuffer);
-    glDeleteBuffers(1, &elementbuffer);
-    glDeleteBuffers(1, &texturebuffer);
-    glDeleteProgram(programID);
+    terrain.cleanUp();
     glDeleteVertexArrays(1, &VertexArrayID);
 
     // Close OpenGL window and terminate GLFW

@@ -1,5 +1,7 @@
 #include <map>
 
+#include "lib/shader.hpp"
+
 using namespace std;
 
 using ushort = unsigned short;
@@ -21,9 +23,14 @@ struct Triangle {
     glm::vec3 a;
     glm::vec3 b;
     glm::vec3 c;
+
+    Triangle() {}
+    Triangle(glm::vec3 a, glm::vec3 b, glm::vec3 c): a(a), b(b), c(c) {}
 };
 
 class Mesh {
+    GLuint programId;
+
     map<glm::vec3, ushort, VecCompare> verticesIndexed;
     vector<glm::vec3> indexedVertices;
     vector<glm::vec2> textureCoords;
@@ -34,69 +41,18 @@ class Mesh {
     GLuint textureBuffer;
 
     bool useTexture = false;
+    vector<Texture> textures;
 
 public:
     Mesh() {}
 
-    Mesh(vector<Triangle> triangles) {
+    Mesh(const char *vertexShaderPath, const char *fragmentShaderPath, const vector<Triangle> &triangles) {
+        this->programId = LoadShaders(vertexShaderPath, fragmentShaderPath);
+        glUseProgram(this->programId);
+        
         this->buildVertices(triangles);
         this->buildIndices(triangles);
 
-        this->generateBuffersNoTexture();
-    }
-
-    Mesh(vector<Triangle> triangles, map<glm::vec3, glm::vec2, VecCompare> textureCoords) {
-        this->buildVertices(triangles);
-        this->buildIndices(triangles);
-        this->buildTextureCoords(textureCoords);
-
-        this->generateBuffersNoTexture();
-        glGenBuffers(1, &this->textureBuffer);
-        glBindBuffer(GL_ARRAY_BUFFER, this->textureBuffer);
-        glBufferData(GL_ARRAY_BUFFER, this->textureCoords.size() * sizeof(glm::vec2),
-                    &this->textureCoords[0], GL_STATIC_DRAW);
-    }
-
-private:
-    void buildVertices(vector<Triangle> triangles) {
-        for (Triangle triangle : triangles) {
-            if (this->verticesIndexed.find(triangle.a) == this->verticesIndexed.end()) {
-                this->verticesIndexed[triangle.a] = this->verticesIndexed.size();
-            }
-            if (this->verticesIndexed.find(triangle.b) == this->verticesIndexed.end()) {
-                this->verticesIndexed[triangle.b] = this->verticesIndexed.size();
-            }
-            if (this->verticesIndexed.find(triangle.c) == this->verticesIndexed.end()) {
-                this->verticesIndexed[triangle.c] = this->verticesIndexed.size();
-            }
-        }
-
-        for (const auto &pair : this->verticesIndexed) {
-            this->indexedVertices.push_back(pair.first);
-        }
-    }
-
-    void buildIndices(vector<Triangle> triangles) {
-        size_t size = triangles.size();
-        this->indices.clear();
-        this->indices.resize(size * 3);
-
-        for (size_t i = 0; i < size; i++) {
-            this->indices[i * 3 + 0] = this->verticesIndexed[triangles[i].a];
-            this->indices[i * 3 + 1] = this->verticesIndexed[triangles[i].b];
-            this->indices[i * 3 + 2] = this->verticesIndexed[triangles[i].c];
-        }
-    }
-
-    void buildTextureCoords(map<glm::vec3, glm::vec2, VecCompare> textureCoords) {
-        this->useTexture = true;
-
-        for (glm::vec3 vertex : this->indexedVertices) {
-            this->textureCoords.push_back(textureCoords[vertex]);
-        }
-    }
-
-    void generateBuffersNoTexture() {
         glGenBuffers(1, &this->vertexBuffer);
         glBindBuffer(GL_ARRAY_BUFFER, this->vertexBuffer);
         glBufferData(GL_ARRAY_BUFFER, this->indexedVertices.size() * sizeof(glm::vec3),
@@ -108,8 +64,64 @@ private:
                     &this->indices[0], GL_STATIC_DRAW);
     }
 
+private:
+    void buildVertices(const vector<Triangle> &triangles) {
+        for (Triangle triangle : triangles) {
+            this->verticesIndexed[triangle.a];
+            this->verticesIndexed[triangle.b];
+            this->verticesIndexed[triangle.c];
+        }
+        
+        this->indexedVertices.reserve(this->verticesIndexed.size());
+        ushort index = 0;
+        for (auto &pair : this->verticesIndexed) {
+            pair.second = index++;            
+            this->indexedVertices.push_back(pair.first);
+        }
+    }
+
+    void buildIndices(const vector<Triangle> &triangles) {
+        size_t size = triangles.size();
+        this->indices.clear();
+        this->indices.resize(size * 3);
+
+        for (size_t i = 0; i < size; i++) {
+            this->indices[i * 3 + 0] = this->verticesIndexed[triangles[i].a];
+            this->indices[i * 3 + 1] = this->verticesIndexed[triangles[i].b];
+            this->indices[i * 3 + 2] = this->verticesIndexed[triangles[i].c];
+        }
+    }
+
 public:
-    void draw() {        
+    GLuint getId() {
+        return this->programId;
+    }
+
+    void addTextureCoords(const map<glm::vec3, glm::vec2, VecCompare> &textureCoords) {
+        this->textureCoords.clear();
+
+        for (glm::vec3 vertex : this->indexedVertices) {
+            this->textureCoords.push_back(textureCoords.at(vertex));
+        }
+
+        glUseProgram(this->programId);
+        glGenBuffers(1, &this->textureBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, this->textureBuffer);
+        glBufferData(GL_ARRAY_BUFFER, this->textureCoords.size() * sizeof(glm::vec2),
+                    &this->textureCoords[0], GL_STATIC_DRAW);
+    }
+
+    void addTexture(const char * texturePath, const char * varName) {
+        this->useTexture = true;
+        Texture newTexture(texturePath, this->textures.size());
+        newTexture.bind(this->programId, varName);
+
+        this->textures.push_back(newTexture);
+    }
+
+    void draw() const {
+        glUseProgram(this->programId);
+
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, this->vertexBuffer);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
@@ -124,15 +136,19 @@ public:
         glDrawElements(GL_TRIANGLES, this->indices.size(), GL_UNSIGNED_SHORT, (void *)0);
 
         glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
+        if (this->useTexture) {
+            glDisableVertexAttribArray(1);
+        }
     }
 
-    void deleteBuffers() {
+    void cleanUp() const {
         glDeleteBuffers(1, &this->vertexBuffer);
         glDeleteBuffers(1, &this->elementBuffer);
 
         if (this->useTexture) {
             glDeleteBuffers(1, &this->textureBuffer);
         }
+
+        glDeleteProgram(this->programId);
     }
 };
