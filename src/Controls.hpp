@@ -31,7 +31,9 @@ class Controls {
         if (cpt < 5) {
             cpt++;
         } else {
-            this->handleMouseDelta(deltaX, deltaY);
+            for (function<void(float, float)> callback : this->mouseDeltaCallback) {
+                callback(deltaX, deltaY);
+            }
         }
 
         glfwSetCursorPos(window, centerX, centerY);
@@ -70,50 +72,19 @@ public:
         this->keysToWatch[key] = false;
         this->keyPressedMapCallback[key].push_back(callback);
     }
-    
-    void handleKeyPressed(uint key, float deltaTime) {
-        auto it = this->keyPressedMapCallback.find(key);
-        if (it != this->keyPressedMapCallback.end()) {
-            for (const auto& callback : it->second) {
-                callback(deltaTime);
-            }
-        }
-    }
+
     void addKeyReleasedCallback(uint key, function<void(float)> callback) {
         this->keysToWatch[key] = false;
         this->keyReleasedMapCallback[key].push_back(callback);
     }
-    
-    void handleKeyReleased(uint key, float deltaTime) {
-        auto it = this->keyReleasedMapCallback.find(key);
-        if (it != this->keyReleasedMapCallback.end()) {
-            for (const auto& callback : it->second) {
-                callback(deltaTime);
-            }
-        }
-    }
+
     void addKeyDownCallback(uint key, function<void(float)> callback) {
         this->keysToWatch[key] = false;
         this->keyDownMapCallback[key].push_back(callback);
     }
-    
-    void handleKeyDown(uint key, float deltaTime) {
-        auto it = this->keyDownMapCallback.find(key);
-        if (it != this->keyDownMapCallback.end()) {
-            for (const auto& callback : it->second) {
-                callback(deltaTime);
-            }
-        }
-    }
 
     void addMouseDeltaCallback(function<void(float, float)> callback) {
         this->mouseDeltaCallback.push_back(callback);
-    }
-
-    void handleMouseDelta(float deltaX, float deltaY) {
-        for (function<void(float, float)> callback : this->mouseDeltaCallback) {
-            callback(deltaX, deltaY);
-        }
     }
 
     void processInput(GLFWwindow *window, Camera &camera, float deltaTime) {
