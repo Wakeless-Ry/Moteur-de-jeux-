@@ -19,19 +19,19 @@ GLFWwindow *window;
 #include "src/Texture.hpp"
 #include "src/Mesh.hpp"
 #include "src/Camera.hpp"
+#include "src/Controls.hpp"
 
 using namespace std;
 using namespace glm;
 using ushort = unsigned short;
 using uint = unsigned int;
 
-void processInput(GLFWwindow *window);
-
 // timing
 float deltaTime = 0.0f; // time between current frame and last frame
 float lastFrame = 0.0f;
 
 Camera camera(800, 600);
+Controls controls;
 
 template <typename T> T random(T min, T max) {
     static std::random_device rd;
@@ -115,6 +115,36 @@ Mesh buildTerrain() {
     return mesh;
 }
 
+void initControls() {
+    controls.addMouseDeltaCallback([](float dx, float dy) {
+        camera.rotateWithMouse(dx, dy);
+    });
+
+    controls.addKeyPressedCallback(GLFW_KEY_ESCAPE, [](float deltaTime) {
+        glfwSetWindowShouldClose(window, true);
+    });
+
+    controls.addKeyPressedCallback(GLFW_KEY_M, [](float deltaTime) {
+            camera.changeMode();
+    });
+
+    controls.addKeyDownCallback(GLFW_KEY_W, [](float deltaTime) {
+        camera.forward(deltaTime);
+    });
+
+    controls.addKeyDownCallback(GLFW_KEY_A, [](float deltaTime) {
+        camera.left(deltaTime);
+    });
+
+    controls.addKeyDownCallback(GLFW_KEY_S, [](float deltaTime) {
+        camera.backward(deltaTime);
+    });
+
+    controls.addKeyDownCallback(GLFW_KEY_D, [](float deltaTime) {
+        camera.right(deltaTime);
+    });
+}
+
 int main(void) {
     // Initialise GLFW
     if (!glfwInit()) {
@@ -149,6 +179,8 @@ int main(void) {
 
     camera.setScreenWidth(mode->width);
     camera.setScreenHeight(mode->height);
+
+    initControls();
 
     // Initialize GLEW
     glewExperimental = true; // Needed for core profile
@@ -197,10 +229,7 @@ int main(void) {
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        // input
-        // -----
-        processInput(window);
-
+        controls.processInput(window, camera, deltaTime);
         camera.update(deltaTime);
 
         // Clear the screen
@@ -223,59 +252,6 @@ int main(void) {
     glfwTerminate();
 
     return 0;
-}
-
-void processMouse(GLFWwindow *window) {
-    double currentX, currentY;
-    glfwGetCursorPos(window, &currentX, &currentY);
-
-    static const float centerX = camera.getScreenWidth() / 2.;
-    static const float centerY = camera.getScreenHeight() / 2.;
-
-    float deltaX = currentX - centerX;
-    float deltaY = currentY - centerY;
-    static int cpt = 0;
-
-    if (cpt < 5) {
-        cpt++;
-        camera.rotateWithMouse(0, 0);
-    } else {
-        camera.rotateWithMouse(deltaX, deltaY);
-    }
-
-    glfwSetCursorPos(window, centerX, centerY);
-}
-
-// process all input: query GLFW whether relevant keys are pressed/released this
-// frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
-void processInput(GLFWwindow *window) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.forward(deltaTime);
-
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.left(deltaTime);
-
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.backward(deltaTime);
-
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.right(deltaTime);
-
-    static bool toggleMode = false;
-    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
-        if (!toggleMode) {
-            camera.changeMode();
-            toggleMode = true;
-        }
-    } else {
-        toggleMode = false;
-    }
-
-    processMouse(window);
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback

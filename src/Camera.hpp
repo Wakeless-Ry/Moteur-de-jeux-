@@ -139,7 +139,7 @@ public:
         this->rotationSpeed = newRotationSpeed;
     }
 
-    void update(float delta) {
+    void update(float deltaTime) {
         this->eulerAngle = vec3(clipAngle180(this->eulerAngle.x), clipAngle180(this->eulerAngle.y), clipAngle180(this->eulerAngle.z));
         this->eulerAngle.x = clamp(this->eulerAngle.x, -89.f, 89.f);
         this->rotation = quat(this->eulerAngle * M_PI / 180.0f);
@@ -164,9 +164,9 @@ public:
         this->viewMatrix = lookAt(this->position, this->position + front, VEC_UP);
     }
 
-    void update(float delta, vec3 newTarget) {
+    void update(float deltaTime, vec3 newTarget) {
         this->target = newTarget;
-        this->update(delta);
+        this->update(deltaTime);
     }
 
     mat4 getView() const {
@@ -189,56 +189,56 @@ public:
         }
     }
 
-    void forward(float delta) {
+    void forward(float deltaTime) {
         vec3 direction = this->rotation * vec3(0.0f, 0.0f, 1.0f);
 
         switch (this->mode) {
         case LOOK_AT:
-            this->targetDistance -= delta * this->translationSpeed;
+            this->targetDistance -= deltaTime * this->translationSpeed;
             break;
         case FRONT:
-            this->position += normalize(direction) * this->translationSpeed * delta;
+            this->position += normalize(direction) * this->translationSpeed * deltaTime;
             break;
         case HOVER:
-            this->position += normalize(this->projectVectorOnPlan(direction, vec3(0.0f, 1.0f, 0.0f))) * this->translationSpeed * delta;
+            this->position += normalize(this->projectVectorOnPlan(direction, vec3(0.0f, 1.0f, 0.0f))) * this->translationSpeed * deltaTime;
             break;
         }
     }
 
-    void backward(float delta) {
+    void backward(float deltaTime) {
         vec3 direction = this->rotation * vec3(0.0f, 0.0f, -1.0f);
 
         switch (this->mode) {
         case LOOK_AT:
-            this->targetDistance += delta * this->translationSpeed;
+            this->targetDistance += deltaTime * this->translationSpeed;
             break;
         case FRONT:
-            this->position += normalize(direction) * this->translationSpeed * delta;
+            this->position += normalize(direction) * this->translationSpeed * deltaTime;
             break;
         case HOVER:
-            this->position += normalize(this->projectVectorOnPlan(direction, vec3(0.0f, 1.0f, 0.0f))) * this->translationSpeed * delta;
+            this->position += normalize(this->projectVectorOnPlan(direction, vec3(0.0f, 1.0f, 0.0f))) * this->translationSpeed * deltaTime;
             break;
         }
     }
 
-    void left(float delta) {
+    void left(float deltaTime) {
         switch (this->mode) {
         case LOOK_AT:
             break;
         case FRONT:
         case HOVER:
-            this->position += normalize(this->rotation * vec3(1.0f, 0.0f, 0.0f)) * this->translationSpeed * delta;
+            this->position += normalize(this->rotation * vec3(1.0f, 0.0f, 0.0f)) * this->translationSpeed * deltaTime;
             break;
         }        
     }
 
-    void right(float delta) {
+    void right(float deltaTime) {
         switch (this->mode) {
         case LOOK_AT:
             break;
         case FRONT:
         case HOVER:
-            this->position += normalize(this->rotation * vec3(-1.0f, 0.0f, 0.0f)) * this->translationSpeed * delta;
+            this->position += normalize(this->rotation * vec3(-1.0f, 0.0f, 0.0f)) * this->translationSpeed * deltaTime;
             break;
         }        
     }
