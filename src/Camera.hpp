@@ -3,12 +3,33 @@
 
 #include <glm/glm.hpp>
 
+using namespace std;
+using namespace glm;
+
 using uint = unsigned int;
 
 enum CameraMode {
     LOOK_AT,
-    DIRECTION,
+    FRONT,
+    HOVER,
+    Count
 };
+
+inline CameraMode& operator++(CameraMode& dir) {
+    dir = static_cast<CameraMode>((static_cast<int>(dir) + 1) % static_cast<int>(CameraMode::Count));
+    return dir;
+}
+
+const static vec3 VEC_UP(0.f, 1.f, 0.f);
+const static vec3 VEC_FRONT(0.f, 0.f, 1.f);
+const static vec3 VEC_RIGHT(1.f, 0.f, 0.f);
+
+static float clipAngle180(float _angle) {
+    while (_angle >= 180.f || _angle < -180.f) {
+        _angle += (_angle > 180.f) ? -360.f : 360.f;
+    }
+    return _angle;
+}
 
 class Camera {
     uint screenWidth;
@@ -18,116 +39,215 @@ class Camera {
     float zNear = .1;
     float zFar = 100;
 
-    glm::vec3 position = glm::vec3(0.0f, 3.0f, 3.0f);
-    glm::vec3 target = glm::vec3(0.0f, 0.0f, -1.0f);
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    vec3 position = vec3(0, 0, 0);
+    vec3 eulerAngle = vec3(45, 45, 0);
+    quat rotation = quat();
 
-    float speed = 2.5;
-    float zoom = 1;
+    mat4 viewMatrix = mat4();
+    mat4 projectionMatrix = mat4();
 
-    float mode = LOOK_AT;
+    vec3 target = vec3(0, 0, 0);
+    float targetDistance = 3.;
+
+    float translationSpeed = 2.5;
+    float rotationSpeed = 100;
+
+    CameraMode mode = LOOK_AT;
+
+    vec3 projectVectorOnPlan(vec3 toProject, vec3 normal) {
+        normal = normalize(normal);
+        return cross(normal, cross(toProject, normal));
+    }
 
 public:
     Camera(uint screenWidth, uint screenHeight): screenWidth(screenWidth), screenHeight(screenHeight) {}
-
+    
     uint getScreenWidth() const {
         return this->screenWidth;
     }
-    
-    void setScreenWidth(uint width) {
-        this->screenWidth = width;
+    void setScreenWidth(uint newWidth) {
+        this->screenWidth = newWidth;
     }
-    
+
     uint getScreenHeight() const {
         return this->screenHeight;
     }
-    
-    void setScreenHeight(uint height) {
-        this->screenHeight = height;
+    void setScreenHeight(uint newHeight) {
+        this->screenHeight = newHeight;
     }
-    
+
     float getFov() const {
         return this->fov;
     }
-    
-    void setFov(float fieldOfView) {
-        this->fov = fieldOfView;
+    void setFov(float newFov) {
+        this->fov = newFov;
     }
-    
+
     float getZNear() const {
         return this->zNear;
     }
-    
-    void setZNear(float near) {
-        this->zNear = near;
+    void setZNear(float newZNear) {
+        this->zNear = newZNear;
     }
-    
+
     float getZFar() const {
         return this->zFar;
     }
-    
-    void setZFar(float far) {
-        this->zFar = far;
+    void setZFar(float newZFar) {
+        this->zFar = newZFar;
     }
-    
-    glm::vec3 getPosition() const {
+
+    vec3 getPosition() const {
         return this->position;
     }
-    
-    void setPosition(const glm::vec3& pos) {
-        this->position = pos;
+    void setPosition(vec3 newPosition) {
+        this->position = newPosition;
     }
-    
-    glm::vec3 getTarget() const {
+
+    vec3 getEulerAngle() const {
+        return this->eulerAngle;
+    }
+    void setEulerAngle(vec3 newEulerAngle) {
+        this->eulerAngle = newEulerAngle;
+    }
+
+    vec3 getTarget() const {
         return this->target;
     }
-    
-    void setTarget(const glm::vec3& target) {
-        this->target = target;
-    }
-    
-    glm::vec3 getUp() const {
-        return this->up;
-    }
-    
-    void setUp(const glm::vec3& upVector) {
-        this->up = upVector;
+    void setTarget(vec3 newTarget) {
+        this->target = newTarget;
     }
 
-    float getSpeed() const {
-        return this->speed;
+    float getTargetDistance() const {
+        return this->targetDistance;
+    }
+    void setTargetDistance(float newTargetDistance) {
+        this->targetDistance = newTargetDistance;
     }
 
-    void setSpeed(float speed) {
-        this->speed = speed;
+    float getTranslationSpeed() const {
+        return this->translationSpeed;
+    }
+    void setTranslationSpeed(float newTranslationSpeed) {
+        this->translationSpeed = newTranslationSpeed;
     }
 
-    float getZoom() const {
-        return this->zoom;
+    float getRotationSpeed() const {
+        return this->rotationSpeed;
+    }
+    void setRotationSpeed(float newRotationSpeed) {
+        this->rotationSpeed = newRotationSpeed;
     }
 
-    void setZoom(float zoom) {
-        this->zoom = zoom;
+    void update(float delta) {
+        this->eulerAngle = vec3(clipAngle180(this->eulerAngle.x), clipAngle180(this->eulerAngle.y), clipAngle180(this->eulerAngle.z));
+        this->eulerAngle.x = clamp(this->eulerAngle.x, -89.f, 89.f);
+        this->rotation = quat(this->eulerAngle * M_PI / 180.0f);
+        
+        if (this->targetDistance < this->zNear) {
+            this->targetDistance = this->zNear;
+        }
+        
+        if (this->targetDistance > this->zFar) {
+            this->targetDistance = this->zFar;
+        }
+
+        if (this->mode == LOOK_AT) {
+	        this->position = this->target - (this->rotation * VEC_FRONT) * this->targetDistance;
+        }
+
+        this->projectionMatrix = perspective(radians(this->fov), ((float) this->screenWidth) / this->screenHeight, this->zNear, this->zFar);
+
+        const vec3 front = this->rotation * VEC_FRONT;
+        const vec3 up = this->rotation * VEC_UP;
+
+        this->viewMatrix = lookAt(this->position, this->position + front, VEC_UP);
     }
 
-    float getMode() const {
-        return this->mode;
+    void update(float delta, vec3 newTarget) {
+        this->target = newTarget;
+        this->update(delta);
     }
 
-    void setMode(float mode) {
-        this->mode = mode;
+    mat4 getView() const {
+        return this->viewMatrix;
     }
 
-    glm::mat4 getView() {
-        return glm::lookAt(this->position, this->target, this->up);
+    mat4 getProjection() const {
+        return this->projectionMatrix;
     }
 
-    glm::mat4 getProjection() {
-        return glm::perspective(glm::radians(this->fov), ((float) this->screenWidth) / this->screenHeight, this->zNear, this->zFar);
+    void rotateWithMouse(float deltaX, float deltaY) {
+        const static float ROTATE_MOUSE_FACTOR = 500.f;
+
+        if (deltaY != 0) {
+            this->eulerAngle.x += (deltaY * this->rotationSpeed) / ROTATE_MOUSE_FACTOR;
+        }
+
+        if (deltaX != 0) {
+            this->eulerAngle.y += (-deltaX * this->rotationSpeed) / ROTATE_MOUSE_FACTOR;
+        }
     }
 
-    void move(float delta) {
-        this->position += this->target * delta * this->speed;
+    void forward(float delta) {
+        vec3 direction = this->rotation * vec3(0.0f, 0.0f, 1.0f);
+
+        switch (this->mode) {
+        case LOOK_AT:
+            this->targetDistance -= delta * this->translationSpeed;
+            break;
+        case FRONT:
+            this->position += normalize(direction) * this->translationSpeed * delta;
+            break;
+        case HOVER:
+            this->position += normalize(this->projectVectorOnPlan(direction, vec3(0.0f, 1.0f, 0.0f))) * this->translationSpeed * delta;
+            break;
+        }
+    }
+
+    void backward(float delta) {
+        vec3 direction = this->rotation * vec3(0.0f, 0.0f, -1.0f);
+
+        switch (this->mode) {
+        case LOOK_AT:
+            this->targetDistance += delta * this->translationSpeed;
+            break;
+        case FRONT:
+            this->position += normalize(direction) * this->translationSpeed * delta;
+            break;
+        case HOVER:
+            this->position += normalize(this->projectVectorOnPlan(direction, vec3(0.0f, 1.0f, 0.0f))) * this->translationSpeed * delta;
+            break;
+        }
+    }
+
+    void left(float delta) {
+        switch (this->mode) {
+        case LOOK_AT:
+            break;
+        case FRONT:
+        case HOVER:
+            this->position += normalize(this->rotation * vec3(1.0f, 0.0f, 0.0f)) * this->translationSpeed * delta;
+            break;
+        }        
+    }
+
+    void right(float delta) {
+        switch (this->mode) {
+        case LOOK_AT:
+            break;
+        case FRONT:
+        case HOVER:
+            this->position += normalize(this->rotation * vec3(-1.0f, 0.0f, 0.0f)) * this->translationSpeed * delta;
+            break;
+        }        
+    }
+
+    void changeMode() {
+        ++this->mode;
+        if (this->mode == LOOK_AT) {
+            this->targetDistance = distance(this->position, this->target);
+        }
     }
 };
 

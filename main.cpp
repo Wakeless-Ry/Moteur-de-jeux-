@@ -130,8 +130,12 @@ int main(void) {
                    GL_TRUE); // To make MacOS happy; should not be needed
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+        
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
     // Open a window and create its OpenGL context
-    window = glfwCreateWindow(1024, 768, "TP1 - GLFW", NULL, NULL);
+    window = glfwCreateWindow(mode->width, mode->height, "TP1 - GLFW", monitor, NULL);
     if (window == NULL) {
         fprintf(
             stderr,
@@ -142,6 +146,9 @@ int main(void) {
         return -1;
     }
     glfwMakeContextCurrent(window);
+
+    camera.setScreenWidth(mode->width);
+    camera.setScreenHeight(mode->height);
 
     // Initialize GLEW
     glewExperimental = true; // Needed for core profile
@@ -155,11 +162,11 @@ int main(void) {
     // Ensure we can capture the escape key being pressed below
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
     // Hide the mouse and enable unlimited mouvement
-    //  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Set the mouse at the center of the screen
     glfwPollEvents();
-    glfwSetCursorPos(window, 1024. / 2, 768. / 2);
+    glfwSetCursorPos(window, camera.getScreenWidth() / 2, camera.getScreenHeight() / 2);
 
     // Dark blue background
     glClearColor(0.8f, 0.8f, 0.8f, 0.0f);
@@ -194,6 +201,8 @@ int main(void) {
         // -----
         processInput(window);
 
+        camera.update(deltaTime);
+
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -216,6 +225,27 @@ int main(void) {
     return 0;
 }
 
+void processMouse(GLFWwindow *window) {
+    double currentX, currentY;
+    glfwGetCursorPos(window, &currentX, &currentY);
+
+    static const float centerX = camera.getScreenWidth() / 2.;
+    static const float centerY = camera.getScreenHeight() / 2.;
+
+    float deltaX = currentX - centerX;
+    float deltaY = currentY - centerY;
+    static int cpt = 0;
+
+    if (cpt < 5) {
+        cpt++;
+        camera.rotateWithMouse(0, 0);
+    } else {
+        camera.rotateWithMouse(deltaX, deltaY);
+    }
+
+    glfwSetCursorPos(window, centerX, centerY);
+}
+
 // process all input: query GLFW whether relevant keys are pressed/released this
 // frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
@@ -224,10 +254,28 @@ void processInput(GLFWwindow *window) {
         glfwSetWindowShouldClose(window, true);
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.move(deltaTime);
+        camera.forward(deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera.left(deltaTime);
 
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.move(-deltaTime);
+        camera.backward(deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera.right(deltaTime);
+
+    static bool toggleMode = false;
+    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
+        if (!toggleMode) {
+            camera.changeMode();
+            toggleMode = true;
+        }
+    } else {
+        toggleMode = false;
+    }
+
+    processMouse(window);
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback
