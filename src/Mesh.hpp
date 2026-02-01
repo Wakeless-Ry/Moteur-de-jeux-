@@ -158,15 +158,23 @@ public:
         }
     }
 
-    void cleanUp() const {
+    void cleanUp() {
         glDeleteBuffers(1, &this->vertexBuffer);
         glDeleteBuffers(1, &this->elementBuffer);
 
         if (this->useTexture) {
             glDeleteBuffers(1, &this->textureBuffer);
+            for (auto& texture : this->textures) {
+                texture.cleanUp(); // or however your Texture class handles cleanup
+            }
         }
 
         glDeleteProgram(this->programId);
+        
+        this->vertexBuffer = 0;
+        this->elementBuffer = 0;
+        this->textureBuffer = 0;
+        this->programId = 0;
     }
 };
 

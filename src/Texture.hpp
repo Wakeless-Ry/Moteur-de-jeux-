@@ -45,7 +45,7 @@ public:
     }
 
     uint getId() const {
-        return texId;
+        return this->texId;
     }
 
     void bind(GLuint programId, const char *name) const {
@@ -53,6 +53,13 @@ public:
         glActiveTexture(GL_TEXTURE0 + this->pos);
         glBindTexture(GL_TEXTURE_2D, this->texId);
         glUniform1i(glGetUniformLocation(programId, name), this->pos);
+    }
+
+    void cleanUp() {
+        if (this->texId != 0) {
+            glDeleteTextures(1, &this->texId);
+            this->texId = 0;
+        }
     }
 };
 

@@ -60,8 +60,7 @@ vector<ushort> flatten(vector<vector<ushort>> &values) {
     return result;
 }
 
-void generateTerrain(vector<Triangle> &triangles, map<glm::vec3, glm::vec2, VecCompare> &textureCoords) {
-    const ushort nombreVertices = 128;
+void generateTerrain(uint nombreVertices, vector<Triangle> &triangles, map<glm::vec3, glm::vec2, VecCompare> &textureCoords) {
     const ushort nombreCases = nombreVertices - 1;
     const float minX = -1;
     const float maxX = 1;
@@ -99,20 +98,33 @@ void generateTerrain(vector<Triangle> &triangles, map<glm::vec3, glm::vec2, VecC
     }
 }
 
-Mesh buildTerrain() {
+Mesh * terrain;
+
+void buildTerrain(uint nombreVertices) {
     vector<Triangle> triangles;
     map<glm::vec3, glm::vec2, VecCompare> textureCoords;
 
-    generateTerrain(triangles, textureCoords);
+    generateTerrain(nombreVertices, triangles, textureCoords);
 
-    Mesh mesh("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl", triangles);
-    mesh.addTextureCoords(textureCoords);
-    mesh.addTexture("assets/noiseTexture.png", "heightMap");
-    mesh.addTexture("assets/grass.png", "grassTexture");
-    mesh.addTexture("assets/rock.png", "rockTexture");
-    mesh.addTexture("assets/snowrocks.png", "snowTexture");
+    terrain = new Mesh("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl", triangles);
+    terrain->addTextureCoords(textureCoords);
+    terrain->addTexture("assets/noiseTexture.png", "heightMap");
+    terrain->addTexture("assets/grass.png", "grassTexture");
+    terrain->addTexture("assets/rock.png", "rockTexture");
+    terrain->addTexture("assets/snowrocks.png", "snowTexture");
+}
 
-    return mesh;
+void buildTerrainWithDeltaVertices(int change) {
+    static uint nombreVertices = 32;
+    nombreVertices += change;
+    if (nombreVertices < 2) {
+        nombreVertices = 2;
+    }
+
+    if (terrain) {
+        terrain->cleanUp();
+    }
+    buildTerrain(nombreVertices);
 }
 
 void initControls() {
@@ -142,6 +154,14 @@ void initControls() {
 
     controls.addKeyDownCallback(GLFW_KEY_D, [](float deltaTime) {
         camera.right(deltaTime);
+    });
+
+    controls.addKeyDownCallback(GLFW_KEY_KP_ADD, [](float deltaTime) {
+        buildTerrainWithDeltaVertices(1);
+    });
+
+    controls.addKeyDownCallback(GLFW_KEY_KP_SUBTRACT, [](float deltaTime) {
+        buildTerrainWithDeltaVertices(-1);
     });
 }
 
@@ -215,7 +235,7 @@ int main(void) {
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
 
-    Mesh terrain = buildTerrain();
+    buildTerrainWithDeltaVertices(0);
 
     // For speed computation
     double lastTime = glfwGetTime();
@@ -235,7 +255,7 @@ int main(void) {
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        terrain.draw(camera);
+        terrain->draw(camera);
 
         // Swap buffers
         glfwSwapBuffers(window);
@@ -245,7 +265,7 @@ int main(void) {
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
            glfwWindowShouldClose(window) == 0);
 
-    terrain.cleanUp();
+    terrain->cleanUp();
     glDeleteVertexArrays(1, &VertexArrayID);
 
     // Close OpenGL window and terminate GLFW
