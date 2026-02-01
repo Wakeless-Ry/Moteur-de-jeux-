@@ -63,8 +63,6 @@ int nZ = 64;
 
 void generate_scene(std::vector<unsigned int> &indices, std::vector<std::vector<unsigned int>> &triangles, std::vector<glm::vec3> &indexed_vertices, std::vector<glm::vec2> &textures_coords)
 {
-    // std::string filename("chair.off");
-    // loadOFF(filename, indexed_vertices, indices, triangles );
 
     float minX = -1.f;
     float minZ = -1.f;
@@ -162,7 +160,7 @@ int main(void)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Open a window and create its OpenGL context
-    window = glfwCreateWindow(1024, 768, "TP1 - GLFW", NULL, NULL);
+    window = glfwCreateWindow(1024, 768, "Moteur - GLFW", NULL, NULL);
     if (window == NULL)
     {
         fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
@@ -184,6 +182,7 @@ int main(void)
 
     // Ensure we can capture the escape key being pressed below
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+
     // Hide the mouse and enable unlimited mouvement
     //  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -245,18 +244,11 @@ int main(void)
         // Use our shader
         glUseProgram(programID);
 
-        /*****************TODO***********************/
-        // Model matrix : an identity matrix (model will be at the origin) then change
         glm::mat4 model = glm::mat4();
 
-        // View matrix : camera/view transformation lookat() utiliser camera_position camera_target camera_up
         glm::mat4 view = glm::lookAt(camera_position, camera_target, camera_up);
 
-        // Projection matrix : 45 Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
         glm::mat4 proj = glm::perspective(glm::radians(45.), ((double)SCR_WIDTH) / SCR_HEIGHT, 0.1, 100.);
-
-        // Send our transformation to the currently bound shader,
-        // in the "Model View Projection" to the shader uniforms
 
         GLfloat modelLocation = glGetUniformLocation(programID, "model");
         glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
