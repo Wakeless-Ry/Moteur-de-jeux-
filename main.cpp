@@ -29,8 +29,9 @@ using namespace glm;
 #include <lib/objloader.hpp>
 #include <lib/vboindexer.hpp>
 
-void processInput(GLFWwindow *window);
-GLuint vertexbuffer, elementbuffer, texturebuffer;
+#include "src/Mesh.h"
+
+void processInput(GLFWwindow *window, Mesh &terrain);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -201,40 +202,13 @@ int main(void)
     // Cull triangles which normal is not towards the camera
     // glEnable(GL_CULL_FACE);
 
-    GLuint VertexArrayID;
-    glGenVertexArrays(1, &VertexArrayID);
-    glBindVertexArray(VertexArrayID);
-
     // Create and compile our GLSL program from the shaders
     GLuint programID = LoadShaders("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl");
 
-    /*****************TODO***********************/
-    // Get a handle for our "Model View Projection" matrices uniforms
-
-    /****************************************/
-
+    Mesh terrain;
     generate_scene(indices, triangles, indexed_vertices, textures_coords);
-
+    terrain.setData(indexed_vertices, textures_coords, indices);
     // Load it into a VBO
-
-    // GLuint vertexbuffer;
-    glGenBuffers(1, &vertexbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, indexed_vertices.size() * sizeof(glm::vec3), &indexed_vertices[0], GL_STATIC_DRAW);
-
-    // Generate a buffer for the indices as well
-    // GLuint elementbuffer;
-    glGenBuffers(1, &elementbuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-
-    // GLuint texturebuffer;
-    glGenBuffers(1, &texturebuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, texturebuffer);
-    glBufferData(GL_ARRAY_BUFFER, textures_coords.size() * sizeof(glm::vec2), &textures_coords[0], GL_STATIC_DRAW);
-
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
-    glEnableVertexAttribArray(1);
 
     // Get a handle for our "LightPosition" uniform
     glUseProgram(programID);
@@ -263,7 +237,7 @@ int main(void)
 
         // input
         // -----
-        processInput(window);
+        processInput(window, terrain);
 
         // Clear the screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -293,45 +267,7 @@ int main(void)
         GLfloat viewLocation = glGetUniformLocation(programID, "view");
         glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
 
-        /****************************************/
-
-        // 1rst attribute buffer : vertices
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-        glVertexAttribPointer(
-            0,        // attribute
-            3,        // size
-            GL_FLOAT, // type
-            GL_FALSE, // normalized?
-            0,        // stride
-            (void *)0 // array buffer offset
-        );
-
-        // Index buffer
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-
-        // 2nd attribute buffer : texture coordinates
-        // glEnableVertexAttribArray(1);
-        // glBindBuffer(GL_ARRAY_BUFFER, texturebuffer);
-        // glVertexAttribPointer(
-        //     1,                  // attribute location
-        //     2,                  // size (vec2)
-        //     GL_FLOAT,           // type
-        //     GL_FALSE,           // normalized?
-        //     0,                  // stride
-        //     (void*)0            // offset
-        // );
-
-        // Draw the triangles !
-        glDrawElements(
-            GL_TRIANGLES,    // mode
-            indices.size(),  // count
-            GL_UNSIGNED_INT, // type
-            (void *)0        // element array buffer offset
-        );
-
-        glDisableVertexAttribArray(0);
-        // glDisableVertexAttribArray(1);
+        terrain.draw();
 
         // Swap buffers
         glfwSwapBuffers(window);
@@ -341,13 +277,6 @@ int main(void)
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
            glfwWindowShouldClose(window) == 0);
 
-    // Cleanup VBO and shader
-    glDeleteBuffers(1, &vertexbuffer);
-    glDeleteBuffers(1, &elementbuffer);
-    glDeleteProgram(programID);
-
-    glDeleteVertexArrays(1, &VertexArrayID);
-
     // Close OpenGL window and terminate GLFW
     glfwTerminate();
 
@@ -356,7 +285,7 @@ int main(void)
 
 // ---------------------------------------------------------------------------------------------------------
 
-void regenerateTerrain()
+void regenerateTerrain(Mesh &terrainMesh)
 {
     indices.clear();
     triangles.clear();
@@ -364,39 +293,14 @@ void regenerateTerrain()
     textures_coords.clear();
 
     generate_scene(indices, triangles, indexed_vertices, textures_coords);
-
-    glDeleteBuffers(1, &vertexbuffer);
-    glDeleteBuffers(1, &texturebuffer);
-    glDeleteBuffers(1, &elementbuffer);
-
-    glGenBuffers(1, &vertexbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, indexed_vertices.size() * sizeof(glm::vec3), &indexed_vertices[0], GL_STATIC_DRAW);
-
-    glGenBuffers(1, &texturebuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, texturebuffer);
-    glBufferData(GL_ARRAY_BUFFER, textures_coords.size() * sizeof(glm::vec2), &textures_coords[0], GL_STATIC_DRAW);
-
-    glGenBuffers(1, &elementbuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
-    glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, texturebuffer);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
-    glEnableVertexAttribArray(1);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+    terrainMesh.setData(indexed_vertices, textures_coords, indices);
 
     std::cout << "Terrain regenerated: " << nX << " x " << nZ << std::endl;
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
-void processInput(GLFWwindow *window)
+void processInput(GLFWwindow *window, Mesh &terrain)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
@@ -418,7 +322,7 @@ void processInput(GLFWwindow *window)
             nX += 2;
             nZ += 2;
             plusPressed = true;
-            regenerateTerrain();
+            regenerateTerrain(terrain);
         }
     }
     else
@@ -433,7 +337,7 @@ void processInput(GLFWwindow *window)
             nX = std::max(4, nX - 2);
             nZ = std::max(4, nZ - 2);
             minusPressed = true;
-            regenerateTerrain();
+            regenerateTerrain(terrain);
         }
     }
     else
@@ -445,7 +349,7 @@ void processInput(GLFWwindow *window)
     {
         nX = 0;
         nZ = 0;
-        regenerateTerrain();
+        regenerateTerrain(terrain);
         std::cout << "delete terrain" << std::endl;
     }
     // TODO add translations
