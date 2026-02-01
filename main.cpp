@@ -415,8 +415,8 @@ void processInput(GLFWwindow *window)
     {
         if (!plusPressed)
         {
-            nX += 1;
-            nZ += 1;
+            nX += 2;
+            nZ += 2;
             plusPressed = true;
             regenerateTerrain();
         }
@@ -430,8 +430,8 @@ void processInput(GLFWwindow *window)
     {
         if (!minusPressed)
         {
-            nX = std::max(4, nX - 1);
-            nZ = std::max(4, nZ - 1);
+            nX = std::max(4, nX - 2);
+            nZ = std::max(4, nZ - 2);
             minusPressed = true;
             regenerateTerrain();
         }
@@ -441,6 +441,13 @@ void processInput(GLFWwindow *window)
         minusPressed = false;
     }
 
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+    {
+        nX = 0;
+        nZ = 0;
+        regenerateTerrain();
+        std::cout << "delete terrain" << std::endl;
+    }
     // TODO add translations
 }
 
