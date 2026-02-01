@@ -60,7 +60,7 @@ float randomFloat()
 int nX = 64;
 int nZ = 64;
 
-void generate_scene(std::vector<unsigned short> &indices, std::vector<std::vector<unsigned short>> &triangles, std::vector<glm::vec3> &indexed_vertices, std::vector<glm::vec2> &textures_coords)
+void generate_scene(std::vector<unsigned int> &indices, std::vector<std::vector<unsigned int>> &triangles, std::vector<glm::vec3> &indexed_vertices, std::vector<glm::vec2> &textures_coords)
 {
     // std::string filename("chair.off");
     // loadOFF(filename, indexed_vertices, indices, triangles );
@@ -84,9 +84,9 @@ void generate_scene(std::vector<unsigned short> &indices, std::vector<std::vecto
         }
     }
 
-    for (float i = 0; i < nX - 1; i++)
+    for (unsigned int i = 0; i < nX - 1; i++)
     {
-        for (float j = 0; j < nZ - 1; j++)
+        for (unsigned int j = 0; j < nZ - 1; j++)
         {
 
             triangles.push_back({i * nZ + j,
@@ -99,7 +99,7 @@ void generate_scene(std::vector<unsigned short> &indices, std::vector<std::vecto
         }
     }
 
-    for (std::vector<unsigned short> triangle : triangles)
+    for (std::vector<unsigned int> triangle : triangles)
     {
         indices.insert(indices.end(), triangle.begin(), triangle.end());
     }
@@ -139,8 +139,8 @@ void loadTexture(char *filename, GLuint programID, char *varName)
 
 /*******************************************************************************/
 
-std::vector<unsigned short> indices; // Triangles concaténés dans une liste
-std::vector<std::vector<unsigned short>> triangles;
+std::vector<unsigned int> indices; // Triangles concaténés dans une liste
+std::vector<std::vector<unsigned int>> triangles;
 std::vector<glm::vec3> indexed_vertices;
 std::vector<glm::vec2> textures_coords;
 
@@ -226,7 +226,7 @@ int main(void)
     // GLuint elementbuffer;
     glGenBuffers(1, &elementbuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
     // GLuint texturebuffer;
     glGenBuffers(1, &texturebuffer);
@@ -324,10 +324,10 @@ int main(void)
 
         // Draw the triangles !
         glDrawElements(
-            GL_TRIANGLES,      // mode
-            indices.size(),    // count
-            GL_UNSIGNED_SHORT, // type
-            (void *)0          // element array buffer offset
+            GL_TRIANGLES,    // mode
+            indices.size(),  // count
+            GL_UNSIGNED_INT, // type
+            (void *)0        // element array buffer offset
         );
 
         glDisableVertexAttribArray(0);
@@ -379,7 +379,7 @@ void regenerateTerrain()
 
     glGenBuffers(1, &elementbuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
