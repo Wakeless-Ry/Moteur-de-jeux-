@@ -165,7 +165,7 @@ public:
         if (this->useTexture) {
             glDeleteBuffers(1, &this->textureBuffer);
             for (auto& texture : this->textures) {
-                texture.cleanUp(); // or however your Texture class handles cleanup
+                texture.cleanUp();
             }
         }
 

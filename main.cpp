@@ -1,37 +1,20 @@
-// Include standard headers
 #include <iostream>
 #include <random>
 #include <stdio.h>
 #include <stdlib.h>
 
-// Include GLEW
 #include <GL/glew.h>
 
-// Include GLFW
 #include <GLFW/glfw3.h>
 GLFWwindow *window;
 
-// Include GLM
 #include <glm/ext.hpp>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 #include "src/Texture.hpp"
 #include "src/Mesh.hpp"
 #include "src/Camera.hpp"
 #include "src/Controls.hpp"
-
-using namespace std;
-using namespace glm;
-using ushort = unsigned short;
-using uint = unsigned int;
-
-// timing
-float deltaTime = 0.0f; // time between current frame and last frame
-float lastFrame = 0.0f;
-
-Camera camera(800, 600);
-Controls controls;
+#include "src/GameEngine.hpp"
 
 template <typename T> T random(T min, T max) {
     static std::random_device rd;
@@ -98,75 +81,79 @@ void generateTerrain(uint nombreVertices, vector<Triangle> &triangles, map<glm::
     }
 }
 
-Mesh * terrain;
-
-void buildTerrain(uint nombreVertices) {
+Mesh buildTerrain(uint nombreVertices) {
     vector<Triangle> triangles;
     map<glm::vec3, glm::vec2, VecCompare> textureCoords;
 
     generateTerrain(nombreVertices, triangles, textureCoords);
 
-    terrain = new Mesh("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl", triangles);
-    terrain->addTextureCoords(textureCoords);
-    terrain->addTexture("assets/noiseTexture.png", "heightMap");
-    terrain->addTexture("assets/grass.png", "grassTexture");
-    terrain->addTexture("assets/rock.png", "rockTexture");
-    terrain->addTexture("assets/snowrocks.png", "snowTexture");
+    Mesh terrain("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl", triangles);
+    terrain.addTextureCoords(textureCoords);
+    terrain.addTexture("assets/noiseTexture.png", "heightMap");
+    terrain.addTexture("assets/grass.png", "grassTexture");
+    terrain.addTexture("assets/rock.png", "rockTexture");
+    terrain.addTexture("assets/snowrocks.png", "snowTexture");
+
+    return terrain;
 }
 
-void buildTerrainWithDeltaVertices(int change) {
+Mesh buildTerrainWithDeltaVertices(int change) {
     static uint nombreVertices = 32;
     nombreVertices += change;
     if (nombreVertices < 2) {
         nombreVertices = 2;
     }
 
-    if (terrain) {
-        terrain->cleanUp();
-    }
-    buildTerrain(nombreVertices);
+    return buildTerrain(nombreVertices);
 }
 
-void initControls() {
-    controls.addMouseDeltaCallback([](float dx, float dy) {
-        camera.rotateWithMouse(dx, dy);
+void initControls(GameEngine &engine, uint terrainId) {
+    Controls &controls = engine.getControls();
+
+    controls.addMouseDeltaCallback([&engine](float dx, float dy) {
+        engine.getCamera().rotateWithMouse(dx, dy);
     });
 
-    controls.addKeyPressedCallback(GLFW_KEY_ESCAPE, [](float deltaTime) {
-        glfwSetWindowShouldClose(window, true);
+    controls.addKeyPressedCallback(GLFW_KEY_ESCAPE, [&engine](float deltaTime) {
+        engine.stopRunning();
     });
 
-    controls.addKeyPressedCallback(GLFW_KEY_M, [](float deltaTime) {
-            camera.changeMode();
+    controls.addKeyPressedCallback(GLFW_KEY_M, [&engine](float deltaTime) {
+            engine.getCamera().changeMode();
     });
 
-    controls.addKeyDownCallback(GLFW_KEY_W, [](float deltaTime) {
-        camera.forward(deltaTime);
+    controls.addKeyDownCallback(GLFW_KEY_W, [&engine](float deltaTime) {
+        engine.getCamera().forward(deltaTime);
     });
 
-    controls.addKeyDownCallback(GLFW_KEY_A, [](float deltaTime) {
-        camera.left(deltaTime);
+    controls.addKeyDownCallback(GLFW_KEY_A, [&engine](float deltaTime) {
+        engine.getCamera().left(deltaTime);
     });
 
-    controls.addKeyDownCallback(GLFW_KEY_S, [](float deltaTime) {
-        camera.backward(deltaTime);
+    controls.addKeyDownCallback(GLFW_KEY_S, [&engine](float deltaTime) {
+        engine.getCamera().backward(deltaTime);
     });
 
-    controls.addKeyDownCallback(GLFW_KEY_D, [](float deltaTime) {
-        camera.right(deltaTime);
+    controls.addKeyDownCallback(GLFW_KEY_D, [&engine](float deltaTime) {
+        engine.getCamera().right(deltaTime);
+    });
+    
+    controls.addKeyDownCallback(GLFW_KEY_KP_ADD, [&engine, terrainId](float deltaTime) {
+        Mesh * terrain = engine.getMesh(terrainId);
+        terrain->cleanUp();
+        terrain = new Mesh(buildTerrainWithDeltaVertices(1));
+        engine.replaceMesh(terrainId, terrain);
     });
 
-    controls.addKeyDownCallback(GLFW_KEY_KP_ADD, [](float deltaTime) {
-        buildTerrainWithDeltaVertices(1);
-    });
-
-    controls.addKeyDownCallback(GLFW_KEY_KP_SUBTRACT, [](float deltaTime) {
-        buildTerrainWithDeltaVertices(-1);
+    controls.addKeyDownCallback(GLFW_KEY_KP_SUBTRACT, [&engine, terrainId](float deltaTime) {
+        Mesh * terrain = engine.getMesh(terrainId);
+        terrain->cleanUp();
+        terrain = new Mesh(buildTerrainWithDeltaVertices(-1));
+        engine.replaceMesh(terrainId, terrain);
     });
 }
 
 int main(void) {
-    // Initialise GLFW
     if (!glfwInit()) {
         fprintf(stderr, "Failed to initialize GLFW\n");
         getchar();
@@ -176,31 +163,22 @@ int main(void) {
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT,
-                   GL_TRUE); // To make MacOS happy; should not be needed
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-        
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
-    // Open a window and create its OpenGL context
-    window = glfwCreateWindow(mode->width, mode->height, "TP1 - GLFW", monitor, NULL);
+    window = glfwCreateWindow(mode->width, mode->height, "Game Engine", monitor, NULL);
+
     if (window == NULL) {
-        fprintf(
-            stderr,
-            "Failed to open GLFW window. If you have an Intel GPU, they are "
-            "not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
+        fprintf(stderr, "Failed to open GLFW window.");
         getchar();
         glfwTerminate();
         return -1;
     }
+
     glfwMakeContextCurrent(window);
-
-    camera.setScreenWidth(mode->width);
-    camera.setScreenHeight(mode->height);
-
-    initControls();
 
     // Initialize GLEW
     glewExperimental = true; // Needed for core profile
@@ -217,69 +195,25 @@ int main(void) {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Set the mouse at the center of the screen
-    glfwPollEvents();
-    glfwSetCursorPos(window, camera.getScreenWidth() / 2, camera.getScreenHeight() / 2);
-
-    // Dark blue background
-    glClearColor(0.8f, 0.8f, 0.8f, 0.0f);
 
     // Enable depth test
     glEnable(GL_DEPTH_TEST);
     // Accept fragment if it closer to the camera than the former one
     glDepthFunc(GL_LESS);
 
-    // Cull triangles which normal is not towards the camera
-    // glEnable(GL_CULL_FACE);
+    GameEngine engine = GameEngine::newGameEngine(window);
+    Camera &camera = engine.getCamera();
 
-    GLuint VertexArrayID;
-    glGenVertexArrays(1, &VertexArrayID);
-    glBindVertexArray(VertexArrayID);
+    glfwPollEvents();
+    glfwSetCursorPos(window, camera.getScreenWidth() / 2, camera.getScreenHeight() / 2);
 
-    buildTerrainWithDeltaVertices(0);
+    Mesh terrain = buildTerrainWithDeltaVertices(0);
 
-    // For speed computation
-    double lastTime = glfwGetTime();
-    int nbFrames = 0;
+    uint terrainId = engine.addMesh(&terrain);
 
-    do {
-        // Measure speed
-        // per-frame time logic
-        // --------------------
-        float currentFrame = glfwGetTime();
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
+    initControls(engine, terrainId);
 
-        controls.processInput(window, camera, deltaTime);
-        camera.update(deltaTime);
-
-        // Clear the screen
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        terrain->draw(camera);
-
-        // Swap buffers
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-
-    } // Check if the ESC key was pressed or the window was closed
-    while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
-           glfwWindowShouldClose(window) == 0);
-
-    terrain->cleanUp();
-    glDeleteVertexArrays(1, &VertexArrayID);
-
-    // Close OpenGL window and terminate GLFW
-    glfwTerminate();
+    engine.run();
 
     return 0;
-}
-
-// glfw: whenever the window size changed (by OS or user resize) this callback
-// function executes
-// ---------------------------------------------------------------------------------------------
-void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
-    // make sure the viewport matches the new window dimensions; note that width
-    // and height will be significantly larger than specified on retina
-    // displays.
-    glViewport(0, 0, width, height);
 }
