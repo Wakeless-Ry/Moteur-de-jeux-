@@ -334,10 +334,23 @@ void processInput(GLFWwindow *window, Mesh &terrain)
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera_position += right * velocity;
 
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
         camera_position.y -= velocity;
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
         camera_position.y += velocity;
+
+    float rotationSpeed = 60.f * deltaTime;
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        cameraYaw -= rotationSpeed;
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+        cameraYaw += rotationSpeed;
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+        cameraPitch += rotationSpeed;
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        cameraPitch -= rotationSpeed;
+
+    cameraPitch = glm::clamp(cameraPitch, -89.f, 89.f);
 
     static bool plusPressed = false;
     static bool minusPressed = false;
