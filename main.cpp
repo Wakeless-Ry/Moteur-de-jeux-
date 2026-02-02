@@ -37,10 +37,27 @@ void processInput(GLFWwindow *window, Mesh &terrain);
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
+/*******************************************************************************/
+
 // camera
 glm::vec3 camera_position = glm::vec3(0.0f, 3.0f, 3.0f);
-glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, -1.0f);
+// glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, -1.0f);
+
+float cameraYaw = -90.f;
+float cameraPitch = 0.f;
+float cameraSpeed = 5.f;
 glm::vec3 camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+glm::vec3 getFront()
+{
+    glm::vec3 front;
+    front.x = cos(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
+    front.y = sin(glm::radians(cameraPitch));
+    front.z = sin(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
+    return glm::normalize(front);
+}
+
+/*******************************************************************************/
 
 // timing
 float deltaTime = 0.0f; // time between current frame and last frame
@@ -251,7 +268,8 @@ int main(void)
 
         glm::mat4 model = glm::mat4();
 
-        glm::mat4 view = glm::lookAt(camera_position, camera_target, camera_up);
+        glm::vec3 front = getFront();
+        glm::mat4 view = glm::lookAt(camera_position, camera_position + front, camera_up);
 
         glm::mat4 proj = glm::perspective(glm::radians(45.), ((double)SCR_WIDTH) / SCR_HEIGHT, 0.1, 100.);
 
@@ -302,12 +320,24 @@ void processInput(GLFWwindow *window, Mesh &terrain)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    // Camera zoom in and out
-    float cameraSpeed = 2.5 * deltaTime;
+    float velocity = cameraSpeed * deltaTime;
+
+    glm::vec3 front = getFront();
+    glm::vec3 right = glm::normalize(glm::cross(front, camera_up));
+
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera_position += cameraSpeed * camera_target;
+        camera_position += front * velocity;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera_position -= cameraSpeed * camera_target;
+        camera_position -= front * velocity;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera_position -= right * velocity;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera_position += right * velocity;
+
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        camera_position.y -= velocity;
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        camera_position.y += velocity;
 
     static bool plusPressed = false;
     static bool minusPressed = false;
@@ -342,13 +372,6 @@ void processInput(GLFWwindow *window, Mesh &terrain)
         minusPressed = false;
     }
 
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-    {
-        nX = 0;
-        nZ = 0;
-        regenerateTerrain(terrain);
-        std::cout << "delete terrain" << std::endl;
-    }
     // TODO add translations
 }
 
