@@ -58,8 +58,8 @@ float randomFloat()
     return dist(gen);
 }
 
-int nX = 64;
-int nZ = 64;
+int nX = 16;
+int nZ = 16;
 
 void generate_scene(std::vector<unsigned int> &indices, std::vector<std::vector<unsigned int>> &triangles, std::vector<glm::vec3> &indexed_vertices, std::vector<glm::vec2> &textures_coords)
 {
@@ -113,10 +113,15 @@ void loadTexture(char *filename, GLuint programID, char *varName)
     glActiveTexture(GL_TEXTURE0 + textureidx);
     glBindTexture(GL_TEXTURE_2D, texture);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     int width, height, nrChannels;
     unsigned char *data = stbi_load(filename, &width, &height, &nrChannels, 0);
@@ -311,8 +316,8 @@ void processInput(GLFWwindow *window, Mesh &terrain)
     {
         if (!plusPressed)
         {
-            nX += 2;
-            nZ += 2;
+            nX *= 2;
+            nZ *= 2;
             plusPressed = true;
             regenerateTerrain(terrain);
         }
@@ -326,8 +331,8 @@ void processInput(GLFWwindow *window, Mesh &terrain)
     {
         if (!minusPressed)
         {
-            nX = std::max(4, nX - 2);
-            nZ = std::max(4, nZ - 2);
+            nX = std::max(4, nX / 2);
+            nZ = std::max(4, nZ / 2);
             minusPressed = true;
             regenerateTerrain(terrain);
         }
