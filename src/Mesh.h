@@ -50,6 +50,12 @@ void Mesh::setData(const std::vector<glm::vec3> &vertices,
                    const std::vector<glm::vec2> &uvs,
                    const std::vector<unsigned int> &indices)
 {
+    if (vbo != 0)
+        glDeleteBuffers(1, &vbo);
+    if (uvbo != 0)
+        glDeleteBuffers(1, &uvbo);
+    if (ebo != 0)
+        glDeleteBuffers(1, &ebo);
     indexCount = static_cast<GLsizei>(indices.size());
 
     glBindVertexArray(vao);

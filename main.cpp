@@ -76,18 +76,10 @@ float lastFrame = 0.0f;
 float angle = 0.;
 float zoom = 1.;
 /*******************************************************************************/
-float randomFloat()
-{
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<float> dist(0.0f, 0.4f);
-    return dist(gen);
-}
-
 int nX = 16;
 int nZ = 16;
 
-void generate_scene(std::vector<unsigned int> &indices, std::vector<std::vector<unsigned int>> &triangles, std::vector<glm::vec3> &indexed_vertices, std::vector<glm::vec2> &textures_coords)
+void generate_scene(std::vector<unsigned int> &indices, std::vector<glm::vec3> &indexed_vertices, std::vector<glm::vec2> &textures_coords)
 {
 
     float minX = -1.f;
@@ -102,7 +94,6 @@ void generate_scene(std::vector<unsigned int> &indices, std::vector<std::vector<
             float z = minZ + 2.0 * j / (nZ - 1);
             // float y = 0.f;
 
-            // float y = randomFloat();
             float y = 0.f;
             indexed_vertices.push_back(glm::vec3(x, y, z));
             textures_coords.push_back(glm::vec2(i / (float)nX, j / (float)nZ));
@@ -113,20 +104,19 @@ void generate_scene(std::vector<unsigned int> &indices, std::vector<std::vector<
     {
         for (unsigned int j = 0; j < nZ - 1; j++)
         {
+            unsigned int topLeft = i * nZ + j;
+            unsigned int bottomLeft = (i + 1) * nZ + j;
+            unsigned int bottomRight = (i + 1) * nZ + (j + 1);
+            unsigned int topRight = i * nZ + (j + 1);
 
-            triangles.push_back({i * nZ + j,
-                                 (i + 1) * nZ + j,
-                                 (i + 1) * nZ + (j + 1)});
+            indices.push_back(topLeft);
+            indices.push_back(bottomLeft);
+            indices.push_back(bottomRight);
 
-            triangles.push_back({i * nZ + j,
-                                 (i + 1) * nZ + (j + 1),
-                                 i * nZ + (j + 1)});
+            indices.push_back(topLeft);
+            indices.push_back(bottomRight);
+            indices.push_back(topRight);
         }
-    }
-
-    for (std::vector<unsigned int> triangle : triangles)
-    {
-        indices.insert(indices.end(), triangle.begin(), triangle.end());
     }
 }
 /*******************************************************************************/
@@ -170,7 +160,6 @@ void loadTexture(char *filename, GLuint programID, char *varName)
 /*******************************************************************************/
 
 std::vector<unsigned int> indices; // Triangles concaténés dans une liste
-std::vector<std::vector<unsigned int>> triangles;
 std::vector<glm::vec3> indexed_vertices;
 std::vector<glm::vec2> textures_coords;
 
@@ -236,7 +225,7 @@ int main(void)
     GLuint programID = LoadShaders("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl");
 
     Mesh terrain;
-    generate_scene(indices, triangles, indexed_vertices, textures_coords);
+    generate_scene(indices, indexed_vertices, textures_coords);
     terrain.setData(indexed_vertices, textures_coords, indices);
     // Load it into a VBO
 
@@ -312,11 +301,10 @@ int main(void)
 void regenerateTerrain(Mesh &terrainMesh)
 {
     indices.clear();
-    triangles.clear();
     indexed_vertices.clear();
     textures_coords.clear();
 
-    generate_scene(indices, triangles, indexed_vertices, textures_coords);
+    generate_scene(indices, indexed_vertices, textures_coords);
     terrainMesh.setData(indexed_vertices, textures_coords, indices);
 
     std::cout << "Terrain regenerated: " << nX << " x " << nZ << std::endl;
