@@ -57,6 +57,15 @@ glm::vec3 getFront()
     return glm::normalize(front);
 }
 
+glm::vec3 getMoveDirection()
+{
+    glm::vec3 dir;
+    dir.x = cos(glm::radians(cameraYaw));
+    dir.y = 0.0f;
+    dir.z = sin(glm::radians(cameraYaw));
+    return glm::normalize(dir);
+}
+
 /*******************************************************************************/
 
 // timing
@@ -96,7 +105,7 @@ void generate_scene(std::vector<unsigned int> &indices, std::vector<std::vector<
             // float y = randomFloat();
             float y = 0.f;
             indexed_vertices.push_back(glm::vec3(x, y, z));
-            textures_coords.push_back(glm::vec2((i + 0.5) / nX, (j + 0.5) / nZ));
+            textures_coords.push_back(glm::vec2(i / (float)nX, j / (float)nZ));
         }
     }
 
@@ -322,13 +331,13 @@ void processInput(GLFWwindow *window, Mesh &terrain)
 
     float velocity = cameraSpeed * deltaTime;
 
-    glm::vec3 front = getFront();
-    glm::vec3 right = glm::normalize(glm::cross(front, camera_up));
+    glm::vec3 dir = getMoveDirection();
+    glm::vec3 right = glm::normalize(glm::cross(dir, camera_up));
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera_position += front * velocity;
+        camera_position += dir * velocity;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera_position -= front * velocity;
+        camera_position -= dir * velocity;
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         camera_position -= right * velocity;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
