@@ -38,9 +38,21 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 /*******************************************************************************/
+enum CameraMode
+{
+    CAMERA_LIBRE,
+    CAMERA_ORBITAL
+};
+
+CameraMode cameraMode = CAMERA_LIBRE;
+
+float angle_orbit = 45.f;
+float speed_orbit = 30.f;
+float dist_orbit = 5.f;
+float height_orbit = 3.0f;
 
 // camera
-glm::vec3 camera_position = glm::vec3(0.0f, 3.0f, 3.0f);
+glm::vec3 camera_position = glm::vec3(0.0f, 0.5f, 1.f);
 // glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, -1.0f);
 
 float cameraYaw = -90.f;
@@ -265,9 +277,26 @@ int main(void)
         glUseProgram(programID);
 
         glm::mat4 model = glm::mat4();
+        glm::mat4 view;
 
-        glm::vec3 front = getFront();
-        glm::mat4 view = glm::lookAt(camera_position, camera_position + front, camera_up);
+        if (cameraMode == CAMERA_LIBRE)
+        {
+            glm::vec3 front = getFront();
+            view = glm::lookAt(camera_position, camera_position + front, camera_up);
+        }
+        else if (cameraMode == CAMERA_ORBITAL)
+        {
+            angle_orbit += speed_orbit * deltaTime;
+            glm::vec3 target = glm::vec3(0.f, 0.f, 0.f);
+
+            float rad = glm::radians(angle_orbit);
+            glm::vec3 pos_orbit;
+            pos_orbit.x = cos(rad) * dist_orbit;
+            pos_orbit.y = height_orbit;
+            pos_orbit.z = sin(rad) * dist_orbit;
+
+            view = glm::lookAt(pos_orbit, target, glm::vec3(0.f, 1.f, 0.f));
+        }
 
         glm::mat4 proj = glm::perspective(glm::radians(45.), ((double)SCR_WIDTH) / SCR_HEIGHT, 0.1, 100.);
 
@@ -317,37 +346,66 @@ void processInput(GLFWwindow *window, Mesh &terrain)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    float velocity = cameraSpeed * deltaTime;
+    if (cameraMode == CAMERA_LIBRE)
+    {
+        float velocity = cameraSpeed * deltaTime;
 
-    glm::vec3 dir = getMoveDirection();
-    glm::vec3 right = glm::normalize(glm::cross(dir, camera_up));
+        glm::vec3 dir = getMoveDirection();
+        glm::vec3 right = glm::normalize(glm::cross(dir, camera_up));
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera_position += dir * velocity;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera_position -= dir * velocity;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera_position -= right * velocity;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera_position += right * velocity;
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            camera_position += dir * velocity;
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            camera_position -= dir * velocity;
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            camera_position -= right * velocity;
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            camera_position += right * velocity;
 
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-        camera_position.y -= velocity;
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-        camera_position.y += velocity;
+        if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+            camera_position.y -= velocity;
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+            camera_position.y += velocity;
 
-    float rotationSpeed = 60.f * deltaTime;
+        float rotationSpeed = 60.f * deltaTime;
 
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-        cameraYaw -= rotationSpeed;
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        cameraYaw += rotationSpeed;
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-        cameraPitch += rotationSpeed;
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        cameraPitch -= rotationSpeed;
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+            cameraYaw -= rotationSpeed;
+        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+            cameraYaw += rotationSpeed;
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+            cameraPitch += rotationSpeed;
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+            cameraPitch -= rotationSpeed;
 
-    cameraPitch = glm::clamp(cameraPitch, -89.f, 89.f);
+        cameraPitch = glm::clamp(cameraPitch, -89.f, 89.f);
+    }
+
+    if (cameraMode == CAMERA_ORBITAL)
+    {
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+            speed_orbit += 20.f * deltaTime;
+
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+            speed_orbit -= 20.f * deltaTime;
+
+        speed_orbit = glm::clamp(speed_orbit, -180.f, 180.f);
+    }
+
+    static bool cPressed = false;
+
+    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
+    {
+        if (!cPressed)
+        {
+            cameraMode = (cameraMode == CAMERA_LIBRE) ? CAMERA_ORBITAL : CAMERA_LIBRE;
+            cPressed = true;
+        }
+    }
+    else
+    {
+        cPressed = false;
+    }
 
     static bool plusPressed = false;
     static bool minusPressed = false;
