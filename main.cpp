@@ -107,6 +107,13 @@ Mesh buildTerrainWithDeltaVertices(int change) {
     return buildTerrain(nombreVertices);
 }
 
+void changeTerrain(GameEngine &engine, uint terrainId, int changeVertices) {
+    Mesh * terrain = engine.getMesh(terrainId);
+    terrain->cleanUp();
+    terrain = new Mesh(buildTerrainWithDeltaVertices(changeVertices));
+    engine.replaceMesh(terrainId, terrain);
+}
+
 void initControls(GameEngine &engine, uint terrainId) {
     Controls &controls = engine.getControls();
 
@@ -139,17 +146,19 @@ void initControls(GameEngine &engine, uint terrainId) {
     });
     
     controls.addKeyDownCallback(GLFW_KEY_KP_ADD, [&engine, terrainId](float deltaTime) {
-        Mesh * terrain = engine.getMesh(terrainId);
-        terrain->cleanUp();
-        terrain = new Mesh(buildTerrainWithDeltaVertices(1));
-        engine.replaceMesh(terrainId, terrain);
+        changeTerrain(engine, terrainId, 1);
+    });
+    
+    controls.addKeyDownCallback(GLFW_KEY_O, [&engine, terrainId](float deltaTime) {
+        changeTerrain(engine, terrainId, 1);
     });
 
     controls.addKeyDownCallback(GLFW_KEY_KP_SUBTRACT, [&engine, terrainId](float deltaTime) {
-        Mesh * terrain = engine.getMesh(terrainId);
-        terrain->cleanUp();
-        terrain = new Mesh(buildTerrainWithDeltaVertices(-1));
-        engine.replaceMesh(terrainId, terrain);
+        changeTerrain(engine, terrainId, -1);
+    });
+
+    controls.addKeyDownCallback(GLFW_KEY_L, [&engine, terrainId](float deltaTime) {
+        changeTerrain(engine, terrainId, -1);
     });
 }
 
