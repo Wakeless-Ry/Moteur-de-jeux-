@@ -126,8 +126,16 @@ void initControls(GameEngine &engine, uint terrainId) {
         engine.stopRunning();
     });
 
-    controls.addKeyPressedCallback(GLFW_KEY_M, [&engine](float deltaTime) {
-            engine.getCamera().changeMode();
+    controls.addKeyPressedCallback(GLFW_KEY_M, [&engine, terrainId](float deltaTime) {
+            CameraMode mode = engine.getCamera().changeMode();
+            switch (mode) {
+            case LOOK_AT:
+                engine.getMesh(terrainId)->attach(&engine.getCamera());
+                break;
+            default:
+                engine.getMesh(terrainId)->detach(&engine.getCamera());
+                break;
+            }
     });
 
     controls.addKeyDownCallback(GLFW_KEY_W, [&engine](float deltaTime) {

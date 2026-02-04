@@ -249,11 +249,13 @@ public:
         }        
     }
 
-    void changeMode() {
+    CameraMode changeMode() {
         ++this->mode;
         if (this->mode == LOOK_AT) {
             this->targetDistance = distance(this->position, this->target);
         }
+
+        return this->mode;
     }
 };
 
