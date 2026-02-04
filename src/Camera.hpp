@@ -3,6 +3,8 @@
 
 #include <glm/glm.hpp>
 
+#include "Observer.hpp"
+
 using namespace std;
 using namespace glm;
 
@@ -31,7 +33,7 @@ static float clipAngle180(float _angle) {
     return _angle;
 }
 
-class Camera {
+class Camera : public Observer<vec3> {
     uint screenWidth;
     uint screenHeight;
 
@@ -61,6 +63,10 @@ class Camera {
 
 public:
     Camera(uint screenWidth, uint screenHeight): screenWidth(screenWidth), screenHeight(screenHeight) {}
+
+    void update(const vec3 &pos) override {
+        this->setPosition(pos);
+    }
     
     uint getScreenWidth() const {
         return this->screenWidth;

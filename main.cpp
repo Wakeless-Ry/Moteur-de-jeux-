@@ -111,6 +111,7 @@ void changeTerrain(GameEngine &engine, uint terrainId, int changeVertices) {
     Mesh * terrain = engine.getMesh(terrainId);
     terrain->cleanUp();
     terrain = new Mesh(buildTerrainWithDeltaVertices(changeVertices));
+    terrain->attach(&engine.getCamera());
     engine.replaceMesh(terrainId, terrain);
 }
 
