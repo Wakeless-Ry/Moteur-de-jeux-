@@ -65,7 +65,7 @@ public:
     Camera(uint screenWidth, uint screenHeight): screenWidth(screenWidth), screenHeight(screenHeight) {}
 
     void update(const vec3 &pos) override {
-        this->setPosition(pos);
+        this->setTarget(pos);
     }
     
     uint getScreenWidth() const {
