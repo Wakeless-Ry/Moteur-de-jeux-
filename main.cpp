@@ -414,8 +414,8 @@ void processInput(GLFWwindow *window, Mesh &terrain)
     {
         if (!plusPressed)
         {
-            nX = std::min(512, nX * 2);
-            nZ = std::min(512, nZ * 2);
+            nX = std::min(256, nX * 2);
+            nZ = std::min(256, nZ * 2);
             plusPressed = true;
             regenerateTerrain(terrain);
         }
