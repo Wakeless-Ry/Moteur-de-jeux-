@@ -107,69 +107,97 @@ Mesh buildTerrainWithDeltaVertices(int change) {
     return buildTerrain(nombreVertices);
 }
 
-void changeTerrain(GameEngine &engine, uint terrainId, int changeVertices) {
-    Mesh * terrain = engine.getMesh(terrainId);
-    terrain->cleanUp();
-    terrain = new Mesh(buildTerrainWithDeltaVertices(changeVertices));
-    terrain->attach(&engine.getCamera());
-    engine.replaceMesh(terrainId, terrain);
-}
+class Moteur: public GameEngine {
+    uint terrainId;
 
-void initControls(GameEngine &engine, uint terrainId) {
-    Controls &controls = engine.getControls();
+    void init() override {
+        glfwPollEvents();
+        glfwSetCursorPos(this->getWindow(), this->getCamera().getScreenWidth() / 2, this->getCamera().getScreenHeight() / 2);
 
-    controls.addMouseDeltaCallback(new MouseMoveCallback([&engine](float dx, float dy) {
-        engine.getCamera().rotateWithMouse(dx, dy);
-    }));
+        Controls &controls = this->getControls();
 
-    controls.addKeyPressedCallback(GLFW_KEY_ESCAPE, new KeyCallback([&engine](float deltaTime) {
-        engine.stopRunning();
-    }));
+        controls.addMouseDeltaCallback(new MouseMoveCallback([this](float dx, float dy) {
+            this->getCamera().rotateWithMouse(dx, dy);
+        }));
 
-    controls.addKeyPressedCallback(GLFW_KEY_M, new KeyCallback([&engine, terrainId](float deltaTime) {
-            CameraMode mode = engine.getCamera().changeMode();
-            switch (mode) {
-            case LOOK_AT:
-                engine.getMesh(terrainId)->attach(&engine.getCamera());
-                break;
-            default:
-                engine.getMesh(terrainId)->detach(&engine.getCamera());
-                break;
-            }
-    }));
+        controls.addKeyPressedCallback(GLFW_KEY_ESCAPE, new KeyCallback([this](float deltaTime) {
+            this->stopRunning();
+        }));
 
-    controls.addKeyDownCallback(GLFW_KEY_W, new KeyCallback([&engine](float deltaTime) {
-        engine.getCamera().forward(deltaTime);
-    }));
+        controls.addKeyPressedCallback(GLFW_KEY_M, new KeyCallback([this](float deltaTime) {
+                CameraMode mode = this->getCamera().changeMode();
+                switch (mode) {
+                case LOOK_AT:
+                    this->getMesh(this->terrainId)->attach(&this->getCamera());
+                    break;
+                default:
+                    this->getMesh(this->terrainId)->detach(&this->getCamera());
+                    break;
+                }
+        }));
 
-    controls.addKeyDownCallback(GLFW_KEY_A, new KeyCallback([&engine](float deltaTime) {
-        engine.getCamera().left(deltaTime);
-    }));
+        controls.addKeyDownCallback(GLFW_KEY_W, new KeyCallback([this](float deltaTime) {
+            this->getCamera().forward(deltaTime);
+        }));
 
-    controls.addKeyDownCallback(GLFW_KEY_S, new KeyCallback([&engine](float deltaTime) {
-        engine.getCamera().backward(deltaTime);
-    }));
+        controls.addKeyDownCallback(GLFW_KEY_A, new KeyCallback([this](float deltaTime) {
+            this->getCamera().left(deltaTime);
+        }));
 
-    controls.addKeyDownCallback(GLFW_KEY_D, new KeyCallback([&engine](float deltaTime) {
-        engine.getCamera().right(deltaTime);
-    }));
-    
-    controls.addKeyDownCallback(GLFW_KEY_KP_ADD, new KeyCallback([&engine, terrainId](float deltaTime) {
-        changeTerrain(engine, terrainId, 1);
-    }));
-    
-    controls.addKeyDownCallback(GLFW_KEY_O, new KeyCallback([&engine, terrainId](float deltaTime) {
-        changeTerrain(engine, terrainId, 1);
-    }));
+        controls.addKeyDownCallback(GLFW_KEY_S, new KeyCallback([this](float deltaTime) {
+            this->getCamera().backward(deltaTime);
+        }));
 
-    controls.addKeyDownCallback(GLFW_KEY_KP_SUBTRACT, new KeyCallback([&engine, terrainId](float deltaTime) {
-        changeTerrain(engine, terrainId, -1);
-    }));
+        controls.addKeyDownCallback(GLFW_KEY_D, new KeyCallback([this](float deltaTime) {
+            this->getCamera().right(deltaTime);
+        }));
+        
+        controls.addKeyDownCallback(GLFW_KEY_KP_ADD, new KeyCallback([this](float deltaTime) {
+            this->changeTerrain(1);
+        }));
+        
+        controls.addKeyDownCallback(GLFW_KEY_O, new KeyCallback([this](float deltaTime) {
+            this->changeTerrain(1);
+        }));
 
-    controls.addKeyDownCallback(GLFW_KEY_L, new KeyCallback([&engine, terrainId](float deltaTime) {
-        changeTerrain(engine, terrainId, -1);
-    }));
-}
+        controls.addKeyDownCallback(GLFW_KEY_KP_SUBTRACT, new KeyCallback([this](float deltaTime) {
+            this->changeTerrain(-1);
+        }));
+
+        controls.addKeyDownCallback(GLFW_KEY_L, new KeyCallback([this](float deltaTime) {
+            this->changeTerrain(-1);
+        }));
+    }
+
+    void processInput(float delta) override {
+
+    }
+
+    void update(float delta) override {
+
+    }
+
+    void render(float delta) override {
+
+    }
+
+    void cleanUp() override {
+
+    }
+
+    void changeTerrain(int changeVertices) {
+        Mesh * terrain = this->getMesh(this->terrainId);
+        terrain->cleanUp();
+        terrain = new Mesh(buildTerrainWithDeltaVertices(changeVertices));
+        terrain->attach(&this->getCamera());
+        this->replaceMesh(this->terrainId, terrain);
+    }
+
+public:
+    Moteur(GLFWwindow *window, uint width, uint height, Mesh &terrain): GameEngine(window, width, height) {
+        this->terrainId = this->addMesh(&terrain);
+    }
+};
 
 int main(void) {
     if (!glfwInit()) {
@@ -219,17 +247,12 @@ int main(void) {
     // Accept fragment if it closer to the camera than the former one
     glDepthFunc(GL_LESS);
 
-    GameEngine engine = GameEngine::newGameEngine(window);
-    Camera &camera = engine.getCamera();
-
-    glfwPollEvents();
-    glfwSetCursorPos(window, camera.getScreenWidth() / 2, camera.getScreenHeight() / 2);
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
 
     Mesh terrain = buildTerrainWithDeltaVertices(0);
-
-    uint terrainId = engine.addMesh(&terrain);
-
-    initControls(engine, terrainId);
+    Moteur engine(window, width, height, terrain);
+    Camera &camera = engine.getCamera();
 
     engine.run();
 

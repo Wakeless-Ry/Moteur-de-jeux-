@@ -28,39 +28,42 @@ class GameEngine {
     GLuint vertexArrayId;
 
     bool stop = false;
-    
-    GameEngine(GLFWwindow *window, uint width, uint height): camera(width, height), controls() {
-        this->window = window;
-    }
 
-    void init() {
+    void initInternal() {
         GLuint VertexArrayID;
         glGenVertexArrays(1, &VertexArrayID);
         glBindVertexArray(VertexArrayID);
+
+        this->init();
     }
 
-    void processInput() {
+    void processInputInternal() {
         controls.processInput(this->window, this->camera, this->deltaTime);
 
+        this->processInput(this->deltaTime);
     }
 
-    void update() {
+    void updateInternal() {
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
         camera.setScreenWidth(width);
         camera.setScreenHeight(height);
+
+        this->update(this->deltaTime);
     }
 
-    void render() {
+    void renderInternal() {
         this->camera.update(this->deltaTime);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         for (auto &pair : this->meshes) {
             pair.second->draw(this->camera);
         }
+
+        this->render(this->deltaTime);
     }
 
-    void cleanUp() {
+    void cleanUpInternal() {
         for (auto &pair : this->meshes) {
             pair.second->cleanUp();
         }
@@ -70,40 +73,42 @@ class GameEngine {
         glfwSetWindowShouldClose(window, true);
         
         glfwTerminate();
+
+        this->cleanUp();
     }
 
 public:
-
-    static GameEngine newGameEngine(GLFWwindow *window) {
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
-
-        return GameEngine(window, width, height);
+    GameEngine(GLFWwindow *window, uint width, uint height): camera(width, height), controls() {
+        this->window = window;
     }
 
     int run() {
-        this->init();
+        this->initInternal();
 
         while (!this->stop) {
             float currentFrame = glfwGetTime();
             this->deltaTime = currentFrame - this->lastFrame;
             this->lastFrame = currentFrame;
 
-            this->processInput();
-            this->update();
-            this->render();
+            this->processInputInternal();
+            this->updateInternal();
+            this->renderInternal();
 
             glfwSwapBuffers(window);
             glfwPollEvents();
         }
 
-        this->cleanUp();
+        this->cleanUpInternal();
 
         return 0;
     }
 
     void stopRunning() {
         this->stop = true;
+    }
+
+    GLFWwindow * getWindow() {
+        return this->window;
     }
 
     Camera & getCamera() {
@@ -132,6 +137,12 @@ public:
     void removeMesh(uint id) {
         this->meshes.erase(id);
     }
+
+    virtual void init() {};
+    virtual void processInput(float delta) {};
+    virtual void update(float delta) {};
+    virtual void render(float delta) {};
+    virtual void cleanUp() {};
 };
 
 #endif //GAME_ENGINE
