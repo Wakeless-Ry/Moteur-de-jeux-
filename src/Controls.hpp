@@ -8,14 +8,30 @@ using namespace std;
 
 using uint = unsigned int;
 
+using KeyId = uint;
+
+class KeyCallback {
+public:
+    function<void(float)> callback;
+
+    KeyCallback(function<void(float)> callback): callback(callback) {}
+};
+
+class MouseMoveCallback {
+public:
+    function<void(float, float)> callback;
+
+    MouseMoveCallback(function<void(float, float)> callback): callback(callback) {}
+};
+
 class Controls {
-    map<uint, vector<function<void(float)>>> keyPressedMapCallback;
-    map<uint, vector<function<void(float)>>> keyReleasedMapCallback;
-    map<uint, vector<function<void(float)>>> keyDownMapCallback;
+    map<KeyId, vector<KeyCallback *>> keyPressedMapCallback;
+    map<KeyId, vector<KeyCallback *>> keyReleasedMapCallback;
+    map<KeyId, vector<KeyCallback *>> keyDownMapCallback;
 
-    map<uint, bool> keysToWatch;
+    map<KeyId, bool> keysToWatch;
 
-    vector<function<void(float, float)>> mouseDeltaCallback;
+    vector<MouseMoveCallback *> mouseDeltaCallback;
 
     void processMouse(GLFWwindow *window, Camera &camera) {
         double currentX, currentY;
@@ -31,17 +47,17 @@ class Controls {
         if (cpt < 5) {
             cpt++;
         } else {
-            for (function<void(float, float)> callback : this->mouseDeltaCallback) {
-                callback(deltaX, deltaY);
+            for (MouseMoveCallback *mouseMoveCallback : this->mouseDeltaCallback) {
+                mouseMoveCallback->callback(deltaX, deltaY);
             }
         }
 
         glfwSetCursorPos(window, centerX, centerY);
     }
 
-    void callEach(vector<function<void(float)>> callbacks, float value) {
-        for (function<void(float)> callback : callbacks) {
-            callback(value);
+    void callEach(vector<KeyCallback *> callbacks, float value) {
+        for (KeyCallback *keyCallback : callbacks) {
+            keyCallback->callback(value);
         }
     }
 
@@ -68,22 +84,22 @@ class Controls {
     }
 
 public:
-    void addKeyPressedCallback(uint key, function<void(float)> callback) {
+    void addKeyPressedCallback(KeyId key, KeyCallback *callback) {
         this->keysToWatch[key] = false;
         this->keyPressedMapCallback[key].push_back(callback);
     }
 
-    void addKeyReleasedCallback(uint key, function<void(float)> callback) {
+    void addKeyReleasedCallback(KeyId key, KeyCallback *callback) {
         this->keysToWatch[key] = false;
         this->keyReleasedMapCallback[key].push_back(callback);
     }
 
-    void addKeyDownCallback(uint key, function<void(float)> callback) {
+    void addKeyDownCallback(KeyId key, KeyCallback *callback) {
         this->keysToWatch[key] = false;
         this->keyDownMapCallback[key].push_back(callback);
     }
 
-    void addMouseDeltaCallback(function<void(float, float)> callback) {
+    void addMouseDeltaCallback(MouseMoveCallback *callback) {
         this->mouseDeltaCallback.push_back(callback);
     }
 

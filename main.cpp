@@ -118,15 +118,15 @@ void changeTerrain(GameEngine &engine, uint terrainId, int changeVertices) {
 void initControls(GameEngine &engine, uint terrainId) {
     Controls &controls = engine.getControls();
 
-    controls.addMouseDeltaCallback([&engine](float dx, float dy) {
+    controls.addMouseDeltaCallback(new MouseMoveCallback([&engine](float dx, float dy) {
         engine.getCamera().rotateWithMouse(dx, dy);
-    });
+    }));
 
-    controls.addKeyPressedCallback(GLFW_KEY_ESCAPE, [&engine](float deltaTime) {
+    controls.addKeyPressedCallback(GLFW_KEY_ESCAPE, new KeyCallback([&engine](float deltaTime) {
         engine.stopRunning();
-    });
+    }));
 
-    controls.addKeyPressedCallback(GLFW_KEY_M, [&engine, terrainId](float deltaTime) {
+    controls.addKeyPressedCallback(GLFW_KEY_M, new KeyCallback([&engine, terrainId](float deltaTime) {
             CameraMode mode = engine.getCamera().changeMode();
             switch (mode) {
             case LOOK_AT:
@@ -136,39 +136,39 @@ void initControls(GameEngine &engine, uint terrainId) {
                 engine.getMesh(terrainId)->detach(&engine.getCamera());
                 break;
             }
-    });
+    }));
 
-    controls.addKeyDownCallback(GLFW_KEY_W, [&engine](float deltaTime) {
+    controls.addKeyDownCallback(GLFW_KEY_W, new KeyCallback([&engine](float deltaTime) {
         engine.getCamera().forward(deltaTime);
-    });
+    }));
 
-    controls.addKeyDownCallback(GLFW_KEY_A, [&engine](float deltaTime) {
+    controls.addKeyDownCallback(GLFW_KEY_A, new KeyCallback([&engine](float deltaTime) {
         engine.getCamera().left(deltaTime);
-    });
+    }));
 
-    controls.addKeyDownCallback(GLFW_KEY_S, [&engine](float deltaTime) {
+    controls.addKeyDownCallback(GLFW_KEY_S, new KeyCallback([&engine](float deltaTime) {
         engine.getCamera().backward(deltaTime);
-    });
+    }));
 
-    controls.addKeyDownCallback(GLFW_KEY_D, [&engine](float deltaTime) {
+    controls.addKeyDownCallback(GLFW_KEY_D, new KeyCallback([&engine](float deltaTime) {
         engine.getCamera().right(deltaTime);
-    });
+    }));
     
-    controls.addKeyDownCallback(GLFW_KEY_KP_ADD, [&engine, terrainId](float deltaTime) {
+    controls.addKeyDownCallback(GLFW_KEY_KP_ADD, new KeyCallback([&engine, terrainId](float deltaTime) {
         changeTerrain(engine, terrainId, 1);
-    });
+    }));
     
-    controls.addKeyDownCallback(GLFW_KEY_O, [&engine, terrainId](float deltaTime) {
+    controls.addKeyDownCallback(GLFW_KEY_O, new KeyCallback([&engine, terrainId](float deltaTime) {
         changeTerrain(engine, terrainId, 1);
-    });
+    }));
 
-    controls.addKeyDownCallback(GLFW_KEY_KP_SUBTRACT, [&engine, terrainId](float deltaTime) {
+    controls.addKeyDownCallback(GLFW_KEY_KP_SUBTRACT, new KeyCallback([&engine, terrainId](float deltaTime) {
         changeTerrain(engine, terrainId, -1);
-    });
+    }));
 
-    controls.addKeyDownCallback(GLFW_KEY_L, [&engine, terrainId](float deltaTime) {
+    controls.addKeyDownCallback(GLFW_KEY_L, new KeyCallback([&engine, terrainId](float deltaTime) {
         changeTerrain(engine, terrainId, -1);
-    });
+    }));
 }
 
 int main(void) {
