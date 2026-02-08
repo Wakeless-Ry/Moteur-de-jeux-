@@ -24,6 +24,13 @@ public:
     MouseMoveCallback(function<void(float, float)> callback): callback(callback) {}
 };
 
+class MouseKeyCallback {
+public:
+    function<void(float, float, float)> callback;
+
+    MouseKeyCallback(function<void(float, float, float)> callback): callback(callback) {}
+};
+
 class Controls {
     map<KeyId, vector<KeyCallback *>> keyPressedMapCallback;
     map<KeyId, vector<KeyCallback *>> keyReleasedMapCallback;
@@ -32,6 +39,11 @@ class Controls {
     map<KeyId, bool> keysToWatch;
 
     vector<MouseMoveCallback *> mouseDeltaCallback;
+    map<KeyId, vector<MouseKeyCallback *>> mouseKeyPressedMapCallback;
+    map<KeyId, vector<MouseKeyCallback *>> mouseKeyReleasedMapCallback;
+    map<KeyId, vector<MouseKeyCallback *>> mouseKeyDownMapCallback;
+
+    map<KeyId, bool> mouseKeysToWatch;
 
     void processMouse(GLFWwindow *window, Camera &camera) {
         double currentX, currentY;
@@ -55,9 +67,15 @@ class Controls {
         glfwSetCursorPos(window, centerX, centerY);
     }
 
-    void callEach(vector<KeyCallback *> callbacks, float value) {
+    void callEachKey(vector<KeyCallback *> callbacks, float value) {
         for (KeyCallback *keyCallback : callbacks) {
             keyCallback->callback(value);
+        }
+    }
+
+    void callEachMouseKey(vector<MouseKeyCallback *> callbacks, float posX, float posY, float value) {
+        for (MouseKeyCallback *keyCallback : callbacks) {
+            keyCallback->callback(posX, posY, value);
         }
     }
 
@@ -68,16 +86,41 @@ class Controls {
 
             if (glfwGetKey(window, key) == GLFW_PRESS) {
                 if (wasPressed) {
-                    this->callEach(this->keyDownMapCallback[key], deltaTime);
+                    this->callEachKey(this->keyDownMapCallback[key], deltaTime);
                 } else {
-                    this->callEach(this->keyPressedMapCallback[key], deltaTime);
-                    this->callEach(this->keyDownMapCallback[key], deltaTime);
+                    this->callEachKey(this->keyPressedMapCallback[key], deltaTime);
+                    this->callEachKey(this->keyDownMapCallback[key], deltaTime);
                     this->keysToWatch[key] = true;
                 }
             } else {
                 if (wasPressed) {
-                    this->callEach(this->keyReleasedMapCallback[key], deltaTime);
+                    this->callEachKey(this->keyReleasedMapCallback[key], deltaTime);
                     this->keysToWatch[key] = false;
+                }
+            }
+        }
+    }
+
+    void processMouseKeys(GLFWwindow *window, Camera &camera, float deltaTime) {
+        double currentX, currentY;
+        glfwGetCursorPos(window, &currentX, &currentY);
+
+        for (auto &pair : this->mouseKeysToWatch) {
+            uint key = pair.first;
+            bool wasPressed = pair.second;
+
+            if (glfwGetMouseButton(window, key) == GLFW_PRESS) {
+                if (wasPressed) {
+                    this->callEachMouseKey(this->mouseKeyDownMapCallback[key], currentX, currentY, deltaTime);
+                } else {
+                    this->callEachMouseKey(this->mouseKeyPressedMapCallback[key], currentX, currentY, deltaTime);
+                    this->callEachMouseKey(this->mouseKeyDownMapCallback[key], currentX, currentY, deltaTime);
+                    this->mouseKeysToWatch[key] = true;
+                }
+            } else {
+                if (wasPressed) {
+                    this->callEachMouseKey(this->mouseKeyReleasedMapCallback[key], currentX, currentY, deltaTime);
+                    this->mouseKeysToWatch[key] = false;
                 }
             }
         }
@@ -103,9 +146,25 @@ public:
         this->mouseDeltaCallback.push_back(callback);
     }
 
+    void addMouseKeyPressedCallback(KeyId key, MouseKeyCallback *callback) {
+        this->mouseKeysToWatch[key] = false;
+        this->mouseKeyPressedMapCallback[key].push_back(callback);
+    }
+
+    void addMouseKeyReleasedCallback(KeyId key, MouseKeyCallback *callback) {
+        this->mouseKeysToWatch[key] = false;
+        this->mouseKeyReleasedMapCallback[key].push_back(callback);
+    }
+
+    void addMouseKeyDownCallback(KeyId key, MouseKeyCallback *callback) {
+        this->mouseKeysToWatch[key] = false;
+        this->mouseKeyDownMapCallback[key].push_back(callback);
+    }
+
     void processInput(GLFWwindow *window, Camera &camera, float deltaTime) {
         this->processKeys(window, deltaTime);
         this->processMouse(window, camera);
+        this->processMouseKeys(window, camera, deltaTime);
     }
 };
 
