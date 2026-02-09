@@ -167,10 +167,6 @@ class Moteur: public GameEngine {
         controls.addKeyDownCallback(GLFW_KEY_L, new KeyCallback([this](float deltaTime) {
             this->changeTerrain(-1);
         }));
-
-        controls.addMouseKeyReleasedCallback(GLFW_MOUSE_BUTTON_LEFT, new MouseKeyCallback([this](float posX, float posY, float deltaTime) {
-            cout << posX << ", " << posY << endl;
-        }));
     }
 
     void processInput(float delta) override {
@@ -256,7 +252,6 @@ int main(void) {
 
     Mesh terrain = buildTerrainWithDeltaVertices(0);
     Moteur engine(window, width, height, terrain);
-    Camera &camera = engine.getCamera();
 
     engine.run();
 

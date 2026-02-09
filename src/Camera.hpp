@@ -14,6 +14,7 @@ enum CameraMode {
     LOOK_AT,
     FRONT,
     HOVER,
+    ROTATE,
     Count
 };
 
@@ -146,6 +147,11 @@ public:
     }
 
     void update(float deltaTime) {
+        if (this->mode == ROTATE) {
+            this->eulerAngle.y = this->eulerAngle.y + deltaTime * rotationSpeed;
+            cout << this->eulerAngle.y << endl;
+        }
+
         this->eulerAngle = vec3(clipAngle180(this->eulerAngle.x), clipAngle180(this->eulerAngle.y), clipAngle180(this->eulerAngle.z));
         this->eulerAngle.x = clamp(this->eulerAngle.x, -89.f, 89.f);
         this->rotation = quat(this->eulerAngle * M_PI / 180.0f);
@@ -158,7 +164,7 @@ public:
             this->targetDistance = this->zFar;
         }
 
-        if (this->mode == LOOK_AT) {
+        if (this->mode == LOOK_AT || this->mode == ROTATE) {
 	        this->position = this->target - (this->rotation * VEC_FRONT) * this->targetDistance;
         }
 
@@ -200,6 +206,7 @@ public:
 
         switch (this->mode) {
         case LOOK_AT:
+        case ROTATE:
             this->targetDistance -= deltaTime * this->translationSpeed;
             break;
         case FRONT:
@@ -216,6 +223,7 @@ public:
 
         switch (this->mode) {
         case LOOK_AT:
+        case ROTATE:
             this->targetDistance += deltaTime * this->translationSpeed;
             break;
         case FRONT:
@@ -230,6 +238,7 @@ public:
     void left(float deltaTime) {
         switch (this->mode) {
         case LOOK_AT:
+        case ROTATE:
             break;
         case FRONT:
         case HOVER:
@@ -241,6 +250,7 @@ public:
     void right(float deltaTime) {
         switch (this->mode) {
         case LOOK_AT:
+        case ROTATE:
             break;
         case FRONT:
         case HOVER:
@@ -251,7 +261,7 @@ public:
 
     CameraMode changeMode() {
         ++this->mode;
-        if (this->mode == LOOK_AT) {
+        if (this->mode == LOOK_AT || this->mode == ROTATE) {
             this->targetDistance = distance(this->position, this->target);
         }
 
