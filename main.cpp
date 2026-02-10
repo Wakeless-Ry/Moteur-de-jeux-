@@ -167,6 +167,14 @@ class Moteur: public GameEngine {
         controls.addKeyDownCallback(GLFW_KEY_L, new KeyCallback([this](float deltaTime) {
             this->changeTerrain(-1);
         }));
+
+        controls.addKeyDownCallback(GLFW_KEY_UP, new KeyCallback([this](float deltaTime) {
+            this->getCamera().up_arrow(deltaTime);
+        }));
+        
+        controls.addKeyDownCallback(GLFW_KEY_DOWN, new KeyCallback([this](float deltaTime) {
+            this->getCamera().down_arrow(deltaTime);
+        }));
     }
 
     void processInput(float delta) override {

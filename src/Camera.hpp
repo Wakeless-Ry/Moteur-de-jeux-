@@ -259,6 +259,34 @@ public:
         }        
     }
 
+    
+    void up_arrow(float deltaTime) {
+        switch (this->mode) {
+        case LOOK_AT:
+        case ROTATE:
+            this->rotationSpeed += this->rotationSpeed * deltaTime;
+            break;
+        case FRONT:
+            break;
+        case HOVER:
+            break;
+        }        
+    }
+
+    void down_arrow(float deltaTime) {
+        switch (this->mode) {
+        case LOOK_AT:
+        case ROTATE:
+            this->rotationSpeed -= this->rotationSpeed * deltaTime;
+            break;
+        case FRONT:
+            break;
+        case HOVER:
+            break;
+        }        
+    }
+
+
     CameraMode changeMode() {
         ++this->mode;
         if (this->mode == LOOK_AT || this->mode == ROTATE) {
