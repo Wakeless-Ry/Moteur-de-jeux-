@@ -5,8 +5,9 @@
 
 #include "lib/shader.hpp"
 
-#include "Camera.hpp"
-#include "Observer.hpp"
+#include <src/Camera.hpp>
+#include <src/Observer.hpp>
+#include <src/SceneNode.hpp>
 
 using namespace std;
 
@@ -34,7 +35,7 @@ struct Triangle {
     Triangle(glm::vec3 a, glm::vec3 b, glm::vec3 c): a(a), b(b), c(c) {}
 };
 
-class Mesh : public Subject<glm::vec3> {
+class Mesh : public Subject<glm::vec3>, public SceneNode {
     GLuint programId;
 
     map<glm::vec3, ushort, VecCompare> verticesIndexed;

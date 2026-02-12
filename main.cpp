@@ -10,11 +10,11 @@ GLFWwindow *window;
 
 #include <glm/ext.hpp>
 
-#include "src/Texture.hpp"
-#include "src/Mesh.hpp"
-#include "src/Camera.hpp"
-#include "src/Controls.hpp"
-#include "src/GameEngine.hpp"
+#include <src/Texture.hpp>
+#include <src/Mesh.hpp>
+#include <src/Camera.hpp>
+#include <src/Controls.hpp>
+#include <src/GameEngine.hpp>
 
 template <typename T> T random(T min, T max) {
     static std::random_device rd;
@@ -43,69 +43,117 @@ vector<ushort> flatten(vector<vector<ushort>> &values) {
     return result;
 }
 
-void generateTerrain(uint nombreVertices, vector<Triangle> &triangles, map<glm::vec3, glm::vec2, VecCompare> &textureCoords) {
-    const ushort nombreCases = nombreVertices - 1;
-    const float minX = -1;
-    const float maxX = 1;
-    const float minY = -1;
-    const float maxY = 1;
 
-    const float stepX = (maxX - minX) / nombreCases;
-    const float stepY = (maxY - minY) / nombreCases;
 
-    vector<glm::vec3> indexedVertices;
+class Cube: public Mesh {
+    glm::vec3 pos;
+public:
+    Cube() {}
+    Cube(const char *v, const char *f, const vector<Triangle> &t, glm::vec3 pos): Mesh(v, f, t), pos(pos) {}
 
-    for (ushort i = 0; i < nombreVertices; i++) {
-        for (ushort j = 0; j < nombreVertices; j++) {
-            float half = (nombreVertices - 1) / 2.;
-            float iWeight = (1 - abs(i - half) / half) * 0.25;
-            float jWeight = (1 - abs(j - half) / half) * 0.25;
-
-            glm::vec3 pos = glm::vec3(i * stepX + minX, 0, j * stepY + minY);
-
-            indexedVertices.push_back(pos);
-            textureCoords[pos] = glm::vec2((i + 0.5) / nombreVertices, (j + 0.5) / nombreVertices);
-        }
+    void transform(const Transform &transform) override {
+        std::cout << "(" << pos.x << ", " << pos.y << ", " << pos.z << ")" << std::endl;
     }
+};
 
-    for (ushort i = 0; i < nombreCases; i++) {
-        for (ushort j = 0; j < nombreCases; j++) {
-            glm::vec3 a = indexedVertices[(i + 0) * nombreVertices + (j + 0)];
-            glm::vec3 b = indexedVertices[(i + 0) * nombreVertices + (j + 1)];
-            glm::vec3 c = indexedVertices[(i + 1) * nombreVertices + (j + 0)];
-            glm::vec3 d = indexedVertices[(i + 1) * nombreVertices + (j + 1)];
+Cube buildCube(float x, float y, float z) {
+    glm::vec3 v0 = {x - 0.25f, y - 0.25f, z - 0.25f};
+    glm::vec3 v1 = {x + 0.25f, y - 0.25f, z - 0.25f};
+    glm::vec3 v2 = {x + 0.25f, y + 0.25f, z - 0.25f};
+    glm::vec3 v3 = {x - 0.25f, y + 0.25f, z - 0.25f};
+    glm::vec3 v4 = {x - 0.25f, y - 0.25f, z + 0.25f};
+    glm::vec3 v5 = {x + 0.25f, y - 0.25f, z + 0.25f};
+    glm::vec3 v6 = {x + 0.25f, y + 0.25f, z + 0.25f};
+    glm::vec3 v7 = {x - 0.25f, y + 0.25f, z + 0.25f};
 
-            triangles.push_back(Triangle(a, b, c));
-            triangles.push_back(Triangle(b, d, c));
-        }
-    }
+    std::vector<Triangle> triangles = {
+        Triangle(v0, v1, v2), 
+        Triangle(v0, v2, v3), 
+        
+        Triangle(v5, v4, v7), 
+        Triangle(v5, v7, v6), 
+        
+        Triangle(v4, v0, v3), 
+        Triangle(v4, v3, v7), 
+        
+        Triangle(v1, v5, v6), 
+        Triangle(v1, v6, v2), 
+        
+        Triangle(v4, v5, v1), 
+        Triangle(v4, v1, v0), 
+        
+        Triangle(v3, v2, v6), 
+        Triangle(v3, v6, v7), 
+    };
+
+    return Cube("shaders/cube_vs.glsl", "shaders/cube_fs.glsl", triangles, glm::vec3(x, y, z));
 }
 
-Mesh buildTerrain(uint nombreVertices) {
-    vector<Triangle> triangles;
-    map<glm::vec3, glm::vec2, VecCompare> textureCoords;
+Cube cube;
 
-    generateTerrain(nombreVertices, triangles, textureCoords);
+// void generateTerrain(uint nombreVertices, vector<Triangle> &triangles, map<glm::vec3, glm::vec2, VecCompare> &textureCoords) {
+//     const ushort nombreCases = nombreVertices - 1;
+//     const float minX = -1;
+//     const float maxX = 1;
+//     const float minY = -1;
+//     const float maxY = 1;
 
-    Mesh terrain("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl", triangles);
-    terrain.addTextureCoords(textureCoords);
-    terrain.addTexture("assets/noiseTexture.png", "heightMap");
-    terrain.addTexture("assets/grass.png", "grassTexture");
-    terrain.addTexture("assets/rock.png", "rockTexture");
-    terrain.addTexture("assets/snowrocks.png", "snowTexture");
+//     const float stepX = (maxX - minX) / nombreCases;
+//     const float stepY = (maxY - minY) / nombreCases;
 
-    return terrain;
-}
+//     vector<glm::vec3> indexedVertices;
 
-Mesh buildTerrainWithDeltaVertices(int change) {
-    static uint nombreVertices = 32;
-    nombreVertices += change;
-    if (nombreVertices < 2) {
-        nombreVertices = 2;
-    }
+//     for (ushort i = 0; i < nombreVertices; i++) {
+//         for (ushort j = 0; j < nombreVertices; j++) {
+//             float half = (nombreVertices - 1) / 2.;
+//             float iWeight = (1 - abs(i - half) / half) * 0.25;
+//             float jWeight = (1 - abs(j - half) / half) * 0.25;
 
-    return buildTerrain(nombreVertices);
-}
+//             glm::vec3 pos = glm::vec3(i * stepX + minX, 0, j * stepY + minY);
+
+//             indexedVertices.push_back(pos);
+//             textureCoords[pos] = glm::vec2((i + 0.5) / nombreVertices, (j + 0.5) / nombreVertices);
+//         }
+//     }
+
+//     for (ushort i = 0; i < nombreCases; i++) {
+//         for (ushort j = 0; j < nombreCases; j++) {
+//             glm::vec3 a = indexedVertices[(i + 0) * nombreVertices + (j + 0)];
+//             glm::vec3 b = indexedVertices[(i + 0) * nombreVertices + (j + 1)];
+//             glm::vec3 c = indexedVertices[(i + 1) * nombreVertices + (j + 0)];
+//             glm::vec3 d = indexedVertices[(i + 1) * nombreVertices + (j + 1)];
+
+//             triangles.push_back(Triangle(a, b, c));
+//             triangles.push_back(Triangle(b, d, c));
+//         }
+//     }
+// }
+
+// Mesh buildTerrain(uint nombreVertices) {
+//     vector<Triangle> triangles;
+//     map<glm::vec3, glm::vec2, VecCompare> textureCoords;
+
+//     generateTerrain(nombreVertices, triangles, textureCoords);
+
+//     Mesh terrain("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl", triangles);
+//     terrain.addTextureCoords(textureCoords);
+//     terrain.addTexture("assets/noiseTexture.png", "heightMap");
+//     terrain.addTexture("assets/grass.png", "grassTexture");
+//     terrain.addTexture("assets/rock.png", "rockTexture");
+//     terrain.addTexture("assets/snowrocks.png", "snowTexture");
+
+//     return terrain;
+// }
+
+// Mesh buildTerrainWithDeltaVertices(int change) {
+//     static uint nombreVertices = 32;
+//     nombreVertices += change;
+//     if (nombreVertices < 2) {
+//         nombreVertices = 2;
+//     }
+
+//     return buildTerrain(nombreVertices);
+// }
 
 class Moteur: public GameEngine {
     uint terrainId;
@@ -175,6 +223,10 @@ class Moteur: public GameEngine {
         controls.addKeyDownCallback(GLFW_KEY_DOWN, new KeyCallback([this](float deltaTime) {
             this->getCamera().down_arrow(deltaTime);
         }));
+        
+        controls.addKeyPressedCallback(GLFW_KEY_H, new KeyCallback([this](float deltaTime) {
+            cube.transform(Transform());
+        }));
     }
 
     void processInput(float delta) override {
@@ -194,11 +246,11 @@ class Moteur: public GameEngine {
     }
 
     void changeTerrain(int changeVertices) {
-        Mesh * terrain = this->getMesh(this->terrainId);
-        terrain->cleanUp();
-        terrain = new Mesh(buildTerrainWithDeltaVertices(changeVertices));
-        terrain->attach(&this->getCamera());
-        this->replaceMesh(this->terrainId, terrain);
+        // Mesh * terrain = this->getMesh(this->terrainId);
+        // terrain->cleanUp();
+        // terrain = new Mesh(buildTerrainWithDeltaVertices(changeVertices));
+        // terrain->attach(&this->getCamera());
+        // this->replaceMesh(this->terrainId, terrain);
     }
 
 public:
@@ -258,8 +310,21 @@ int main(void) {
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
-    Mesh terrain = buildTerrainWithDeltaVertices(0);
-    Moteur engine(window, width, height, terrain);
+    //Mesh terrain = buildTerrainWithDeltaVertices(0);
+    cube = buildCube(1, 1, 1);
+    Moteur engine(window, width, height, cube);
+
+    Cube cube2 = buildCube(0, 0, 0);
+    engine.addMesh(&cube2);
+    cube.addChild(cube2);
+
+    Cube cube3 = buildCube(-1, -1, -1);
+    engine.addMesh(&cube3);
+    cube2.addChild(cube3);
+
+    Cube cube4 = buildCube(-2, -2, -2);
+    engine.addMesh(&cube4);
+    cube3.addChild(cube4);
 
     engine.run();
 

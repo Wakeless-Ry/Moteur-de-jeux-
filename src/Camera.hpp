@@ -3,7 +3,7 @@
 
 #include <glm/glm.hpp>
 
-#include "Observer.hpp"
+#include <src/Observer.hpp>
 
 using namespace std;
 using namespace glm;

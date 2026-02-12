@@ -6,9 +6,9 @@
 
 #include <GLFW/glfw3.h>
 
-#include "src/Mesh.hpp"
-#include "src/Camera.hpp"
-#include "src/Controls.hpp"
+#include <src/Mesh.hpp>
+#include <src/Camera.hpp>
+#include <src/Controls.hpp>
 
 using namespace std;
 using namespace glm;
