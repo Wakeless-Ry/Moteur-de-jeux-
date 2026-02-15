@@ -1,11 +1,13 @@
 #ifndef TEXTURE
 #define TEXTURE
 
-#include <stdio.h>
+#include <GL/glew.h>
+
+#include <GLFW/glfw3.h>
 #include <iostream>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "lib/stb_image.h"
+#include <lib/stb_image.h>
 
 using namespace std;
 
@@ -15,10 +17,10 @@ class Texture {
     uint texId;
     int pos;
 
-public:
-    Texture(): texId(0) {}
+  public:
+    Texture() : texId(0) {}
 
-    Texture(const char *path, int pos): texId(0), pos(pos) {
+    Texture(const char *path, int pos) : texId(0), pos(pos) {
         int width, height, nrChannels;
         unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 0);
 
@@ -35,7 +37,8 @@ public:
 
             GLenum format = (nrChannels == 4) ? GL_RGBA : GL_RGB;
             GLenum internalFormat = (nrChannels == 4) ? GL_RGBA : GL_RGB;
-            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0,
+                         format, GL_UNSIGNED_BYTE, data);
             glGenerateMipmap(GL_TEXTURE_2D);
 
             stbi_image_free(data);
@@ -44,9 +47,7 @@ public:
         }
     }
 
-    uint getId() const {
-        return this->texId;
-    }
+    uint getId() const { return this->texId; }
 
     void bind(GLuint programId, const char *name) const {
         glUseProgram(programId);
@@ -63,4 +64,4 @@ public:
     }
 };
 
-#endif //TEXTURE
+#endif // TEXTURE

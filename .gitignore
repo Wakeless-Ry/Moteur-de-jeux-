@@ -1,3 +1,5 @@
 .gitignore
 build/
 moteur
+.cache
+compile_commands.json

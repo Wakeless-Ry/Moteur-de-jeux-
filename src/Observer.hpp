@@ -2,26 +2,23 @@
 #define OBSERVER
 
 #include <list>
-#include <memory>
 
-template <typename T>
-class Observer {
-public:
+template <typename T> class Observer {
+  public:
     virtual ~Observer() = default;
 
     virtual void update(const T &message) = 0;
 };
 
-template <typename T>
-class Subject {
+template <typename T> class Subject {
     std::list<Observer<T> *> observerList;
 
-public:
+  public:
     virtual ~Subject() = default;
 
     virtual void notifyAll(const T &message) const {
         auto observersCopy = observerList;
-        for (auto& observer : observersCopy) {
+        for (auto &observer : observersCopy) {
             observer->update(message);
         }
     };
@@ -35,4 +32,4 @@ public:
     }
 };
 
-#endif //OBSERVER
+#endif // OBSERVER

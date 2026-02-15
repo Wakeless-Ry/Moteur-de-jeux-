@@ -1,25 +1,24 @@
 #ifndef CAMERA
 #define CAMERA
 
-#include <glm/glm.hpp>
+#include <iostream>
 
-#include <src/Observer.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+
+#include "Observer.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 
 using namespace std;
 using namespace glm;
 
 using uint = unsigned int;
 
-enum CameraMode {
-    LOOK_AT,
-    FRONT,
-    HOVER,
-    ROTATE,
-    Count
-};
+enum CameraMode { LOOK_AT, FRONT, HOVER, ROTATE, Count };
 
-inline CameraMode& operator++(CameraMode& dir) {
-    dir = static_cast<CameraMode>((static_cast<int>(dir) + 1) % static_cast<int>(CameraMode::Count));
+inline CameraMode &operator++(CameraMode &dir) {
+    dir = static_cast<CameraMode>((static_cast<int>(dir) + 1) %
+                                  static_cast<int>(CameraMode::Count));
     return dir;
 }
 
@@ -62,86 +61,47 @@ class Camera : public Observer<vec3> {
         return cross(normal, cross(toProject, normal));
     }
 
-public:
-    Camera(uint screenWidth, uint screenHeight): screenWidth(screenWidth), screenHeight(screenHeight) {}
+  public:
+    Camera(uint screenWidth, uint screenHeight)
+        : screenWidth(screenWidth), screenHeight(screenHeight) {}
 
-    void update(const vec3 &pos) override {
-        this->setTarget(pos);
-    }
-    
-    uint getScreenWidth() const {
-        return this->screenWidth;
-    }
-    void setScreenWidth(uint newWidth) {
-        this->screenWidth = newWidth;
-    }
+    void update(const vec3 &pos) override { this->setTarget(pos); }
 
-    uint getScreenHeight() const {
-        return this->screenHeight;
-    }
-    void setScreenHeight(uint newHeight) {
-        this->screenHeight = newHeight;
-    }
+    uint getScreenWidth() const { return this->screenWidth; }
+    void setScreenWidth(uint newWidth) { this->screenWidth = newWidth; }
 
-    float getFov() const {
-        return this->fov;
-    }
-    void setFov(float newFov) {
-        this->fov = newFov;
-    }
+    uint getScreenHeight() const { return this->screenHeight; }
+    void setScreenHeight(uint newHeight) { this->screenHeight = newHeight; }
 
-    float getZNear() const {
-        return this->zNear;
-    }
-    void setZNear(float newZNear) {
-        this->zNear = newZNear;
-    }
+    float getFov() const { return this->fov; }
+    void setFov(float newFov) { this->fov = newFov; }
 
-    float getZFar() const {
-        return this->zFar;
-    }
-    void setZFar(float newZFar) {
-        this->zFar = newZFar;
-    }
+    float getZNear() const { return this->zNear; }
+    void setZNear(float newZNear) { this->zNear = newZNear; }
 
-    vec3 getPosition() const {
-        return this->position;
-    }
-    void setPosition(vec3 newPosition) {
-        this->position = newPosition;
-    }
+    float getZFar() const { return this->zFar; }
+    void setZFar(float newZFar) { this->zFar = newZFar; }
 
-    vec3 getEulerAngle() const {
-        return this->eulerAngle;
-    }
-    void setEulerAngle(vec3 newEulerAngle) {
-        this->eulerAngle = newEulerAngle;
-    }
+    vec3 getPosition() const { return this->position; }
+    void setPosition(vec3 newPosition) { this->position = newPosition; }
 
-    vec3 getTarget() const {
-        return this->target;
-    }
-    void setTarget(vec3 newTarget) {
-        this->target = newTarget;
-    }
+    vec3 getEulerAngle() const { return this->eulerAngle; }
+    void setEulerAngle(vec3 newEulerAngle) { this->eulerAngle = newEulerAngle; }
 
-    float getTargetDistance() const {
-        return this->targetDistance;
-    }
+    vec3 getTarget() const { return this->target; }
+    void setTarget(vec3 newTarget) { this->target = newTarget; }
+
+    float getTargetDistance() const { return this->targetDistance; }
     void setTargetDistance(float newTargetDistance) {
         this->targetDistance = newTargetDistance;
     }
 
-    float getTranslationSpeed() const {
-        return this->translationSpeed;
-    }
+    float getTranslationSpeed() const { return this->translationSpeed; }
     void setTranslationSpeed(float newTranslationSpeed) {
         this->translationSpeed = newTranslationSpeed;
     }
 
-    float getRotationSpeed() const {
-        return this->rotationSpeed;
-    }
+    float getRotationSpeed() const { return this->rotationSpeed; }
     void setRotationSpeed(float newRotationSpeed) {
         this->rotationSpeed = newRotationSpeed;
     }
@@ -149,31 +109,36 @@ public:
     void update(float deltaTime) {
         if (this->mode == ROTATE) {
             this->eulerAngle.y = this->eulerAngle.y + deltaTime * rotationSpeed;
-            cout << this->eulerAngle.y << endl;
         }
 
-        this->eulerAngle = vec3(clipAngle180(this->eulerAngle.x), clipAngle180(this->eulerAngle.y), clipAngle180(this->eulerAngle.z));
+        this->eulerAngle = vec3(clipAngle180(this->eulerAngle.x),
+                                clipAngle180(this->eulerAngle.y),
+                                clipAngle180(this->eulerAngle.z));
         this->eulerAngle.x = clamp(this->eulerAngle.x, -89.f, 89.f);
-        this->rotation = quat(this->eulerAngle * M_PI / 180.0f);
-        
+        this->rotation = quat(this->eulerAngle * (float)M_PI / 180.0f);
+
         if (this->targetDistance < this->zNear) {
             this->targetDistance = this->zNear;
         }
-        
+
         if (this->targetDistance > this->zFar) {
             this->targetDistance = this->zFar;
         }
 
         if (this->mode == LOOK_AT || this->mode == ROTATE) {
-	        this->position = this->target - (this->rotation * VEC_FRONT) * this->targetDistance;
+            this->position = this->target - (this->rotation * VEC_FRONT) *
+                                                this->targetDistance;
         }
 
-        this->projectionMatrix = perspective(radians(this->fov), ((float) this->screenWidth) / this->screenHeight, this->zNear, this->zFar);
+        this->projectionMatrix = perspective(
+            radians(this->fov), ((float)this->screenWidth) / this->screenHeight,
+            this->zNear, this->zFar);
 
         const vec3 front = this->rotation * VEC_FRONT;
         const vec3 up = this->rotation * VEC_UP;
 
-        this->viewMatrix = lookAt(this->position, this->position + front, VEC_UP);
+        this->viewMatrix =
+            lookAt(this->position, this->position + front, VEC_UP);
     }
 
     void update(float deltaTime, vec3 newTarget) {
@@ -181,23 +146,21 @@ public:
         this->update(deltaTime);
     }
 
-    mat4 getView() const {
-        return this->viewMatrix;
-    }
+    mat4 getView() const { return this->viewMatrix; }
 
-    mat4 getProjection() const {
-        return this->projectionMatrix;
-    }
+    mat4 getProjection() const { return this->projectionMatrix; }
 
     void rotateWithMouse(float deltaX, float deltaY) {
         const static float ROTATE_MOUSE_FACTOR = 500.f;
 
         if (deltaY != 0) {
-            this->eulerAngle.x += (deltaY * this->rotationSpeed) / ROTATE_MOUSE_FACTOR;
+            this->eulerAngle.x +=
+                (deltaY * this->rotationSpeed) / ROTATE_MOUSE_FACTOR;
         }
 
         if (deltaX != 0) {
-            this->eulerAngle.y += (-deltaX * this->rotationSpeed) / ROTATE_MOUSE_FACTOR;
+            this->eulerAngle.y +=
+                (-deltaX * this->rotationSpeed) / ROTATE_MOUSE_FACTOR;
         }
     }
 
@@ -210,10 +173,15 @@ public:
             this->targetDistance -= deltaTime * this->translationSpeed;
             break;
         case FRONT:
-            this->position += normalize(direction) * this->translationSpeed * deltaTime;
+            this->position +=
+                normalize(direction) * this->translationSpeed * deltaTime;
             break;
         case HOVER:
-            this->position += normalize(this->projectVectorOnPlan(direction, vec3(0.0f, 1.0f, 0.0f))) * this->translationSpeed * deltaTime;
+            this->position += normalize(this->projectVectorOnPlan(
+                                  direction, vec3(0.0f, 1.0f, 0.0f))) *
+                              this->translationSpeed * deltaTime;
+            break;
+        case Count:
             break;
         }
     }
@@ -227,10 +195,15 @@ public:
             this->targetDistance += deltaTime * this->translationSpeed;
             break;
         case FRONT:
-            this->position += normalize(direction) * this->translationSpeed * deltaTime;
+            this->position +=
+                normalize(direction) * this->translationSpeed * deltaTime;
             break;
         case HOVER:
-            this->position += normalize(this->projectVectorOnPlan(direction, vec3(0.0f, 1.0f, 0.0f))) * this->translationSpeed * deltaTime;
+            this->position += normalize(this->projectVectorOnPlan(
+                                  direction, vec3(0.0f, 1.0f, 0.0f))) *
+                              this->translationSpeed * deltaTime;
+            break;
+        case Count:
             break;
         }
     }
@@ -242,9 +215,13 @@ public:
             break;
         case FRONT:
         case HOVER:
-            this->position += normalize(this->rotation * vec3(1.0f, 0.0f, 0.0f)) * this->translationSpeed * deltaTime;
+            this->position +=
+                normalize(this->rotation * vec3(1.0f, 0.0f, 0.0f)) *
+                this->translationSpeed * deltaTime;
             break;
-        }        
+        case Count:
+            break;
+        }
     }
 
     void right(float deltaTime) {
@@ -254,12 +231,15 @@ public:
             break;
         case FRONT:
         case HOVER:
-            this->position += normalize(this->rotation * vec3(-1.0f, 0.0f, 0.0f)) * this->translationSpeed * deltaTime;
+            this->position +=
+                normalize(this->rotation * vec3(-1.0f, 0.0f, 0.0f)) *
+                this->translationSpeed * deltaTime;
             break;
-        }        
+        case Count:
+            break;
+        }
     }
 
-    
     void up_arrow(float deltaTime) {
         switch (this->mode) {
         case LOOK_AT:
@@ -270,7 +250,9 @@ public:
             break;
         case HOVER:
             break;
-        }        
+        case Count:
+            break;
+        }
     }
 
     void down_arrow(float deltaTime) {
@@ -283,9 +265,10 @@ public:
             break;
         case HOVER:
             break;
-        }        
+        case Count:
+            break;
+        }
     }
-
 
     CameraMode changeMode() {
         ++this->mode;
@@ -297,4 +280,4 @@ public:
     }
 };
 
-#endif //CAMERA
+#endif // CAMERA

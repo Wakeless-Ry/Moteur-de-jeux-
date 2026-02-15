@@ -1,14 +1,12 @@
 #ifndef GAME_ENGINE
 #define GAME_ENGINE
 
-#include <iostream>
-#include <vector>
-
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include <src/Mesh.hpp>
-#include <src/Camera.hpp>
-#include <src/Controls.hpp>
+#include "Camera.hpp"
+#include "Controls.hpp"
+#include "Scene.hpp"
 
 using namespace std;
 using namespace glm;
@@ -17,14 +15,14 @@ using uint = unsigned int;
 
 class GameEngine {
     GLFWwindow *window;
-    
+
     float deltaTime = 0;
     float lastFrame = 0;
-    
+
     Camera camera;
     Controls controls;
-    map<uint, Mesh *> meshes;
-    
+    Scene scene;
+
     GLuint vertexArrayId;
 
     bool stop = false;
@@ -56,29 +54,26 @@ class GameEngine {
         this->camera.update(this->deltaTime);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        for (auto &pair : this->meshes) {
-            pair.second->draw(this->camera);
-        }
+        this->scene.draw(this->camera);
 
         this->render(this->deltaTime);
     }
 
     void cleanUpInternal() {
-        for (auto &pair : this->meshes) {
-            pair.second->cleanUp();
-        }
+        this->scene.cleanUp();
 
         glDeleteVertexArrays(1, &this->vertexArrayId);
-        
+
         glfwSetWindowShouldClose(window, true);
-        
+
         glfwTerminate();
 
         this->cleanUp();
     }
 
-public:
-    GameEngine(GLFWwindow *window, uint width, uint height): camera(width, height), controls() {
+  public:
+    GameEngine(GLFWwindow *window, uint width, uint height)
+        : camera(width, height), controls() {
         this->window = window;
     }
 
@@ -103,40 +98,15 @@ public:
         return 0;
     }
 
-    void stopRunning() {
-        this->stop = true;
-    }
+    void stopRunning() { this->stop = true; }
 
-    GLFWwindow * getWindow() {
-        return this->window;
-    }
+    GLFWwindow *getWindow() { return this->window; }
 
-    Camera & getCamera() {
-        return this->camera;
-    }
+    Camera &getCamera() { return this->camera; }
 
-    Controls & getControls() {
-        return this->controls;
-    }
+    Controls &getControls() { return this->controls; }
 
-    uint addMesh(Mesh *mesh) {
-        static uint meshIdCpt = 0;
-        uint id = meshIdCpt++;
-        this->meshes[id] = mesh;
-        return id;
-    }
-
-    void replaceMesh(uint id, Mesh *mesh) {
-        this->meshes[id] = mesh;
-    }
-
-    Mesh * getMesh(uint id) {
-        return this->meshes[id];
-    }
-
-    void removeMesh(uint id) {
-        this->meshes.erase(id);
-    }
+    Scene &getScene() { return this->scene; }
 
     virtual void init() {};
     virtual void processInput(float delta) {};
@@ -145,4 +115,4 @@ public:
     virtual void cleanUp() {};
 };
 
-#endif //GAME_ENGINE
+#endif // GAME_ENGINE
