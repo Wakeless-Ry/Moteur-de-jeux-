@@ -417,18 +417,27 @@ int main(void) {
 
     Moteur engine(window, width, height);
 
-    Cube cube = buildCube(1, 1, 1);
-    Cube cube2 = buildCube(0, 0, 0);
-    Cube cube3 = buildCube(-1, -1, -1);
-    Cube cube4 = buildCube(-2, -2, -2);
+    /*ICI LE CHARGEMENT DES .OFF C'EST MOCHE JE SAIS*/
+    std::vector<glm::vec3> vertices;
+    std::vector<glm::vec3> normals;
+    std::vector<Triangle> triangles;
+    Mesh loader;
+    loader.openOFF("data/avion_n.off", vertices, normals, triangles);
+    Mesh mesh("shaders/cube_vs.glsl","shaders/cube_fs.glsl",triangles);
+    engine.getScene().addMesh(mesh);
 
-    engine.getScene().addMesh(cube);
-    engine.getScene().addMesh(cube2);
-    engine.getScene().addMesh(cube3);
-    engine.getScene().addMesh(cube4);
-    engine.getScene().changeParent(1, 2);
-    engine.getScene().changeParent(2, 3);
-    engine.getScene().changeParent(3, 4);
+    // Cube cube = buildCube(1, 1, 1);
+    // Cube cube2 = buildCube(0, 0, 0);
+    // Cube cube3 = buildCube(-1, -1, -1);
+    // Cube cube4 = buildCube(-2, -2, -2);
+
+    // engine.getScene().addMesh(cube);
+    // engine.getScene().addMesh(cube2);
+    // engine.getScene().addMesh(cube3);
+    // engine.getScene().addMesh(cube4);
+    // engine.getScene().changeParent(1, 2);
+    // engine.getScene().changeParent(2, 3);
+    // engine.getScene().changeParent(3, 4);
 
     engine.run();
 
