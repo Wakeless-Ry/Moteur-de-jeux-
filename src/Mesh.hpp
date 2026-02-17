@@ -54,6 +54,7 @@ class Mesh : public Subject<glm::vec3> {
     GLuint vertexBuffer;
     GLuint elementBuffer;
     GLuint textureBuffer;
+    GLuint normalBuffer;
 
     bool useTexture = false;
     vector<Texture> textures;
@@ -156,10 +157,14 @@ class Mesh : public Subject<glm::vec3> {
         glBindBuffer(GL_ARRAY_BUFFER, this->vertexBuffer);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
 
+        glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ARRAY_BUFFER, this->normalBuffer);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
         if (this->useTexture) {
-            glEnableVertexAttribArray(1);
+            glEnableVertexAttribArray(2);
             glBindBuffer(GL_ARRAY_BUFFER, this->textureBuffer);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
         }
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->elementBuffer);
 
@@ -175,6 +180,7 @@ class Mesh : public Subject<glm::vec3> {
     void cleanUp() {
         glDeleteBuffers(1, &this->vertexBuffer);
         glDeleteBuffers(1, &this->elementBuffer);
+        glDeleteBuffers(1, &this->normalBuffer);
 
         if (this->useTexture) {
             glDeleteBuffers(1, &this->textureBuffer);
@@ -203,6 +209,12 @@ class Mesh : public Subject<glm::vec3> {
 
     void setNormals(const std::vector<glm::vec3> &normals) {
         this->normals = normals;
+
+        glUseProgram(this->programId);
+        glGenBuffers(1, &this->normalBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, this->normalBuffer);
+        glBufferData(GL_ARRAY_BUFFER, this->normals.size() * sizeof(glm::vec3),
+                     &this->normals[0], GL_STATIC_DRAW);
     }
 };
 
