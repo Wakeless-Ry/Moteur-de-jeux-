@@ -92,8 +92,10 @@ class Transform {
     }
 
     inline Transform &transform(const Transform &transform) {
+        this->m_translation_vec =
+            this->m_rss_matrix * transform.m_translation_vec +
+            this->m_translation_vec;
         this->m_rss_matrix *= transform.m_rss_matrix;
-        this->m_translation_vec += transform.m_translation_vec;
         return *this;
     }
 
