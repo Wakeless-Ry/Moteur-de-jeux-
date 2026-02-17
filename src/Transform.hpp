@@ -111,12 +111,9 @@ class Transform {
     }
 
     inline glm::mat4 computeTransformMatrix() const {
-        return glm::mat4(
-            m_rss_matrix[0][0], m_rss_matrix[1][0], m_rss_matrix[2][0],
-            m_translation_vec[0], m_rss_matrix[0][1], m_rss_matrix[1][1],
-            m_rss_matrix[2][1], m_translation_vec[1], m_rss_matrix[0][2],
-            m_rss_matrix[1][2], m_rss_matrix[2][2], m_translation_vec[2], 0.,
-            0., 0., 1.);
+        glm::mat4 result(m_rss_matrix);
+        result[3] = glm::vec4(m_translation_vec, 1.0f);
+        return result;
     }
 };
 

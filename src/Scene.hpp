@@ -18,7 +18,7 @@ class BasicNode {
     Transform transformOfNode;
 
     void transformNode(const Transform &transform) {
-        // TODO Apply transform to this->transformOfNode
+        this->transformOfNode.transform(transform);
     }
 
     friend class Scene;
@@ -233,7 +233,7 @@ class Scene {
         }
     }
 
-    NodeId addMesh(Mesh mesh) {
+    NodeId addMesh(const Mesh &mesh) {
         NodeId newId = this->newId();
         this->meshList.addNode(newId, mesh);
 
@@ -242,7 +242,7 @@ class Scene {
         return newId;
     }
 
-    std::optional<NodeId> addMeshAsChild(NodeId parent, Mesh mesh) {
+    std::optional<NodeId> addMeshAsChild(NodeId parent, const Mesh &mesh) {
         if (this->meshList.hasId(parent) || this->basicNodeList.hasId(parent)) {
             NodeId newId = this->addMesh(mesh);
 
@@ -258,7 +258,7 @@ class Scene {
         return this->meshList.getNode(id);
     }
 
-    NodeId addBasicNode(BasicNode basicNode) {
+    NodeId addBasicNode(const BasicNode &basicNode) {
         NodeId newId = this->newId();
         this->basicNodeList.addNode(newId, basicNode);
 
@@ -268,7 +268,7 @@ class Scene {
     }
 
     std::optional<NodeId> addBasicNodeAsChild(NodeId parent,
-                                              BasicNode basicNode) {
+                                              const BasicNode &basicNode) {
         if (this->meshList.hasId(parent) || this->basicNodeList.hasId(parent)) {
             NodeId newId = this->addBasicNode(basicNode);
 
