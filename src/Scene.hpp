@@ -21,11 +21,17 @@ class BasicNode {
         this->transformOfNode.transform(transform);
     }
 
+    void setTransform(const Transform &transform) {
+        this->transformOfNode = transform;
+    }
+
     friend class Scene;
 
   public:
     BasicNode() {}
     BasicNode(const Transform &transform) : transformOfNode(transform) {}
+
+    Transform getTransform() { return this->transformOfNode; }
 };
 
 class Scene {
@@ -192,8 +198,29 @@ class Scene {
         }
     }
 
+    void setTransform(const Transform &transform,
+                      const std::vector<NodeId> &nodes) {
+        for (const NodeId &id : nodes) {
+            if (this->meshList.hasId(id)) {
+                std::optional<Mesh *> node = this->meshList.getNode(id);
+                if (node.has_value()) {
+                    node.value()->setTransform(transform);
+                }
+            } else if (this->basicNodeList.hasId(id)) {
+                std::optional<BasicNode *> node =
+                    this->basicNodeList.getNode(id);
+                if (node.has_value()) {
+                    node.value()->setTransform(transform);
+                }
+            }
+        }
+    }
+
   public:
-    Scene() { this->tree.addNode(ROOT_ID); }
+    Scene() {
+        this->basicNodeList.addNode(ROOT_ID, BasicNode());
+        this->tree.addNode(ROOT_ID);
+    }
 
     void cleanUp() {}
 
@@ -201,14 +228,28 @@ class Scene {
         this->transform(transform, ROOT_ID);
     }
 
+    void setTransform(const Transform &transform) {
+        this->setTransform(transform, ROOT_ID);
+    }
+
     void transform(const Transform &transform, NodeId id) {
         this->transform(transform, this->tree.getAllChildren(id));
+    }
+
+    void setTransform(const Transform &transform, NodeId id) {
+        this->setTransform(transform, this->tree.getAllChildren(id));
     }
 
     void transformOnlyPropagation(const Transform &transform, NodeId id) {
         std::vector<NodeId> descendants = this->tree.getAllChildren(id);
         descendants.erase(descendants.begin());
         this->transform(transform, descendants);
+    }
+
+    void setTransformOnlyPropagation(const Transform &transform, NodeId id) {
+        std::vector<NodeId> descendants = this->tree.getAllChildren(id);
+        descendants.erase(descendants.begin());
+        this->setTransform(transform, descendants);
     }
 
     void transformWithoutPropagation(const Transform &transform, NodeId id) {
@@ -221,6 +262,20 @@ class Scene {
             std::optional<BasicNode *> node = this->basicNodeList.getNode(id);
             if (node.has_value()) {
                 node.value()->transformNode(transform);
+            }
+        }
+    }
+
+    void setTransformWithoutPropagation(const Transform &transform, NodeId id) {
+        if (this->meshList.hasId(id)) {
+            std::optional<Mesh *> node = this->meshList.getNode(id);
+            if (node.has_value()) {
+                node.value()->setTransform(transform);
+            }
+        } else if (this->basicNodeList.hasId(id)) {
+            std::optional<BasicNode *> node = this->basicNodeList.getNode(id);
+            if (node.has_value()) {
+                node.value()->setTransform(transform);
             }
         }
     }

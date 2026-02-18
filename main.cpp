@@ -1,3 +1,4 @@
+#include "src/Transform.hpp"
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,7 +18,7 @@ GLFWwindow *window;
 #include <src/Camera.hpp>
 #include <src/FileLoader.hpp>
 
-NodeId earthCenter;
+NodeId sun;
 NodeId earth;
 NodeId moon;
 
@@ -76,21 +77,24 @@ class Moteur : public GameEngine {
 
         controls.addKeyPressedCallback(
             GLFW_KEY_H, new KeyCallback([this](float deltaTime) {
-                this->getScene().transform(Transform().scale(0.5, 0.5, 0.5), 1);
+                this->getScene().transform(Transform().scale(0.5), moon);
             }));
 
         controls.addKeyPressedCallback(
             GLFW_KEY_J, new KeyCallback([this](float deltaTime) {
-                this->getScene().transform(Transform().translate(1, 0, 0), 1);
+                this->getScene().transform(Transform().translate(0, 0, 1),
+                                           moon);
             }));
     }
 
+    const float speed = 360. / 48.;
+    const float nbMonths = 12.;
+    const float nbDays = 365.;
+
     void processInput(float delta) override {}
     void update(float delta) override {
-        this->getScene().transform(Transform().rotationY(90 * delta), earth);
-        this->getScene().transform(Transform().rotationY(90 * delta),
-                                   earthCenter);
-        this->getScene().transform(Transform().rotationY(90 * delta), moon);
+        this->getScene().transform(Transform().rotationY(20 * delta), earth);
+        // this->getScene().transform(Transform().rotationY(5 * delta), moon);
     }
     void render(float delta) override {}
     void cleanUp() override {}
@@ -114,18 +118,15 @@ int initializeGlew() {
 }
 
 void doSolarSystem(Moteur &engine, const Mesh &sphere) {
-    size_t sunCenter = engine.getScene().addBasicNode(BasicNode());
-    std::optional<NodeId> sun =
-        engine.getScene().addMeshAsChild(sunCenter, sphere);
-    earthCenter =
-        engine.getScene().addBasicNodeAsChild(sunCenter, BasicNode()).value();
-    earth = engine.getScene().addMeshAsChild(earthCenter, sphere).value();
-    moon = engine.getScene().addMeshAsChild(earthCenter, sphere).value();
+    sun = engine.getScene().addMesh(sphere);
+    earth = engine.getScene().addMeshAsChild(sun, sphere).value();
+    moon = engine.getScene().addMeshAsChild(earth, sphere).value();
 
-    engine.getScene().transform(
-        Transform().scale(0.5, 0.5, 0.5).translate(4, 0, 0), earthCenter);
-    engine.getScene().transform(
-        Transform().scale(0.5, 0.5, 0.5).translate(1, 0, 0), moon);
+    engine.getScene().transform(Transform().scale(0.5).translate(0, 0, 3),
+                                earth);
+
+    engine.getScene().transform(Transform().scale(0.5).translate(0, 0, 2.5),
+                                moon);
 }
 
 int main(void) {

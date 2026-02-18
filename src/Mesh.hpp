@@ -141,7 +141,7 @@ class Mesh : public Subject<glm::vec3> {
     void draw(const Camera &camera) const {
         glUseProgram(this->programId);
 
-        glm::mat4 model = this->transform.computeTransformMatrix();
+        glm::mat4 model = this->transform.getMatrix();
         glUniformMatrix4fv(glGetUniformLocation(this->programId, "model"), 1,
                            GL_FALSE, glm::value_ptr(model));
 
@@ -204,7 +204,7 @@ class Mesh : public Subject<glm::vec3> {
     }
 
     void transformNode(const Transform &transform) {
-        this->transform = this->transform.transform(transform);
+        this->transform.transform(transform);
     }
 
     void setNormals(const std::vector<glm::vec3> &normals) {
