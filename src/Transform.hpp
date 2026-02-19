@@ -1,6 +1,8 @@
 #ifndef TRANSFORM
 #define TRANSFORM
 
+#include <iostream>
+
 #include <glm/ext.hpp>
 
 class Transform {
@@ -30,7 +32,7 @@ class Transform {
         s[1][1] = y;
         s[2][2] = z;
 
-        this->m_matrix = s * this->m_matrix;
+        this->m_matrix *= s;
         return *this;
     }
 
@@ -44,7 +46,7 @@ class Transform {
     }
 
     inline Transform &skew(const glm::mat3 &skewMatrix) {
-        this->m_matrix = buildMat4(skewMatrix) * this->m_matrix;
+        this->m_matrix *= buildMat4(skewMatrix);
         return *this;
     }
 
@@ -55,7 +57,7 @@ class Transform {
         t[3][1] = y;
         t[3][2] = z;
 
-        this->m_matrix = t * this->m_matrix;
+        this->m_matrix *= t;
         return *this;
     }
 
@@ -73,7 +75,7 @@ class Transform {
         glm::mat3 r(1, 0., 0., 0., cos(glm::radians(angle)),
                     sin((glm::radians(angle))), 0., -sin((glm::radians(angle))),
                     cos(glm::radians(angle)));
-        this->m_matrix = buildMat4(r) * this->m_matrix;
+        this->m_matrix *= buildMat4(r);
         return *this;
     }
 
@@ -81,7 +83,7 @@ class Transform {
         glm::mat3 r(cos(glm::radians(angle)), 0., -sin((glm::radians(angle))),
                     0., 1., 0., sin((glm::radians(angle))), 0.,
                     cos(glm::radians(angle)));
-        this->m_matrix = buildMat4(r) * this->m_matrix;
+        this->m_matrix *= buildMat4(r);
         return *this;
     }
 
@@ -89,12 +91,12 @@ class Transform {
         glm::mat3 r(cos(glm::radians(angle)), sin((glm::radians(angle))), 0.,
                     -sin((glm::radians(angle))), cos(glm::radians(angle)), 0.,
                     0., 0., 1.);
-        this->m_matrix = buildMat4(r) * this->m_matrix;
+        this->m_matrix *= buildMat4(r);
         return *this;
     }
 
     inline Transform &transform(const Transform &transform) {
-        this->m_matrix = transform.m_matrix * this->m_matrix;
+        this->m_matrix *= transform.m_matrix;
         return *this;
     }
 
@@ -115,7 +117,8 @@ class Transform {
         for (size_t i = 0; i < 4; i++) {
             for (size_t j = 0; j < 4; j++) {
                 std::cout << m_matrix[j][i];
-                if (j < 3) std::cout << "\t";
+                if (j < 3)
+                    std::cout << "\t";
             }
             std::cout << "\n";
         }

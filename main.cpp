@@ -18,8 +18,9 @@ GLFWwindow *window;
 #include <src/Camera.hpp>
 #include <src/FileLoader.hpp>
 
-
+NodeId solarMovement;
 NodeId sun;
+NodeId earthOrbit;
 NodeId earth;
 NodeId moon;
 
@@ -76,28 +77,48 @@ class Moteur : public GameEngine {
                                         this->getCamera().down_arrow(deltaTime);
                                     }));
 
-        controls.addKeyDownCallback(
-            GLFW_KEY_H, new KeyCallback([this](float deltaTime) {
-                this->getScene().transform(earth, Transform().rotationY(50 * deltaTime));
-            }));
+        controls.addKeyDownCallback(GLFW_KEY_H,
+                                    new KeyCallback([this](float deltaTime) {
+                                        this->speedFactor += 0.05;
+                                    }));
 
-        controls.addKeyDownCallback(
-            GLFW_KEY_J, new KeyCallback([this](float deltaTime) {
-                this->getScene().transform(moon, Transform().rotationY(50 * deltaTime));
-            }));
+        controls.addKeyDownCallback(GLFW_KEY_J,
+                                    new KeyCallback([this](float deltaTime) {
+                                        this->speedFactor -= 0.05;
+                                    }));
     }
 
-    const float speed = 360. / 48.;
-    const float nbMonths = 12.;
-    const float nbDays = 365.;
+    float speedFactor = 10;
+    const float speed = 365;
+    const float sunRotationSpeed = 25. / 365.;
+    const float monthSpeed = 1. / 12.;
+    const float yearSpeed = 1. / 365.;
+    const float daySpeed = 1.;
 
-    float earthAngle = 0.;
-    float 
+    float sunAngle = 0;
+    float earthOrbitAngle = 0;
+    float earthAngle = 0;
+    float moonAngle = 0;
 
     void processInput(float deltaTime) override {}
     void update(float deltaTime) override {
-        // this->getScene().transform(earth, Transform().rotationY(20 * deltaTime));
-        // this->getScene().transform(moon, Transform().rotationY(5 * deltaTime));
+        sunAngle += sunRotationSpeed * speed * speedFactor * deltaTime;
+        this->getScene().setTransform(sun, Transform().rotationY(sunAngle));
+
+        earthOrbitAngle += yearSpeed * speed * speedFactor * deltaTime;
+        this->getScene().setTransform(earthOrbit,
+                                      Transform()
+                                          .rotationY(earthOrbitAngle)
+                                          .translate(3, 0, 0)
+                                          .scale(0.5));
+
+        earthAngle += daySpeed * speed * speedFactor * deltaTime;
+        this->getScene().setTransform(earth, Transform().rotationX(17).rotationY(earthAngle));
+
+        moonAngle += monthSpeed * speed * speedFactor * deltaTime;
+        this->getScene().setTransform(
+            moon,
+            Transform().rotationY(moonAngle).translate(2, 0, 0).scale(0.5));
     }
     void render(float deltaTime) override {}
     void cleanUp() override {}
@@ -121,13 +142,11 @@ int initializeGlew() {
 }
 
 void doSolarSystem(Moteur &engine, const Mesh &sphere) {
-    sun = engine.getScene().addMesh(sphere);
-    earth = engine.getScene().addMeshAsChild(sun, sphere).value();
-    moon = engine.getScene().addMeshAsChild(earth, sphere).value();
-
-    engine.getScene().setTransform(earth, Transform().scale(0.5).translate(0, 0, 3));
-
-    engine.getScene().setTransform(moon, Transform().scale(0.5).translate(0, 0, 2.5));
+    solarMovement = engine.getScene().addBasicNode();
+    sun = engine.getScene().addMeshAsChild(solarMovement, sphere).value();
+    earthOrbit = engine.getScene().addBasicNodeAsChild(solarMovement).value();
+    earth = engine.getScene().addMeshAsChild(earthOrbit, sphere).value();
+    moon = engine.getScene().addMeshAsChild(earthOrbit, sphere).value();
 }
 
 int main(void) {
@@ -146,8 +165,8 @@ int main(void) {
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode *mode = glfwGetVideoMode(monitor);
 
-    window = glfwCreateWindow(mode->width, mode->height, "Game Engine", NULL,
-                              NULL);
+    window =
+        glfwCreateWindow(mode->width, mode->height, "Game Engine", NULL, NULL);
 
     if (window == NULL) {
         fprintf(stderr, "Failed to open GLFW window.");

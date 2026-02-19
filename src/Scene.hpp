@@ -6,7 +6,6 @@
 #include <set>
 #include <stack>
 #include <vector>
-#include <iostream>
 
 #include "Mesh.hpp"
 #include "Transform.hpp"
@@ -15,22 +14,6 @@ class Scene;
 
 typedef size_t NodeId;
 
-class BasicNode {
-    Transform transformOfNode;
-
-    void setTransform(const Transform &transform) {
-        this->transformOfNode = transform;
-    }
-
-    friend class Scene;
-
-  public:
-    BasicNode() {}
-    BasicNode(const Transform &transform) : transformOfNode(transform) {}
-
-    Transform getTransform() { return this->transformOfNode; }
-};
-
 class Scene {
     struct SceneNode {
         NodeId node;
@@ -38,9 +21,10 @@ class Scene {
         Transform cumulativeTransform;
         bool shouldUpdate;
 
-        SceneNode(): shouldUpdate(false) {}
-        SceneNode(NodeId node): node(node), shouldUpdate(false) {}
-        SceneNode(NodeId node, bool shouldUpdate): node(node), shouldUpdate(shouldUpdate) {}
+        SceneNode() : shouldUpdate(false) {}
+        SceneNode(NodeId node) : node(node), shouldUpdate(false) {}
+        SceneNode(NodeId node, bool shouldUpdate)
+            : node(node), shouldUpdate(shouldUpdate) {}
 
         inline void transformLocal(const Transform &transform) {
             this->localTransform.transform(transform);
@@ -75,7 +59,8 @@ class Scene {
         void addChildNodeUnsafe(NodeId parent, NodeId node) {
             this->tree[parent].insert(node);
             this->parents[node] = parent;
-            this->nodes[node] = SceneNode(node, this->nodes[parent].shouldUpdate);
+            this->nodes[node] =
+                SceneNode(node, this->nodes[parent].shouldUpdate);
         }
 
         void markSubTree(NodeId node) {
@@ -171,7 +156,7 @@ class Scene {
         bool transformLocal(NodeId node, const Transform &transform) {
             if (this->hasNode(node)) {
                 this->nodes[node].transformLocal(transform);
-                
+
                 this->markSubTree(node);
 
                 return true;
@@ -183,7 +168,7 @@ class Scene {
         bool setLocalTransform(NodeId node, const Transform &transform) {
             if (this->hasNode(node)) {
                 this->nodes[node].setLocalTransform(transform);
-                
+
                 this->markSubTree(node);
 
                 return true;
@@ -210,7 +195,8 @@ class Scene {
                 transforms.push(current->localTransform);
                 nodes.push(current->node);
 
-                while (current->shouldUpdate && this->parents.count(current->node)) {
+                while (current->shouldUpdate &&
+                       this->parents.count(current->node)) {
                     current = &this->nodes[this->parents[current->node]];
                     transforms.push(current->localTransform);
                     nodes.push(current->node);
@@ -267,6 +253,8 @@ class Scene {
         bool hasId(NodeId id) { return this->idNodeMap.count(id); }
     };
 
+    struct BasicNode {};
+
     NodeId idCpt = 1;
 
     SceneTree tree;
@@ -308,9 +296,11 @@ class Scene {
     void draw(const Camera &camera) {
         for (size_t i = 0; i < this->meshList.flags.size(); i++) {
             if (this->meshList.flags[i]) {
-                
+
                 if (this->tree.shouldUpdate(this->meshList.ids[i])) {
-                    this->meshList.nodes[i].setTransform(this->tree.getCumulativeTransform(this->meshList.ids[i]).value());
+                    this->meshList.nodes[i].setTransform(
+                        this->tree.getCumulativeTransform(this->meshList.ids[i])
+                            .value());
                 }
                 this->meshList.nodes[i].draw(camera);
             }
@@ -342,8 +332,9 @@ class Scene {
         return this->meshList.getNode(id);
     }
 
-    NodeId addBasicNode(const BasicNode &basicNode) {
+    NodeId addBasicNode() {
         NodeId newId = this->newId();
+        BasicNode basicNode;
         this->basicNodeList.addNode(newId, basicNode);
 
         this->tree.addChildNode(ROOT_ID, newId);
@@ -351,10 +342,9 @@ class Scene {
         return newId;
     }
 
-    std::optional<NodeId> addBasicNodeAsChild(NodeId parent,
-                                              const BasicNode &basicNode) {
+    std::optional<NodeId> addBasicNodeAsChild(NodeId parent) {
         if (this->meshList.hasId(parent) || this->basicNodeList.hasId(parent)) {
-            NodeId newId = this->addBasicNode(basicNode);
+            NodeId newId = this->addBasicNode();
 
             this->changeParent(parent, newId);
 
@@ -362,10 +352,6 @@ class Scene {
         }
 
         return std::nullopt;
-    }
-
-    std::optional<BasicNode *> getBasicNode(NodeId id) {
-        return this->basicNodeList.getNode(id);
     }
 
     bool setSceneAsParent(NodeId id) {
