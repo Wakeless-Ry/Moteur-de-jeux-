@@ -109,9 +109,9 @@ class GameEngine {
     Scene &getScene() { return this->scene; }
 
     virtual void init() {};
-    virtual void processInput(float delta) {};
-    virtual void update(float delta) {};
-    virtual void render(float delta) {};
+    virtual void processInput(float deltaTime) {};
+    virtual void update(float deltaTime) {};
+    virtual void render(float deltaTime) {};
     virtual void cleanUp() {};
 };
 

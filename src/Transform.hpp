@@ -110,6 +110,16 @@ class Transform {
     inline glm::mat4 computeMat4(const glm::mat4 &in) const {
         return this->m_matrix * in;
     }
+
+    inline void print() const {
+        for (size_t i = 0; i < 4; i++) {
+            for (size_t j = 0; j < 4; j++) {
+                std::cout << m_matrix[j][i];
+                if (j < 3) std::cout << "\t";
+            }
+            std::cout << "\n";
+        }
+    }
 };
 
 #endif // TRANSFORM

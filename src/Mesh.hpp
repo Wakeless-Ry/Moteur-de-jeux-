@@ -203,10 +203,6 @@ class Mesh : public Subject<glm::vec3> {
         this->transform = transform;
     }
 
-    void transformNode(const Transform &transform) {
-        this->transform.transform(transform);
-    }
-
     void setNormals(const std::vector<glm::vec3> &normals) {
         this->normals = normals;
 

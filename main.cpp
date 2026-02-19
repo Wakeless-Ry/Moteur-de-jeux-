@@ -1,4 +1,3 @@
-#include "src/Transform.hpp"
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,8 +14,10 @@ GLFWwindow *window;
 #include "src/Mesh.hpp"
 #include "src/Scene.hpp"
 #include "src/Texture.hpp"
+#include "src/Transform.hpp"
 #include <src/Camera.hpp>
 #include <src/FileLoader.hpp>
+
 
 NodeId sun;
 NodeId earth;
@@ -75,15 +76,14 @@ class Moteur : public GameEngine {
                                         this->getCamera().down_arrow(deltaTime);
                                     }));
 
-        controls.addKeyPressedCallback(
+        controls.addKeyDownCallback(
             GLFW_KEY_H, new KeyCallback([this](float deltaTime) {
-                this->getScene().transform(Transform().scale(0.5), moon);
+                this->getScene().transform(earth, Transform().rotationY(50 * deltaTime));
             }));
 
-        controls.addKeyPressedCallback(
+        controls.addKeyDownCallback(
             GLFW_KEY_J, new KeyCallback([this](float deltaTime) {
-                this->getScene().transform(Transform().translate(0, 0, 1),
-                                           moon);
+                this->getScene().transform(moon, Transform().rotationY(50 * deltaTime));
             }));
     }
 
@@ -91,12 +91,15 @@ class Moteur : public GameEngine {
     const float nbMonths = 12.;
     const float nbDays = 365.;
 
-    void processInput(float delta) override {}
-    void update(float delta) override {
-        this->getScene().transform(Transform().rotationY(20 * delta), earth);
-        // this->getScene().transform(Transform().rotationY(5 * delta), moon);
+    float earthAngle = 0.;
+    float 
+
+    void processInput(float deltaTime) override {}
+    void update(float deltaTime) override {
+        // this->getScene().transform(earth, Transform().rotationY(20 * deltaTime));
+        // this->getScene().transform(moon, Transform().rotationY(5 * deltaTime));
     }
-    void render(float delta) override {}
+    void render(float deltaTime) override {}
     void cleanUp() override {}
 
   public:
@@ -122,11 +125,9 @@ void doSolarSystem(Moteur &engine, const Mesh &sphere) {
     earth = engine.getScene().addMeshAsChild(sun, sphere).value();
     moon = engine.getScene().addMeshAsChild(earth, sphere).value();
 
-    engine.getScene().transform(Transform().scale(0.5).translate(0, 0, 3),
-                                earth);
+    engine.getScene().setTransform(earth, Transform().scale(0.5).translate(0, 0, 3));
 
-    engine.getScene().transform(Transform().scale(0.5).translate(0, 0, 2.5),
-                                moon);
+    engine.getScene().setTransform(moon, Transform().scale(0.5).translate(0, 0, 2.5));
 }
 
 int main(void) {
@@ -145,7 +146,7 @@ int main(void) {
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode *mode = glfwGetVideoMode(monitor);
 
-    window = glfwCreateWindow(mode->width, mode->height, "Game Engine", monitor,
+    window = glfwCreateWindow(mode->width, mode->height, "Game Engine", NULL,
                               NULL);
 
     if (window == NULL) {
