@@ -79,46 +79,38 @@ class Moteur : public GameEngine {
 
         controls.addKeyDownCallback(GLFW_KEY_H,
                                     new KeyCallback([this](float deltaTime) {
-                                        this->speedFactor += 0.05;
                                     }));
 
         controls.addKeyDownCallback(GLFW_KEY_J,
                                     new KeyCallback([this](float deltaTime) {
-                                        this->speedFactor -= 0.05;
                                     }));
     }
 
-    float speedFactor = 10;
-    const float speed = 365;
-    const float sunRotationSpeed = 25. / 365.;
-    const float monthSpeed = 1. / 12.;
-    const float yearSpeed = 1. / 365.;
-    const float daySpeed = 1.;
+    float angle_rotation_soleil = 0;
+    float sunSpeed = 2.; 
+    float speed_regulator = 2.;
+    float earthspeed = 2;
+    float moonSpeed = 2;
 
-    float sunAngle = 0;
-    float earthOrbitAngle = 0;
-    float earthAngle = 0;
-    float moonAngle = 0;
+
+    float angle_terre_rotation = 0.0f;
+    float angle_terre_revolution = 0.0f;
+    float angle_lune_revolution = 0.0f;
 
     void processInput(float deltaTime) override {}
     void update(float deltaTime) override {
-        sunAngle += sunRotationSpeed * speed * speedFactor * deltaTime;
-        this->getScene().setTransform(sun, Transform().rotationY(sunAngle));
+        angle_rotation_soleil += 36 * deltaTime;
+        this->getScene().setTransform(solarMovement,Transform().rotationY(angle_rotation_soleil));
 
-        earthOrbitAngle += yearSpeed * speed * speedFactor * deltaTime;
-        this->getScene().setTransform(earthOrbit,
-                                      Transform()
-                                          .rotationY(earthOrbitAngle)
-                                          .translate(3, 0, 0)
-                                          .scale(0.5));
+        angle_terre_revolution += 36 * deltaTime;
+        this->getScene().setTransform(earthOrbit,Transform().rotationY(angle_terre_revolution).translate(4,0,0).scale(0.5));
 
-        earthAngle += daySpeed * speed * speedFactor * deltaTime;
-        this->getScene().setTransform(earth, Transform().rotationX(17).rotationY(earthAngle));
+        angle_terre_rotation += 36* deltaTime;
+        this->getScene().setTransform(earth,Transform().rotationX(23).rotationY(angle_terre_rotation));
 
-        moonAngle += monthSpeed * speed * speedFactor * deltaTime;
-        this->getScene().setTransform(
-            moon,
-            Transform().rotationY(moonAngle).translate(2, 0, 0).scale(0.5));
+        angle_lune_revolution += 36 * deltaTime;
+        this->getScene().setTransform(moon, Transform().rotationY(angle_lune_revolution).translate(3, 0, 0).scale(0.5));
+
     }
     void render(float deltaTime) override {}
     void cleanUp() override {}
@@ -141,13 +133,15 @@ int initializeGlew() {
     return 0;
 }
 
-void doSolarSystem(Moteur &engine, const Mesh &sphere) {
+
+void solar_system(Moteur &engine, const Mesh &mesh){
     solarMovement = engine.getScene().addBasicNode();
-    sun = engine.getScene().addMeshAsChild(solarMovement, sphere).value();
+    sun = engine.getScene().addMeshAsChild(solarMovement,mesh).value();
     earthOrbit = engine.getScene().addBasicNodeAsChild(solarMovement).value();
-    earth = engine.getScene().addMeshAsChild(earthOrbit, sphere).value();
-    moon = engine.getScene().addMeshAsChild(earthOrbit, sphere).value();
+    earth = engine.getScene().addMeshAsChild(earthOrbit, mesh).value();
+    moon = engine.getScene().addMeshAsChild(earthOrbit, mesh).value();
 }
+
 
 int main(void) {
     if (!glfwInit()) {
@@ -195,9 +189,9 @@ int main(void) {
 
     std::optional<Mesh> mesh = FileLoader::buildMeshFromOFF(
         "shaders/sphere_vs.glsl", "shaders/sphere_fs.glsl",
-        "data/unit_sphere_n.off");
+        "assets/unit_sphere_n.off");
     if (mesh.has_value()) {
-        doSolarSystem(engine, mesh.value());
+        solar_system(engine,mesh.value());
     } else {
         std::cout << "Mesh pas chargé correctement" << std::endl;
     }
