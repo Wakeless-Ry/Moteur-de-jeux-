@@ -87,29 +87,32 @@ class Moteur : public GameEngine {
     }
 
     float angle_rotation_soleil = 0;
-    float sunSpeed = 2.; 
+    float sunSpeed = 50.; 
     float speed_regulator = 2.;
-    float earthspeed = 2;
-    float moonSpeed = 2;
+    float earthspeed = sunSpeed/4.;
+    float moonSpeed = earthspeed *2;
 
 
     float angle_terre_rotation = 0.0f;
     float angle_terre_revolution = 0.0f;
     float angle_lune_revolution = 0.0f;
+    float angle_lune_rotation = 0.f;
+
 
     void processInput(float deltaTime) override {}
     void update(float deltaTime) override {
-        angle_rotation_soleil += 36 * deltaTime;
-        this->getScene().setTransform(solarMovement,Transform().rotationY(angle_rotation_soleil));
+        angle_rotation_soleil += sunSpeed * speed_regulator * deltaTime;
+        this->getScene().setTransform(sun,Transform().rotationY(angle_rotation_soleil));
 
-        angle_terre_revolution += 36 * deltaTime;
+        angle_terre_revolution += sunSpeed * speed_regulator * deltaTime;
         this->getScene().setTransform(earthOrbit,Transform().rotationY(angle_terre_revolution).translate(4,0,0).scale(0.5));
 
-        angle_terre_rotation += 36* deltaTime;
+        angle_terre_rotation += earthspeed * speed_regulator * deltaTime;
         this->getScene().setTransform(earth,Transform().rotationX(23).rotationY(angle_terre_rotation));
-
-        angle_lune_revolution += 36 * deltaTime;
-        this->getScene().setTransform(moon, Transform().rotationY(angle_lune_revolution).translate(3, 0, 0).scale(0.5));
+        
+        angle_lune_revolution += moonSpeed * speed_regulator * deltaTime;
+        angle_lune_rotation += moonSpeed * speed_regulator * deltaTime;        
+        this->getScene().setTransform(moon, Transform().rotationY(angle_lune_revolution).translate(2, 0, 0).scale(0.5).rotationY(angle_lune_rotation));
 
     }
     void render(float deltaTime) override {}
