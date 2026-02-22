@@ -195,7 +195,7 @@ int main(void) {
 
     std::optional<Mesh> mesh = FileLoader::buildMeshFromOFF(
         "shaders/sphere_vs.glsl", "shaders/sphere_fs.glsl",
-        "data/unit_sphere_n.off");
+        "assets/unit_sphere_n.off");
     if (mesh.has_value()) {
         doSolarSystem(engine, mesh.value());
     } else {
