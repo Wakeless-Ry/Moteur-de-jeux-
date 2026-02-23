@@ -87,7 +87,7 @@ class Moteur : public GameEngine {
     }
 
     float angle_rotation_soleil = 0;
-    float sunSpeed = 50.; 
+    float sunSpeed = 0.; 
     float speed_regulator = 2.;
     float earthspeed = sunSpeed/4.;
     float moonSpeed = earthspeed *2;
@@ -195,7 +195,9 @@ int main(void) {
         "shaders/sphere_vs.glsl", "shaders/sphere_fs.glsl",
         "assets/sphere.obj");
     if (mesh.has_value()) {
-        solar_system(engine,mesh.value());
+        Mesh temp = mesh.value();
+        temp.addTexture("assets/earth.jpg","grassTexture");
+        solar_system(engine,temp);
     } else {
         std::cout << "Mesh pas chargé correctement" << std::endl;
     }
