@@ -178,10 +178,18 @@ class FileLoader {
                                                 const char *objFile) {
         printf("Loading OBJ file %s...\n", objFile);
 
-        std::vector<unsigned int> vertexIndices, uvIndices, normalIndices;
+        struct VertexKey {
+            unsigned int v, vt, vn;
+            bool operator<(const VertexKey &other) const {
+                return std::tie(v, vt, vn) < std::tie(other.v, other.vt, other.vn);
+            }
+        };
+
         std::vector<glm::vec3> temp_vertices;
         std::vector<glm::vec2> temp_uvs;
         std::vector<glm::vec3> temp_normals;
+
+        std::vector<VertexKey> face_keys;
 
         FILE *file = fopen(objFile, "r");
         if (file == NULL) {
@@ -209,25 +217,19 @@ class FileLoader {
                 fscanf(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z);
                 temp_normals.push_back(normal);
             } else if (strcmp(lineHeader, "f") == 0) {
-                unsigned int vertexIndex[3], uvIndex[3], normalIndex[3];
+                unsigned int v[3], vt[3], vn[3];
                 int matches = fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n",
-                                    &vertexIndex[0], &uvIndex[0], &normalIndex[0],
-                                    &vertexIndex[1], &uvIndex[1], &normalIndex[1],
-                                    &vertexIndex[2], &uvIndex[2], &normalIndex[2]);
+                                    &v[0], &vt[0], &vn[0],
+                                    &v[1], &vt[1], &vn[1],
+                                    &v[2], &vt[2], &vn[2]);
                 if (matches != 9) {
                     printf("File can't be read by our simple parser :-(\n");
                     fclose(file);
                     return std::nullopt;
                 }
-                vertexIndices.push_back(vertexIndex[0]);
-                vertexIndices.push_back(vertexIndex[1]);
-                vertexIndices.push_back(vertexIndex[2]);
-                uvIndices.push_back(uvIndex[0]);
-                uvIndices.push_back(uvIndex[1]);
-                uvIndices.push_back(uvIndex[2]);
-                normalIndices.push_back(normalIndex[0]);
-                normalIndices.push_back(normalIndex[1]);
-                normalIndices.push_back(normalIndex[2]);
+                for (int i = 0; i < 3; ++i) {
+                    face_keys.push_back(VertexKey{v[i] - 1, vt[i] - 1, vn[i] - 1});
+                }
             } else {
                 char buffer[1000];
                 fgets(buffer, 1000, file);
@@ -235,7 +237,6 @@ class FileLoader {
         }
 
         fclose(file);
-
 
         // Center geometry at origin
         if (!temp_vertices.empty()) {
@@ -245,30 +246,40 @@ class FileLoader {
             for (auto &v : temp_vertices) v -= centroid;
         }
 
-        // Build triangles
+        // Build unique vertex list and triangles
+        std::vector<glm::vec3> unique_vertices;
+        std::vector<glm::vec3> unique_normals;
+        std::vector<glm::vec2> unique_uvs;
         std::vector<Triangle> triangles;
-        for (size_t i = 0; i < vertexIndices.size(); i += 3) {
-            glm::vec3 v0 = temp_vertices[vertexIndices[i] - 1];
-            glm::vec3 v1 = temp_vertices[vertexIndices[i + 1] - 1];
-            glm::vec3 v2 = temp_vertices[vertexIndices[i + 2] - 1];
-            triangles.push_back(Triangle(v0, v1, v2));
+        std::map<VertexKey, unsigned int> vertex_map;
+        std::vector<unsigned int> indices;
+
+        for (const auto &key : face_keys) {
+            auto it = vertex_map.find(key);
+            if (it == vertex_map.end()) {
+                unique_vertices.push_back(temp_vertices[key.v]);
+                unique_uvs.push_back(key.vt < temp_uvs.size() ? temp_uvs[key.vt] : glm::vec2(0.0f));
+                unique_normals.push_back(key.vn < temp_normals.size() ? temp_normals[key.vn] : glm::vec3(0.0f, 1.0f, 0.0f));
+                unsigned int idx = unique_vertices.size() - 1;
+                vertex_map[key] = idx;
+                indices.push_back(idx);
+            } else {
+                indices.push_back(it->second);
+            }
+        }
+
+        // Build triangles from indices
+        for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+            triangles.push_back(Triangle(unique_vertices[indices[i]], unique_vertices[indices[i + 1]], unique_vertices[indices[i + 2]]));
         }
 
         Mesh mesh(vertexShaderPath, fragmentShaderPath, triangles);
-
-        // Set normals
-        std::vector<glm::vec3> mesh_normals;
-        for (size_t i = 0; i < normalIndices.size(); ++i) {
-            mesh_normals.push_back(temp_normals[normalIndices[i] - 1]);
-        }
-        mesh.setNormals(mesh_normals);
+        mesh.setNormals(unique_normals);
 
         // Set texture coordinates
         std::map<glm::vec3, glm::vec2, VecCompare> mesh_texcoords;
-        for (size_t i = 0; i < uvIndices.size(); ++i) {
-            glm::vec3 vertex = temp_vertices[vertexIndices[i] - 1];
-            glm::vec2 uv = temp_uvs[uvIndices[i] - 1];
-            mesh_texcoords[vertex] = uv;
+        for (size_t i = 0; i < unique_vertices.size(); ++i) {
+            mesh_texcoords[unique_vertices[i]] = unique_uvs[i];
         }
         if (!mesh_texcoords.empty()) {
             mesh.addTextureCoords(mesh_texcoords);
