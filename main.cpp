@@ -100,6 +100,7 @@ class Moteur : public GameEngine {
 
 
     void processInput(float deltaTime) override {}
+
     void update(float deltaTime) override {
         angle_rotation_soleil += sunSpeed * speed_regulator * deltaTime;
         this->getScene().setTransform(sun,Transform().rotationY(angle_rotation_soleil));
@@ -142,7 +143,7 @@ void solar_system(Moteur &engine, const Mesh &mesh){
     sun = engine.getScene().addMeshAsChild(solarMovement,mesh).value();
     earthOrbit = engine.getScene().addBasicNodeAsChild(solarMovement).value();
     earth = engine.getScene().addMeshAsChild(earthOrbit, mesh).value();
-    moon = engine.getScene().addMeshAsChild(earthOrbit, mesh).value();
+     moon = engine.getScene().addMeshAsChild(earthOrbit, mesh).value();
 }
 
 
@@ -190,9 +191,9 @@ int main(void) {
 
     Moteur engine(window, width, height);
 
-    std::optional<Mesh> mesh = FileLoader::buildMeshFromOFF(
+    std::optional<Mesh> mesh = FileLoader::buildMeshFromOBJ(
         "shaders/sphere_vs.glsl", "shaders/sphere_fs.glsl",
-        "assets/unit_sphere_n.off");
+        "assets/sphere.obj");
     if (mesh.has_value()) {
         solar_system(engine,mesh.value());
     } else {
