@@ -2,7 +2,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/ext.hpp>
-
+#include <unordered_map>
 #include "src/Mesh.hpp"
 #include "src/Camera.hpp"
 #include "src/Controls.hpp"
@@ -12,6 +12,7 @@
 #include "src/Transform.hpp"
 
 GLFWwindow* window;
+int fps_scaling = 1;
 
 class MoteurSceneGraph : public GameEngine {
     SceneGraph sceneGraph;
@@ -50,8 +51,27 @@ class MoteurSceneGraph : public GameEngine {
 
         controls.addKeyDownCallback(GLFW_KEY_D,
             new KeyCallback([this](float dt) { this->getCamera().right(dt); }));
+
+        controls.addKeyPressedCallback(GLFW_KEY_1,
+            new KeyCallback([this](float)
+            { 
+                fps_scaling++;
+                if (fps_scaling == 3)  
+                    fps_scaling = 4;
+                if (fps_scaling > 4) 
+                    fps_scaling = 1;
+                this->setTargetFPS(fps_scaling * 30.0f);
+            }));
         setupScene();
     }
+
+    struct BodyNodes
+    {
+        SceneNode* orbit;
+        SceneNode* spin;
+    };
+
+    std::unordered_map<std::string, BodyNodes> bodies;
 
     SceneNode* createPlanet(const std::string& name, SceneNode* parent, float orbitDistance,
         float scale, float tiltAngle, const std::string& texturePath)
@@ -80,7 +100,7 @@ class MoteurSceneGraph : public GameEngine {
         SceneNode* body = sceneGraph.createNode(name, spin);
         body->getTransform().setLocalScale(scale, scale, scale);
         body->setMesh(mesh);
-
+        bodies[name] = { orbit, spin };
         return spin;
     }
 
@@ -111,7 +131,7 @@ class MoteurSceneGraph : public GameEngine {
         SceneNode* body = sceneGraph.createNode(name, spin);
         body->getTransform().setLocalScale(scale, scale, scale);
         body->setMesh(mesh);
-
+        bodies[name] = { orbit, spin };
         return spin;
     }
 
@@ -137,68 +157,88 @@ class MoteurSceneGraph : public GameEngine {
 
         // Mars
         createPlanet("Mars", SunRoot, scale * 10.0f, scale * 0.265f, 25.0f, "assets/textures/mars.jpg");
+        SceneNode* marsSpin = bodies["Mars"].spin;
+        createMoon("Phobos", marsSpin, 0.5f, 0.05f, 0.0f, "assets/textures/moon.png");
+        createMoon("Deimos", marsSpin, 0.8f, 0.04f, 0.0f, "assets/textures/moon.png");
 
         // Jupiter
         createPlanet("Jupiter", SunRoot, scale * 15.0f, scale * 1.25f, 3.1f, "assets/textures/jupiter.png");
+        SceneNode* jupiterSpin = bodies["Jupiter"].spin;
+        createMoon("Io",        jupiterSpin, 1.2f, 0.15f, 0.0f, "assets/textures/moon.png");
+        createMoon("Europa",    jupiterSpin, 1.6f, 0.14f, 0.0f, "assets/textures/moon.png");
+        createMoon("Ganymede",  jupiterSpin, 2.0f, 0.2f,  0.0f, "assets/textures/moon.png");
+        createMoon("Callisto",  jupiterSpin, 2.5f, 0.18f, 0.0f, "assets/textures/moon.png");
 
         // Saturne
         createPlanet("Saturn", SunRoot, scale * 19.0f, scale * 1.05f, 26.7f, "assets/textures/saturn.png");
+        SceneNode* saturnSpin = bodies["Saturn"].spin;
+        createMoon("Titan", saturnSpin, 1.5f, 0.18f, 0.0f, "assets/textures/moon.png");
 
         // Uranus
         createPlanet("Uranus", SunRoot, scale * 23.0f, scale * 0.8f, 97.8f, "assets/textures/uranus.png");
+        SceneNode* uranusSpin = bodies["Uranus"].spin;
+        createMoon("Titania", uranusSpin, 1.2f, 0.15f, 0.0f, "assets/textures/moon.png");
 
         // Neptune
         createPlanet("Neptune", SunRoot, scale * 27.0f, scale * 0.775f, 28.3f, "assets/textures/neptune.png");
+        SceneNode* neptuneSpin = bodies["Neptune"].spin;
+        createMoon("Triton", neptuneSpin, 1.3f, 0.16f, 157.0f, "assets/textures/moon.png");
     }
 
     void processInput(float) override {}
 
-void update(float delta) override
-{
-    float timeScale = 10.0f;
-    animationTime += delta * timeScale;
-
-    auto animateBody = [&](const std::string& name, float orbitSpeed, float spinSpeed)
+    void update(float delta) override
     {
-        SceneNode* orbit = sceneGraph.findNode(name + "_Orbit");
-        SceneNode* spin  = sceneGraph.findNode(name + "_Spin");
+        float timeScale = 10.0f;
+        animationTime += delta * timeScale;
 
-        if (orbit)
+        auto animateBody = [&](const std::string& name, float orbitSpeed, float spinSpeed)
         {
+            auto it = bodies.find(name);
+            if (it == bodies.end()) return;
+
+            SceneNode* orbit = it->second.orbit;
+            SceneNode* spin  = it->second.spin;
+
             orbit->getTransform().setLocalRotationEuler(
                 0.0f,
                 animationTime * orbitSpeed,
                 0.0f
             );
-        }
 
-        if (spin)
-        {
             spin->getTransform().setLocalRotationEuler(
                 0.0f,
                 animationTime * spinSpeed,
                 0.0f
             );
-        }
-    };
+        };
 
-    // solid
-    animateBody("Mercury", 4.7f, 20.0f);
-    animateBody("Venus",   3.5f,  5.0f);
-    animateBody("Earth",   3.0f, 25.0f);
-    animateBody("Mars",    2.4f, 22.0f);
+        // solid
+        animateBody("Mercury", 4.7f, 20.0f);
+        animateBody("Venus",   3.5f,  5.0f);
+        animateBody("Earth",   3.0f, 25.0f);
+        animateBody("Mars",    2.4f, 22.0f);
 
-    // gaz
-    animateBody("Jupiter", 1.3f, 40.0f);
-    animateBody("Saturn",  1.0f, 35.0f);
-    animateBody("Uranus",  0.7f, 30.0f);
-    animateBody("Neptune", 0.5f, 28.0f);
+        // gaz
+        animateBody("Jupiter", 1.3f, 40.0f);
+        animateBody("Saturn",  1.0f, 35.0f);
+        animateBody("Uranus",  0.7f, 30.0f);
+        animateBody("Neptune", 0.5f, 28.0f);
 
-    // moon
-    animateBody("Moon", 8.0f, 10.0f);
-
-    sceneGraph.update(delta);
-}
+        // moon
+        animateBody("Moon", 8.0f, 10.0f);
+        animateBody("Moon", 8.0f, 10.0f);
+        animateBody("Phobos", 20.0f, 5.0f);
+        animateBody("Deimos", 15.0f, 4.0f);
+        animateBody("Io", 15.0f, 8.0f);
+        animateBody("Europa", 12.0f, 7.0f);
+        animateBody("Ganymede", 10.0f, 6.0f);
+        animateBody("Callisto", 8.0f, 5.0f);
+        animateBody("Titan", 6.0f, 4.0f);
+        animateBody("Titania", 5.0f, 3.0f);
+        animateBody("Triton", 4.0f, 3.0f);
+        sceneGraph.update(delta);
+    }
 
     void render(float) override {
         sceneGraph.render(this->getCamera());

@@ -3,7 +3,8 @@
 
 #include <iostream>
 #include <vector>
-
+#include <chrono>
+#include <thread>
 #include <GLFW/glfw3.h>
 
 #include "src/Mesh.hpp"
@@ -17,7 +18,8 @@ using uint = unsigned int;
 
 class GameEngine {
     GLFWwindow *window;
-    
+    float targetFPS = 30.0f;
+    float targetFrameTime = 1.0f / targetFPS;
     float deltaTime = 0;
     float lastFrame = 0;
     
@@ -78,11 +80,15 @@ public:
         this->window = window;
     }
 
-    int run() {
+    int run()
+    {
         this->initInternal();
 
-        while (!this->stop) {
-            float currentFrame = glfwGetTime();
+        while (!this->stop)
+        {
+            float frameStart = glfwGetTime();
+
+            float currentFrame = frameStart;
             this->deltaTime = currentFrame - this->lastFrame;
             this->lastFrame = currentFrame;
 
@@ -92,13 +98,49 @@ public:
 
             glfwSwapBuffers(window);
             glfwPollEvents();
+
+            float frameEnd = glfwGetTime();
+            float frameDuration = frameEnd - frameStart;
+
+            if (frameDuration < targetFrameTime)
+            {
+                float sleepTime = targetFrameTime - frameDuration;
+                std::this_thread::sleep_for(
+                    std::chrono::duration<float>(sleepTime)
+                );
+            }
+
+            // fps
+            static float timer = 0.0f;
+            static int frameCount = 0;
+
+            timer += glfwGetTime() - frameStart;
+            frameCount++;
+
+            if (timer >= 1.0f)
+            {
+                float fps = frameCount / timer;
+
+                std::string title =
+                    "Scene Graph Engine | FPS: " + std::to_string((int)fps) +
+                    " | Limit: " + std::to_string((int)targetFPS);
+
+                glfwSetWindowTitle(window, title.c_str());
+
+                frameCount = 0;
+                timer = 0.0f;
+            }
         }
 
         this->cleanUpInternal();
-
         return 0;
     }
 
+    void setTargetFPS(float fps)
+    {
+    targetFPS = fps;
+    targetFrameTime = 1.0f / targetFPS;
+    }
     void stopRunning() {
         this->stop = true;
     }
