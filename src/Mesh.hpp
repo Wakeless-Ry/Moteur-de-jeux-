@@ -172,8 +172,9 @@ class Mesh : public Subject<glm::vec3> {
                        (void *)0);
 
         glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
         if (this->useTexture) {
-            glDisableVertexAttribArray(1);
+            glDisableVertexAttribArray(2);
         }
     }
 
