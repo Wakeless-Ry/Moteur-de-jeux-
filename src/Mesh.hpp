@@ -32,15 +32,6 @@ struct VecCompare {
     }
 };
 
-struct Triangle {
-    glm::vec3 a;
-    glm::vec3 b;
-    glm::vec3 c;
-
-    Triangle() {}
-    Triangle(glm::vec3 a, glm::vec3 b, glm::vec3 c) : a(a), b(b), c(c) {}
-};
-
 class Mesh : public Subject<glm::vec3> {
     GLuint programId;
 
@@ -63,12 +54,12 @@ class Mesh : public Subject<glm::vec3> {
 
   public:
     Mesh(const char *vertexShaderPath, const char *fragmentShaderPath,
-         const vector<Triangle> &triangles) {
+         const vector<glm::vec3> &vertices, const vector<ushort> &indices) {
         this->programId = LoadShaders(vertexShaderPath, fragmentShaderPath);
         glUseProgram(this->programId);
 
-        this->buildVertices(triangles);
-        this->buildIndices(triangles);
+        this->indexedVertices = vertices;
+        this->indices = indices;
 
         glGenBuffers(1, &this->vertexBuffer);
         glBindBuffer(GL_ARRAY_BUFFER, this->vertexBuffer);
@@ -83,44 +74,11 @@ class Mesh : public Subject<glm::vec3> {
                      GL_STATIC_DRAW);
     }
 
-  private:
-    void buildVertices(const vector<Triangle> &triangles) {
-        for (Triangle triangle : triangles) {
-            this->verticesIndexed[triangle.a];
-            this->verticesIndexed[triangle.b];
-            this->verticesIndexed[triangle.c];
-        }
-
-        this->indexedVertices.reserve(this->verticesIndexed.size());
-        ushort index = 0;
-        for (auto &pair : this->verticesIndexed) {
-            pair.second = index++;
-            this->indexedVertices.push_back(pair.first);
-        }
-    }
-
-    void buildIndices(const vector<Triangle> &triangles) {
-        size_t size = triangles.size();
-        this->indices.clear();
-        this->indices.resize(size * 3);
-
-        for (size_t i = 0; i < size; i++) {
-            this->indices[i * 3 + 0] = this->verticesIndexed[triangles[i].a];
-            this->indices[i * 3 + 1] = this->verticesIndexed[triangles[i].b];
-            this->indices[i * 3 + 2] = this->verticesIndexed[triangles[i].c];
-        }
-    }
-
   public:
     GLuint getId() { return this->programId; }
 
-    void addTextureCoords(
-        const map<glm::vec3, glm::vec2, VecCompare> &textureCoords) {
-        this->textureCoords.clear();
-
-        for (glm::vec3 vertex : this->indexedVertices) {
-            this->textureCoords.push_back(textureCoords.at(vertex));
-        }
+    void addTextureCoords(const std::vector<glm::vec2> &textureCoords) {
+        this->textureCoords = textureCoords;
 
         glUseProgram(this->programId);
         glGenBuffers(1, &this->textureBuffer);
