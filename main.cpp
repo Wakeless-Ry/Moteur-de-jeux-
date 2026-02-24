@@ -77,44 +77,50 @@ class Moteur : public GameEngine {
                                         this->getCamera().down_arrow(deltaTime);
                                     }));
 
-        controls.addKeyDownCallback(GLFW_KEY_H,
-                                    new KeyCallback([this](float deltaTime) {
-                                    }));
+        controls.addKeyDownCallback(
+            GLFW_KEY_H, new KeyCallback([this](float deltaTime) {}));
 
-        controls.addKeyDownCallback(GLFW_KEY_J,
-                                    new KeyCallback([this](float deltaTime) {
-                                    }));
+        controls.addKeyDownCallback(
+            GLFW_KEY_J, new KeyCallback([this](float deltaTime) {}));
     }
 
     float angle_rotation_soleil = 0;
-    float sunSpeed = 0.; 
+    float sunSpeed = 0.;
     float speed_regulator = 2.;
-    float earthspeed = sunSpeed/4.;
-    float moonSpeed = earthspeed *2;
-
+    float earthspeed = sunSpeed / 4.;
+    float moonSpeed = earthspeed * 2;
 
     float angle_terre_rotation = 0.0f;
     float angle_terre_revolution = 0.0f;
     float angle_lune_revolution = 0.0f;
     float angle_lune_rotation = 0.f;
 
-
     void processInput(float deltaTime) override {}
 
     void update(float deltaTime) override {
         angle_rotation_soleil += sunSpeed * speed_regulator * deltaTime;
-        this->getScene().setTransform(sun,Transform().rotationY(angle_rotation_soleil));
+        this->getScene().setTransform(
+            sun, Transform().rotationY(angle_rotation_soleil));
 
         angle_terre_revolution += sunSpeed * speed_regulator * deltaTime;
-        this->getScene().setTransform(earthOrbit,Transform().rotationY(angle_terre_revolution).translate(4,0,0).scale(0.5));
+        this->getScene().setTransform(earthOrbit,
+                                      Transform()
+                                          .rotationY(angle_terre_revolution)
+                                          .translate(4, 0, 0)
+                                          .scale(0.5));
 
         angle_terre_rotation += earthspeed * speed_regulator * deltaTime;
-        this->getScene().setTransform(earth,Transform().rotationX(23).rotationY(angle_terre_rotation));
-        
-        angle_lune_revolution += moonSpeed * speed_regulator * deltaTime;
-        angle_lune_rotation += moonSpeed * speed_regulator * deltaTime;        
-        this->getScene().setTransform(moon, Transform().rotationY(angle_lune_revolution).translate(2, 0, 0).scale(0.5).rotationY(angle_lune_rotation));
+        this->getScene().setTransform(
+            earth, Transform().rotationX(23).rotationY(angle_terre_rotation));
 
+        angle_lune_revolution += moonSpeed * speed_regulator * deltaTime;
+        angle_lune_rotation += moonSpeed * speed_regulator * deltaTime;
+        this->getScene().setTransform(moon,
+                                      Transform()
+                                          .rotationY(angle_lune_revolution)
+                                          .translate(2, 0, 0)
+                                          .scale(0.5)
+                                          .rotationY(angle_lune_rotation));
     }
     void render(float deltaTime) override {}
     void cleanUp() override {}
@@ -137,15 +143,13 @@ int initializeGlew() {
     return 0;
 }
 
-
-void solar_system(Moteur &engine, const Mesh &mesh){
+void solar_system(Moteur &engine, const Mesh &mesh) {
     solarMovement = engine.getScene().addBasicNode();
-    sun = engine.getScene().addMeshAsChild(solarMovement,mesh).value();
+    sun = engine.getScene().addMeshAsChild(solarMovement, mesh).value();
     earthOrbit = engine.getScene().addBasicNodeAsChild(solarMovement).value();
     earth = engine.getScene().addMeshAsChild(earthOrbit, mesh).value();
-     moon = engine.getScene().addMeshAsChild(earthOrbit, mesh).value();
+    moon = engine.getScene().addMeshAsChild(earthOrbit, mesh).value();
 }
-
 
 int main(void) {
     if (!glfwInit()) {
@@ -196,8 +200,8 @@ int main(void) {
         "assets/sphere.obj");
     if (mesh.has_value()) {
         Mesh temp = mesh.value();
-        temp.addTexture("assets/earth.jpg","grassTexture");
-        solar_system(engine,temp);
+        temp.addTexture("assets/earth.jpg", "grassTexture");
+        solar_system(engine, temp);
     } else {
         std::cout << "Mesh pas chargé correctement" << std::endl;
     }

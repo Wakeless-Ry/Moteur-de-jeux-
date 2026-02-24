@@ -12,85 +12,55 @@
 
 class FileLoader {
   public:
-    static optional<Mesh> buildMeshFromOFF(const char *vertexShaderPath,
-                                           const char *fragmentShaderPath,
-                                           const char *offFile,
-                                           bool load_normals = true) {
-        std::ifstream myfile;
+    // static optional<Mesh> buildMeshFromOFF(const char *vertexShaderPath,
+    //                                        const char *fragmentShaderPath,
+    //                                        const char *offFile,
+    //                                        bool load_normals = true) {
+    //     std::ifstream myfile;
 
-        myfile.open(offFile);
+    //     myfile.open(offFile);
 
-        if (!myfile.is_open()) {
-            std::cout << offFile << " cannot be opened" << std::endl;
-            return std::nullopt;
-        }
+    //     if (!myfile.is_open()) {
+    //         std::cout << offFile << " cannot be opened" << std::endl;
+    //         return std::nullopt;
+    //     }
 
-        std::string magic_s;
+    //     std::string magic_s;
 
-        myfile >> magic_s;
+    //     myfile >> magic_s;
 
-        if (magic_s != "OFF") {
-            std::cout << magic_s << " != OFF : Not a true OFF file"
-                      << std::endl;
-            myfile.close();
-            return std::nullopt;
-        }
+    //     if (magic_s != "OFF") {
+    //         std::cout << magic_s << " != OFF : Not a true OFF file"
+    //                   << std::endl;
+    //         myfile.close();
+    //         return std::nullopt;
+    //     }
 
-        int n_vertices, n_faces, dummy_int;
-        myfile >> n_vertices >> n_faces >> dummy_int;
+    //     int n_vertices, n_faces, dummy_int;
+    //     myfile >> n_vertices >> n_faces >> dummy_int;
 
-        std::vector<glm::vec3> o_vertices;
-        std::vector<glm::vec3> o_normals;
-        std::vector<Triangle> o_triangles;
+    //     std::vector<glm::vec3> o_vertices;
+    //     std::vector<glm::vec3> o_normals;
 
-        o_vertices.clear();
-        o_normals.clear();
+    //     o_vertices.clear();
+    //     o_normals.clear();
 
-        for (int v = 0; v < n_vertices; ++v) {
-            float x, y, z;
+    //     for (int v = 0; v < n_vertices; ++v) {
+    //         float x, y, z;
 
-            myfile >> x >> y >> z;
-            o_vertices.push_back(glm::vec3(x, y, z));
+    //         myfile >> x >> y >> z;
+    //         o_vertices.push_back(glm::vec3(x, y, z));
 
-            if (load_normals) {
-                myfile >> x >> y >> z;
-                o_normals.push_back(glm::vec3(x, y, z));
-            }
-        }
+    //         if (load_normals) {
+    //             myfile >> x >> y >> z;
+    //             o_normals.push_back(glm::vec3(x, y, z));
+    //         }
+    //     }
 
-        o_triangles.clear();
-        for (int f = 0; f < n_faces; ++f) {
-            int n_vertices_on_face;
-            myfile >> n_vertices_on_face;
-
-            if (n_vertices_on_face == 3) {
-                unsigned int _v1, _v2, _v3;
-                myfile >> _v1 >> _v2 >> _v3;
-
-                o_triangles.push_back(Triangle(o_vertices[_v1], o_vertices[_v2],
-                                               o_vertices[_v3]));
-            } else if (n_vertices_on_face == 4) {
-                unsigned int _v1, _v2, _v3, _v4;
-                myfile >> _v1 >> _v2 >> _v3 >> _v4;
-
-                o_triangles.push_back(Triangle(o_vertices[_v1], o_vertices[_v2],
-                                               o_vertices[_v3]));
-                o_triangles.push_back(Triangle(o_vertices[_v1], o_vertices[_v3],
-                                               o_vertices[_v4]));
-
-            } else {
-                std::cout << "We handle ONLY *.off files with 3 or 4 vertices "
-                             "per face"
-                          << std::endl;
-                myfile.close();
-                return std::nullopt;
-            }
-        }
-
-        Mesh mesh(vertexShaderPath, fragmentShaderPath, o_triangles);
-        mesh.setNormals(o_normals);
-        return mesh;
-    }
+    //     Mesh mesh(vertexShaderPath, fragmentShaderPath, o_vertices);
+    //     mesh.setNormals(o_normals);
+    //     return mesh;
+    // }
 
     static std::optional<Mesh> buildMeshFromOBJ(const char *vertexShaderPath,
                                                 const char *fragmentShaderPath,
@@ -100,7 +70,8 @@ class FileLoader {
         struct VertexKey {
             unsigned int v, vt, vn;
             bool operator<(const VertexKey &other) const {
-                return std::tie(v, vt, vn) < std::tie(other.v, other.vt, other.vn);
+                return std::tie(v, vt, vn) <
+                       std::tie(other.v, other.vt, other.vn);
             }
         };
 
@@ -138,16 +109,16 @@ class FileLoader {
             } else if (strcmp(lineHeader, "f") == 0) {
                 unsigned int v[3], vt[3], vn[3];
                 int matches = fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n",
-                                    &v[0], &vt[0], &vn[0],
-                                    &v[1], &vt[1], &vn[1],
-                                    &v[2], &vt[2], &vn[2]);
+                                     &v[0], &vt[0], &vn[0], &v[1], &vt[1],
+                                     &vn[1], &v[2], &vt[2], &vn[2]);
                 if (matches != 9) {
                     printf("File can't be read by our simple parser :-(\n");
                     fclose(file);
                     return std::nullopt;
                 }
                 for (int i = 0; i < 3; ++i) {
-                    face_keys.push_back(VertexKey{v[i] - 1, vt[i] - 1, vn[i] - 1});
+                    face_keys.push_back(
+                        VertexKey{v[i] - 1, vt[i] - 1, vn[i] - 1});
                 }
             } else {
                 char buffer[1000];
@@ -160,16 +131,17 @@ class FileLoader {
         // Center geometry at origin
         if (!temp_vertices.empty()) {
             glm::vec3 centroid(0.0f);
-            for (const auto &v : temp_vertices) centroid += v;
+            for (const auto &v : temp_vertices)
+                centroid += v;
             centroid /= static_cast<float>(temp_vertices.size());
-            for (auto &v : temp_vertices) v -= centroid;
+            for (auto &v : temp_vertices)
+                v -= centroid;
         }
 
         // Build unique vertex list and triangles
         std::vector<glm::vec3> unique_vertices;
         std::vector<glm::vec3> unique_normals;
         std::vector<glm::vec2> unique_uvs;
-        std::vector<Triangle> triangles;
         std::map<VertexKey, unsigned int> vertex_map;
         std::vector<unsigned int> indices;
 
@@ -177,8 +149,12 @@ class FileLoader {
             auto it = vertex_map.find(key);
             if (it == vertex_map.end()) {
                 unique_vertices.push_back(temp_vertices[key.v]);
-                unique_uvs.push_back(key.vt < temp_uvs.size() ? temp_uvs[key.vt] : glm::vec2(0.0f));
-                unique_normals.push_back(key.vn < temp_normals.size() ? temp_normals[key.vn] : glm::vec3(0.0f, 1.0f, 0.0f));
+                unique_uvs.push_back(key.vt < temp_uvs.size()
+                                         ? temp_uvs[key.vt]
+                                         : glm::vec2(0.0f));
+                unique_normals.push_back(key.vn < temp_normals.size()
+                                             ? temp_normals[key.vn]
+                                             : glm::vec3(0.0f, 1.0f, 0.0f));
                 unsigned int idx = unique_vertices.size() - 1;
                 vertex_map[key] = idx;
                 indices.push_back(idx);
@@ -187,27 +163,15 @@ class FileLoader {
             }
         }
 
-        // Build triangles from indices
-        for (size_t i = 0; i + 2 < indices.size(); i += 3) {
-            triangles.push_back(Triangle(unique_vertices[indices[i]], unique_vertices[indices[i + 1]], unique_vertices[indices[i + 2]]));
-        }
+        vector<ushort> ushort_indices(indices.begin(), indices.end());
 
-        Mesh mesh(vertexShaderPath, fragmentShaderPath, triangles);
+        Mesh mesh(vertexShaderPath, fragmentShaderPath, unique_vertices,
+                  ushort_indices);
         mesh.setNormals(unique_normals);
-
-        // Set texture coordinates
-        std::map<glm::vec3, glm::vec2, VecCompare> mesh_texcoords;
-        for (size_t i = 0; i < unique_vertices.size(); ++i) {
-            mesh_texcoords[unique_vertices[i]] = unique_uvs[i];
-        }
-        if (!mesh_texcoords.empty()) {
-            mesh.addTextureCoords(mesh_texcoords);
-        }
+        mesh.addTextureCoords(unique_uvs);
 
         return mesh;
     }
-
-
 };
 
 #endif // FILE_LOADER
