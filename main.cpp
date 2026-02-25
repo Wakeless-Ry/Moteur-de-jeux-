@@ -77,51 +77,64 @@ class Moteur : public GameEngine {
                                         this->getCamera().down_arrow(deltaTime);
                                     }));
 
-        controls.addKeyDownCallback(
-            GLFW_KEY_H, new KeyCallback([this](float deltaTime) {}));
+        controls.addKeyDownCallback(GLFW_KEY_H,
+                                    new KeyCallback([this](float deltaTime) {
+                                        speedRegulator += 10.f * deltaTime;
+                                    }));
 
-        controls.addKeyDownCallback(
-            GLFW_KEY_J, new KeyCallback([this](float deltaTime) {}));
+        controls.addKeyDownCallback(GLFW_KEY_J,
+                                    new KeyCallback([this](float deltaTime) {
+                                        speedRegulator -= 10.f * deltaTime;
+                                    }));
     }
 
-    float angle_rotation_soleil = 0;
-    float sunSpeed = 0.;
-    float speed_regulator = 2.;
-    float earthspeed = sunSpeed / 4.;
-    float moonSpeed = earthspeed * 2;
+    float speedRegulator = 30.f;
 
-    float angle_terre_rotation = 0.0f;
-    float angle_terre_revolution = 0.0f;
-    float angle_lune_revolution = 0.0f;
-    float angle_lune_rotation = 0.f;
+    float earthYearRatio = 1.0f;
+    float moonMonthRatio = 12.37f;
+
+    float earthSelfRotationRatio = 365.f;
+    float moonSelfRotationRatio = 12.37f;
+
+    float angle_sun = 0.f;
+    float angle_earth_revolution = 0.f;
+    float angle_earth_rotation = 0.f;
+    float angle_moon_revolution = 0.f;
+    float angle_moon_rotation = 0.f;
 
     void processInput(float deltaTime) override {}
 
     void update(float deltaTime) override {
-        angle_rotation_soleil += sunSpeed * speed_regulator * deltaTime;
+        angle_sun += speedRegulator * 0.2f * deltaTime;
         this->getScene().setTransform(
-            sun, Transform().rotationY(angle_rotation_soleil));
+            sun, Transform().rotationY(angle_sun).scale(1.5f));
 
-        angle_terre_revolution += sunSpeed * speed_regulator * deltaTime;
+        angle_earth_revolution += speedRegulator * earthYearRatio * deltaTime;
         this->getScene().setTransform(earthOrbit,
                                       Transform()
-                                          .rotationY(angle_terre_revolution)
-                                          .translate(4, 0, 0)
-                                          .scale(0.5));
+                                          .rotationY(angle_earth_revolution)
+                                          .translate(4.f, 0.f, 0.f));
 
-        angle_terre_rotation += earthspeed * speed_regulator * deltaTime;
-        this->getScene().setTransform(
-            earth, Transform().rotationX(23).rotationY(angle_terre_rotation));
+        angle_earth_rotation +=
+            speedRegulator * earthSelfRotationRatio * deltaTime;
 
-        angle_lune_revolution += moonSpeed * speed_regulator * deltaTime;
-        angle_lune_rotation += moonSpeed * speed_regulator * deltaTime;
+        this->getScene().setTransform(earth,
+                                      Transform()
+                                          .rotationX(23.f)
+                                          .rotationY(angle_earth_rotation)
+                                          .scale(0.6f));
+
+        angle_moon_revolution +=
+            speedRegulator * earthYearRatio * moonMonthRatio * deltaTime;
+
         this->getScene().setTransform(moon,
                                       Transform()
-                                          .rotationY(angle_lune_revolution)
-                                          .translate(2, 0, 0)
-                                          .scale(0.5)
-                                          .rotationY(angle_lune_rotation));
+                                          .rotationY(angle_moon_revolution)
+                                          .translate(1.5f, 0.f, 0.f)
+                                          .scale(0.25f));
+        angle_moon_rotation = angle_moon_revolution;
     }
+
     void render(float deltaTime) override {}
     void cleanUp() override {}
 
@@ -143,12 +156,13 @@ int initializeGlew() {
     return 0;
 }
 
-void solar_system(Moteur &engine, const Mesh &mesh) {
+void solar_system(Moteur &engine, const Mesh &sunMesh, const Mesh &earthMesh,
+                  const Mesh &moonMesh) {
     solarMovement = engine.getScene().addBasicNode();
-    sun = engine.getScene().addMeshAsChild(solarMovement, mesh).value();
+    sun = engine.getScene().addMeshAsChild(solarMovement, sunMesh).value();
     earthOrbit = engine.getScene().addBasicNodeAsChild(solarMovement).value();
-    earth = engine.getScene().addMeshAsChild(earthOrbit, mesh).value();
-    moon = engine.getScene().addMeshAsChild(earthOrbit, mesh).value();
+    earth = engine.getScene().addMeshAsChild(earthOrbit, earthMesh).value();
+    moon = engine.getScene().addMeshAsChild(earthOrbit, moonMesh).value();
 }
 
 int main(void) {
@@ -195,13 +209,27 @@ int main(void) {
 
     Moteur engine(window, width, height);
 
-    std::optional<Mesh> mesh = FileLoader::buildMeshFromOBJ(
+    std::optional<Mesh> sunMeshOpt = FileLoader::buildMeshFromOBJ(
         "shaders/sphere_vs.glsl", "shaders/sphere_fs.glsl",
         "assets/sphere.obj");
-    if (mesh.has_value()) {
-        Mesh temp = mesh.value();
-        temp.addTexture("assets/earth.jpg", "grassTexture");
-        solar_system(engine, temp);
+    std::optional<Mesh> earthMeshOpt = FileLoader::buildMeshFromOBJ(
+        "shaders/sphere_vs.glsl", "shaders/sphere_fs.glsl",
+        "assets/sphere.obj");
+    std::optional<Mesh> moonMeshOpt = FileLoader::buildMeshFromOBJ(
+        "shaders/sphere_vs.glsl", "shaders/sphere_fs.glsl",
+        "assets/sphere.obj");
+
+    if (sunMeshOpt.has_value() && earthMeshOpt.has_value() &&
+        moonMeshOpt.has_value()) {
+        Mesh sunMesh = sunMeshOpt.value();
+        Mesh earthMesh = earthMeshOpt.value();
+        Mesh moonMesh = moonMeshOpt.value();
+
+        sunMesh.addTexture("assets/sun.jpg", "planetTexture");
+        earthMesh.addTexture("assets/earth.jpg", "planetTexture");
+        moonMesh.addTexture("assets/moon.png", "planetTexture");
+
+        solar_system(engine, sunMesh, earthMesh, moonMesh);
     } else {
         std::cout << "Mesh pas chargé correctement" << std::endl;
     }
