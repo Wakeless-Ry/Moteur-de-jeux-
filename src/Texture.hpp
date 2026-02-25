@@ -20,7 +20,7 @@ class Texture {
   public:
     Texture() : texId(0) {}
 
-    Texture(const char *path, int pos) : texId(0), pos(0) { 
+    Texture(const char *path, int pos) : texId(0), pos(0) {
         int width, height, nrChannels;
         unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 0);
 

@@ -76,64 +76,11 @@ class Moteur : public GameEngine {
                                     new KeyCallback([this](float deltaTime) {
                                         this->getCamera().down_arrow(deltaTime);
                                     }));
-
-        controls.addKeyDownCallback(GLFW_KEY_H,
-                                    new KeyCallback([this](float deltaTime) {
-                                        speedRegulator += 10.f * deltaTime;
-                                    }));
-
-        controls.addKeyDownCallback(GLFW_KEY_J,
-                                    new KeyCallback([this](float deltaTime) {
-                                        speedRegulator -= 10.f * deltaTime;
-                                    }));
     }
-
-    float speedRegulator = 30.f;
-
-    float earthYearRatio = 1.0f;
-    float moonMonthRatio = 12.37f;
-
-    float earthSelfRotationRatio = 365.f;
-    float moonSelfRotationRatio = 12.37f;
-
-    float angle_sun = 0.f;
-    float angle_earth_revolution = 0.f;
-    float angle_earth_rotation = 0.f;
-    float angle_moon_revolution = 0.f;
-    float angle_moon_rotation = 0.f;
 
     void processInput(float deltaTime) override {}
 
-    void update(float deltaTime) override {
-        angle_sun += speedRegulator * 0.2f * deltaTime;
-        this->getScene().setTransform(
-            sun, Transform().rotationY(angle_sun).scale(1.5f));
-
-        angle_earth_revolution += speedRegulator * earthYearRatio * deltaTime;
-        this->getScene().setTransform(earthOrbit,
-                                      Transform()
-                                          .rotationY(angle_earth_revolution)
-                                          .translate(4.f, 0.f, 0.f));
-
-        angle_earth_rotation +=
-            speedRegulator * earthSelfRotationRatio * deltaTime;
-
-        this->getScene().setTransform(earth,
-                                      Transform()
-                                          .rotationX(23.f)
-                                          .rotationY(angle_earth_rotation)
-                                          .scale(0.6f));
-
-        angle_moon_revolution +=
-            speedRegulator * earthYearRatio * moonMonthRatio * deltaTime;
-
-        this->getScene().setTransform(moon,
-                                      Transform()
-                                          .rotationY(angle_moon_revolution)
-                                          .translate(1.5f, 0.f, 0.f)
-                                          .scale(0.25f));
-        angle_moon_rotation = angle_moon_revolution;
-    }
+    void update(float deltaTime) override {}
 
     void render(float deltaTime) override {}
     void cleanUp() override {}
@@ -154,15 +101,6 @@ int initializeGlew() {
     }
 
     return 0;
-}
-
-void solar_system(Moteur &engine, const Mesh &sunMesh, const Mesh &earthMesh,
-                  const Mesh &moonMesh) {
-    solarMovement = engine.getScene().addBasicNode();
-    sun = engine.getScene().addMeshAsChild(solarMovement, sunMesh).value();
-    earthOrbit = engine.getScene().addBasicNodeAsChild(solarMovement).value();
-    earth = engine.getScene().addMeshAsChild(earthOrbit, earthMesh).value();
-    moon = engine.getScene().addMeshAsChild(earthOrbit, moonMesh).value();
 }
 
 int main(void) {
@@ -209,27 +147,13 @@ int main(void) {
 
     Moteur engine(window, width, height);
 
-    std::optional<Mesh> sunMeshOpt = FileLoader::buildMeshFromOBJ(
-        "shaders/sphere_vs.glsl", "shaders/sphere_fs.glsl",
-        "assets/sphere.obj");
-    std::optional<Mesh> earthMeshOpt = FileLoader::buildMeshFromOBJ(
-        "shaders/sphere_vs.glsl", "shaders/sphere_fs.glsl",
-        "assets/sphere.obj");
-    std::optional<Mesh> moonMeshOpt = FileLoader::buildMeshFromOBJ(
-        "shaders/sphere_vs.glsl", "shaders/sphere_fs.glsl",
-        "assets/sphere.obj");
+    std::optional<Mesh> sphereMesh = FileLoader::buildMeshFromOBJ(
+        "shaders/PBR_sphere_vs.glsl", "shaders/PBR_sphere_fs.glsl",
+        "assets/big_sphere2.obj");
 
-    if (sunMeshOpt.has_value() && earthMeshOpt.has_value() &&
-        moonMeshOpt.has_value()) {
-        Mesh sunMesh = sunMeshOpt.value();
-        Mesh earthMesh = earthMeshOpt.value();
-        Mesh moonMesh = moonMeshOpt.value();
-
-        sunMesh.addTexture("assets/sun.jpg", "planetTexture");
-        earthMesh.addTexture("assets/earth.jpg", "planetTexture");
-        moonMesh.addTexture("assets/moon.png", "planetTexture");
-
-        solar_system(engine, sunMesh, earthMesh, moonMesh);
+    if (sphereMesh.has_value()) {
+        Mesh sphere = sphereMesh.value();
+        engine.getScene().addMesh(sphere);
     } else {
         std::cout << "Mesh pas chargé correctement" << std::endl;
     }

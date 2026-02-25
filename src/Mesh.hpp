@@ -90,8 +90,8 @@ class Mesh : public Subject<glm::vec3> {
 
     void addTexture(const char *texturePath, const char *varName) {
         this->useTexture = true;
-        Texture newTexture(texturePath, 0); 
-        this->textures.clear(); 
+        Texture newTexture(texturePath, 0);
+        this->textures.clear();
         this->textures.push_back(newTexture);
     }
 
@@ -109,6 +109,13 @@ class Mesh : public Subject<glm::vec3> {
         glm::mat4 projection = camera.getProjection();
         glUniformMatrix4fv(glGetUniformLocation(this->programId, "projection"),
                            1, GL_FALSE, glm::value_ptr(projection));
+
+        glm::vec3 cameraPos = camera.getPosition();
+        glUniform3fv(glGetUniformLocation(this->programId, "camPos"), 1,
+                     glm::value_ptr(cameraPos));
+
+        std::cout << cameraPos.x << " " << cameraPos.y << " " << cameraPos.z
+                  << std::endl;
 
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, this->vertexBuffer);
