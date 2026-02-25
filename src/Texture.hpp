@@ -20,13 +20,13 @@ class Texture {
   public:
     Texture() : texId(0) {}
 
-    Texture(const char *path, int pos) : texId(0), pos(pos) {
+    Texture(const char *path, int pos) : texId(0), pos(0) { 
         int width, height, nrChannels;
         unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 0);
 
         if (data != nullptr) {
             glGenTextures(1, &texId);
-            glActiveTexture(GL_TEXTURE0 + this->pos);
+            glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, texId);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -51,9 +51,9 @@ class Texture {
 
     void bind(GLuint programId, const char *name) const {
         glUseProgram(programId);
-        glActiveTexture(GL_TEXTURE0 + this->pos);
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, this->texId);
-        glUniform1i(glGetUniformLocation(programId, name), this->pos);
+        glUniform1i(glGetUniformLocation(programId, name), 0);
     }
 
     void cleanUp() {

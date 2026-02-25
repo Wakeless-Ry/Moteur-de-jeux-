@@ -90,9 +90,8 @@ class Mesh : public Subject<glm::vec3> {
 
     void addTexture(const char *texturePath, const char *varName) {
         this->useTexture = true;
-        Texture newTexture(texturePath, this->textures.size());
-        newTexture.bind(this->programId, varName);
-
+        Texture newTexture(texturePath, 0); 
+        this->textures.clear(); 
         this->textures.push_back(newTexture);
     }
 
@@ -119,10 +118,11 @@ class Mesh : public Subject<glm::vec3> {
         glBindBuffer(GL_ARRAY_BUFFER, this->normalBuffer);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
 
-        if (this->useTexture) {
+        if (this->useTexture && !this->textures.empty()) {
             glEnableVertexAttribArray(2);
             glBindBuffer(GL_ARRAY_BUFFER, this->textureBuffer);
             glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
+            this->textures[0].bind(this->programId, "planetTexture");
         }
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->elementBuffer);
 
