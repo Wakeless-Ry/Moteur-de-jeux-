@@ -2,8 +2,6 @@
 
 in vec3 normal_viewspace;
 out vec4 color;
-uniform sampler2D earthTexture;
-uniform sampler2D moonTexture;
 uniform sampler2D planetTexture;
 
 in vec2 texcoord;
