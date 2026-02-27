@@ -1,3 +1,4 @@
+#include "src/scene_examples.hpp"
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -76,6 +77,14 @@ class Moteur : public GameEngine {
                                     new KeyCallback([this](float deltaTime) {
                                         this->getCamera().down_arrow(deltaTime);
                                     }));
+        controls.addKeyDownCallback(GLFW_KEY_SPACE,
+                                    new KeyCallback([this](float deltaTime) {
+                                        this->getCamera().space(deltaTime);
+                                    }));
+        controls.addKeyDownCallback(GLFW_KEY_LEFT_SHIFT,
+                                    new KeyCallback([this](float deltaTime) {
+                                        this->getCamera().left_shift(deltaTime);
+                                    }));
     }
 
     void processInput(float deltaTime) override {}
@@ -146,17 +155,11 @@ int main(void) {
     glfwGetFramebufferSize(window, &width, &height);
 
     Moteur engine(window, width, height);
-
-    std::optional<Mesh> sphereMesh = FileLoader::buildMeshFromOBJ(
-        "shaders/PBR_sphere_vs.glsl", "shaders/PBR_sphere_fs.glsl",
-        "assets/big_sphere2.obj");
-
-    if (sphereMesh.has_value()) {
-        Mesh sphere = sphereMesh.value();
-        engine.getScene().addMesh(sphere);
-    } else {
-        std::cout << "Mesh pas chargé correctement" << std::endl;
-    }
+    // engine.setScene(getPBRbenchmarkScene(7));
+    int maxSize;
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxSize);
+    std::cout << maxSize << std::endl;
+    engine.setScene(getPBRbenchmarkSceneTexture(1));
 
     engine.run();
 

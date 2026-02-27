@@ -6,12 +6,16 @@ in vec3 WorldPos;
 in vec3 Normal;
   
 uniform vec3 camPos;
-uniform vec3  albedo;
-uniform float metallic;
-uniform float roughness;
-uniform float ao;
 
-const vec3 lightPositions = vec3(5,5,5);
+uniform sampler2D albedoMap;
+uniform sampler2D normalMap;
+uniform sampler2D metallicMap;
+uniform sampler2D roughnessMap;
+uniform float ao;
+// uniform float metallic;
+// uniform float roughness;
+
+const vec3 lightPositions = vec3(0,2,0);
 const vec3 lightColors = vec3(500, 500, 500);
 
 const float PI = 3.14159265359;
@@ -55,10 +59,31 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
+vec3 getNormalFromMap()
+{
+    vec3 tangentNormal = texture(normalMap, TexCoords).xyz * 2.0 - 1.0;
+
+    vec3 Q1  = dFdx(WorldPos);
+    vec3 Q2  = dFdy(WorldPos);
+    vec2 st1 = dFdx(TexCoords);
+    vec2 st2 = dFdy(TexCoords);
+
+    vec3 N   = normalize(Normal);
+    vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
+    vec3 B  = -normalize(cross(N, T));
+    mat3 TBN = mat3(T, B, N);
+
+    return normalize(TBN * tangentNormal);
+}
 
 void main()
 {		
-    vec3 N = normalize(Normal);
+    vec3 albedo     = pow(texture(albedoMap, TexCoords).rgb, vec3(2.2));
+    float metallic  = texture(metallicMap, TexCoords).r;
+    float roughness = texture(roughnessMap, TexCoords).r;
+
+    vec3 N = getNormalFromMap();
+    // vec3 N = normalize(Normal);
     vec3 V = normalize(camPos - WorldPos);
 
     vec3 F0 = vec3(0.04); 
@@ -98,5 +123,5 @@ void main()
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0/2.2));  
    
-    FragColor = vec4(color, 1.0);
+    FragColor = texture(metallicMap, TexCoords);
 } 

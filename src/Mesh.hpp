@@ -6,6 +6,7 @@
 
 #include <GL/glew.h>
 
+#include "glm/detail/type_vec.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "lib/shader.hpp"
 
@@ -47,6 +48,11 @@ class Mesh : public Subject<glm::vec3> {
     GLuint textureBuffer;
     GLuint normalBuffer;
 
+    glm::vec3 albedo = {0, 0, 0};
+    float metallic = 0.f;
+    float roughness = 0.f;
+    float ao = 1.f;
+
     bool useTexture = false;
     vector<Texture> textures;
 
@@ -77,6 +83,16 @@ class Mesh : public Subject<glm::vec3> {
   public:
     GLuint getId() { return this->programId; }
 
+    const glm::vec3 &getAlbedo() const { return albedo; }
+    float getMetallic() const { return metallic; }
+    float getRoughness() const { return roughness; }
+    float getAo() const { return ao; }
+
+    void setAlbedo(const glm::vec3 &value) { albedo = value; }
+    void setMetallic(float value) { metallic = value; }
+    void setRoughness(float value) { roughness = value; }
+    void setAo(float value) { ao = value; }
+
     void addTextureCoords(const std::vector<glm::vec2> &textureCoords) {
         this->textureCoords = textureCoords;
 
@@ -90,12 +106,15 @@ class Mesh : public Subject<glm::vec3> {
 
     void addTexture(const char *texturePath, const char *varName) {
         this->useTexture = true;
-        Texture newTexture(texturePath, 0);
-        this->textures.clear();
+        Texture newTexture(texturePath, this->textures.size());
+        newTexture.bind(this->programId, varName);
         this->textures.push_back(newTexture);
     }
 
     void draw(const Camera &camera) const {
+        printf("Verts: %zu, Normals: %zu, TexCoords: %zu, Indices: %zu\n",
+               indexedVertices.size(), normals.size(), textureCoords.size(),
+               indices.size());
         glUseProgram(this->programId);
 
         glm::mat4 model = this->transform.getMatrix();
@@ -114,8 +133,16 @@ class Mesh : public Subject<glm::vec3> {
         glUniform3fv(glGetUniformLocation(this->programId, "camPos"), 1,
                      glm::value_ptr(cameraPos));
 
-        std::cout << cameraPos.x << " " << cameraPos.y << " " << cameraPos.z
-                  << std::endl;
+        glUniform3fv(glGetUniformLocation(this->programId, "albedo"), 1,
+                     glm::value_ptr(this->albedo));
+
+        glUniform1f(glGetUniformLocation(this->programId, "metallic"),
+                    this->metallic);
+
+        glUniform1f(glGetUniformLocation(this->programId, "roughness"),
+                    this->roughness);
+
+        glUniform1f(glGetUniformLocation(this->programId, "ao"), this->ao);
 
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, this->vertexBuffer);
@@ -129,7 +156,6 @@ class Mesh : public Subject<glm::vec3> {
             glEnableVertexAttribArray(2);
             glBindBuffer(GL_ARRAY_BUFFER, this->textureBuffer);
             glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
-            this->textures[0].bind(this->programId, "planetTexture");
         }
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->elementBuffer);
 

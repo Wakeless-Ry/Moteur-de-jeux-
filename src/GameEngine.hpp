@@ -107,6 +107,7 @@ class GameEngine {
     Controls &getControls() { return this->controls; }
 
     Scene &getScene() { return this->scene; }
+    void setScene(const Scene &other) { this->scene = other; }
 
     virtual void init() {};
     virtual void processInput(float deltaTime) {};

@@ -270,6 +270,38 @@ class Camera : public Observer<vec3> {
         }
     }
 
+    void space(float deltaTime) {
+        switch (this->mode) {
+        case LOOK_AT:
+        case ROTATE:
+            break;
+        case FRONT:
+        case HOVER:
+            this->position +=
+                normalize(this->position * vec3(.0f, 1.0f, 0.0f)) *
+                this->translationSpeed * deltaTime;
+            break;
+        case Count:
+            break;
+        }
+    }
+
+    void left_shift(float deltaTime) {
+        switch (this->mode) {
+        case LOOK_AT:
+        case ROTATE:
+            break;
+        case FRONT:
+        case HOVER:
+            this->position +=
+                normalize(this->position * vec3(.0f, -1.0f, 0.0f)) *
+                this->translationSpeed * deltaTime;
+            break;
+        case Count:
+            break;
+        }
+    }
+
     CameraMode changeMode() {
         ++this->mode;
         if (this->mode == LOOK_AT || this->mode == ROTATE) {
