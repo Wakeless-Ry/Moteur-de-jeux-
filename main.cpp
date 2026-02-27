@@ -156,9 +156,6 @@ int main(void) {
 
     Moteur engine(window, width, height);
     // engine.setScene(getPBRbenchmarkScene(7));
-    int maxSize;
-    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxSize);
-    std::cout << maxSize << std::endl;
     engine.setScene(getPBRbenchmarkSceneTexture(1));
 
     engine.run();

@@ -15,7 +15,7 @@ uniform float ao;
 // uniform float metallic;
 // uniform float roughness;
 
-const vec3 lightPositions = vec3(0,2,0);
+const vec3 lightPositions = vec3(5, 5, 5);
 const vec3 lightColors = vec3(500, 500, 500);
 
 const float PI = 3.14159265359;
@@ -123,5 +123,5 @@ void main()
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0/2.2));  
    
-    FragColor = texture(metallicMap, TexCoords);
+    FragColor = vec4(color, 1.0);
 } 

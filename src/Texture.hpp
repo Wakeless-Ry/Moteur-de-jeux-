@@ -35,8 +35,15 @@ class Texture {
                             GL_LINEAR_MIPMAP_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-            GLenum format = (nrChannels == 4) ? GL_RGBA : GL_RGB;
-            GLenum internalFormat = (nrChannels == 4) ? GL_RGBA : GL_RGB;
+            GLenum format;
+            if (nrChannels == 1)
+                format = GL_RED;
+            else if (nrChannels == 3)
+                format = GL_RGB;
+            else
+                format = GL_RGBA;
+
+            GLenum internalFormat = format;
             glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0,
                          format, GL_UNSIGNED_BYTE, data);
             glGenerateMipmap(GL_TEXTURE_2D);

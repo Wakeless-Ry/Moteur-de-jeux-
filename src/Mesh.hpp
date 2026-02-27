@@ -112,9 +112,6 @@ class Mesh : public Subject<glm::vec3> {
     }
 
     void draw(const Camera &camera) const {
-        printf("Verts: %zu, Normals: %zu, TexCoords: %zu, Indices: %zu\n",
-               indexedVertices.size(), normals.size(), textureCoords.size(),
-               indices.size());
         glUseProgram(this->programId);
 
         glm::mat4 model = this->transform.getMatrix();
