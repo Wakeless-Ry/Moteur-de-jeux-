@@ -125,4 +125,54 @@ class Transform {
     }
 };
 
+inline Transform scale(float x, float y, float z) {
+    Transform t;
+    return t.scale(x, y, z);
+}
+
+inline Transform scale(float value) {
+    Transform t;
+    return t.scale(value);
+}
+
+inline Transform scale(const glm::vec3 &s) {
+    Transform t;
+    return t.scale(s);
+}
+
+inline Transform skew(const glm::mat3 &skewMatrix) {
+    Transform t;
+    return t.skew(skewMatrix);
+}
+
+inline Transform translate(float x, float y, float z) {
+    Transform t;
+    return t.translate(x, y, z);
+}
+
+inline Transform translate(float value) {
+    Transform t;
+    return t.translate(value);
+}
+
+inline Transform translate(const glm::vec3 &s) {
+    Transform t;
+    return t.translate(s);
+}
+
+inline Transform rotationX(float angle) {
+    Transform t;
+    return t.rotationX(angle);
+}
+
+inline Transform rotationY(float angle) {
+    Transform t;
+    return t.rotationY(angle);
+}
+
+inline Transform rotationZ(float angle) {
+    Transform t;
+    return t.rotationZ(angle);
+}
+
 #endif // TRANSFORM

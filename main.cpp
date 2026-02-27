@@ -156,7 +156,7 @@ int main(void) {
 
     Moteur engine(window, width, height);
     engine.setScene(getPBRbenchmarkScene(10));
-    // engine.setScene(getPBRbenchmarkSceneTexture(1));
+    // engine.setScene(getRustedSphereScene());
 
     engine.run();
 
