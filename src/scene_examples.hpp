@@ -14,7 +14,7 @@ Scene getPBRbenchmarkScene(size_t nbcarre) {
 
             std::optional<Mesh> sphereMesh = FileLoader::buildMeshFromOBJ(
                 "shaders/PBR_sphere_vs.glsl", "shaders/PBR_sphere_fs.glsl",
-                "assets/big_sphere2.obj");
+                "assets/sphere.obj");
             if (sphereMesh.has_value()) {
                 Mesh sphere = sphereMesh.value();
 

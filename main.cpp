@@ -155,8 +155,8 @@ int main(void) {
     glfwGetFramebufferSize(window, &width, &height);
 
     Moteur engine(window, width, height);
-    // engine.setScene(getPBRbenchmarkScene(7));
-    engine.setScene(getPBRbenchmarkSceneTexture(1));
+    engine.setScene(getPBRbenchmarkScene(10));
+    // engine.setScene(getPBRbenchmarkSceneTexture(1));
 
     engine.run();
 
