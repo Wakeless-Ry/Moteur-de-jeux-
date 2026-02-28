@@ -100,10 +100,10 @@ class Camera : public Observer<vec3> {
     void backward(float deltaTime);
     void left(float deltaTime);
     void right(float deltaTime);
-    void up_arrow(float deltaTime);
-    void down_arrow(float deltaTime);
-    void space(float deltaTime);
-    void left_shift(float deltaTime);
+    void increaseRotationSpeed(float deltaTime);
+    void decreaseRotationSpeed(float deltaTime);
+    void up(float deltaTime);
+    void down(float deltaTime);
 
     CameraMode changeMode();
 };

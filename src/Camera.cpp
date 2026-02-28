@@ -190,7 +190,7 @@ void Camera::right(float deltaTime) {
     }
 }
 
-void Camera::up_arrow(float deltaTime) {
+void Camera::increaseRotationSpeed(float deltaTime) {
     switch (this->mode) {
     case LOOK_AT:
     case ROTATE:
@@ -203,7 +203,7 @@ void Camera::up_arrow(float deltaTime) {
     }
 }
 
-void Camera::down_arrow(float deltaTime) {
+void Camera::decreaseRotationSpeed(float deltaTime) {
     switch (this->mode) {
     case LOOK_AT:
     case ROTATE:
@@ -216,14 +216,13 @@ void Camera::down_arrow(float deltaTime) {
     }
 }
 
-void Camera::space(float deltaTime) {
+void Camera::up(float deltaTime) {
     switch (this->mode) {
     case LOOK_AT:
     case ROTATE:
-        break;
     case FRONT:
     case HOVER:
-        this->position += normalize(this->position * vec3(.0f, 1.0f, 0.0f)) *
+        this->position += normalize(vec3(.0f, 1.0f, 0.0f)) *
                           this->translationSpeed * deltaTime;
         break;
     case Count:
@@ -231,14 +230,13 @@ void Camera::space(float deltaTime) {
     }
 }
 
-void Camera::left_shift(float deltaTime) {
+void Camera::down(float deltaTime) {
     switch (this->mode) {
     case LOOK_AT:
     case ROTATE:
-        break;
     case FRONT:
     case HOVER:
-        this->position += normalize(this->position * vec3(.0f, -1.0f, 0.0f)) *
+        this->position += normalize(vec3(.0f, -1.0f, 0.0f)) *
                           this->translationSpeed * deltaTime;
         break;
     case Count:

@@ -65,22 +65,22 @@ class Moteur : public GameEngine {
                                         this->getCamera().right(deltaTime);
                                     }));
 
-        controls.addKeyDownCallback(GLFW_KEY_UP,
-                                    new KeyCallback([this](float deltaTime) {
-                                        this->getCamera().up_arrow(deltaTime);
-                                    }));
+        controls.addKeyDownCallback(
+            GLFW_KEY_UP, new KeyCallback([this](float deltaTime) {
+                this->getCamera().increaseRotationSpeed(deltaTime);
+            }));
 
-        controls.addKeyDownCallback(GLFW_KEY_DOWN,
-                                    new KeyCallback([this](float deltaTime) {
-                                        this->getCamera().down_arrow(deltaTime);
-                                    }));
+        controls.addKeyDownCallback(
+            GLFW_KEY_DOWN, new KeyCallback([this](float deltaTime) {
+                this->getCamera().decreaseRotationSpeed(deltaTime);
+            }));
         controls.addKeyDownCallback(GLFW_KEY_SPACE,
                                     new KeyCallback([this](float deltaTime) {
-                                        this->getCamera().space(deltaTime);
+                                        this->getCamera().up(deltaTime);
                                     }));
         controls.addKeyDownCallback(GLFW_KEY_LEFT_SHIFT,
                                     new KeyCallback([this](float deltaTime) {
-                                        this->getCamera().left_shift(deltaTime);
+                                        this->getCamera().down(deltaTime);
                                     }));
     }
 
