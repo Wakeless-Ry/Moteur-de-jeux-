@@ -1,7 +1,6 @@
 #ifndef MESH
 #define MESH
 
-#include <map>
 #include <vector>
 
 #include "glm/detail/type_vec.hpp"
@@ -14,15 +13,9 @@
 
 using ushort = unsigned short;
 
-struct VecCompare {
-    bool operator()(const glm::vec3 &a, const glm::vec3 &b) const;
-    bool operator()(const glm::vec2 &a, const glm::vec2 &b) const;
-};
-
 class Mesh : public Subject<glm::vec3> {
     GLuint programId;
 
-    std::map<glm::vec3, ushort, VecCompare> verticesIndexed;
     std::vector<glm::vec3> indexedVertices;
     std::vector<glm::vec2> textureCoords;
     std::vector<ushort> indices;
