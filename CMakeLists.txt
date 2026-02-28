@@ -44,6 +44,13 @@ add_definitions(
 # Main executable
 add_executable(moteur
     main.cpp
+
+    src/Camera.cpp
+    src/Controls.cpp
+    src/GameEngine.cpp
+    src/Texture.cpp
+    src/Mesh.cpp
+
     lib/shader.cpp
     lib/shader.hpp
     lib/controls.cpp
@@ -54,8 +61,6 @@ add_executable(moteur
     lib/objloader.hpp
     lib/vboindexer.cpp
     lib/vboindexer.hpp
-    shaders/vertex_shader.glsl
-    shaders/fragment_shader.glsl
 )
 target_link_libraries(moteur
 ${ALL_LIBS}

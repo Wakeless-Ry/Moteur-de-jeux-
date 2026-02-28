@@ -7,8 +7,8 @@
 #include <stack>
 #include <vector>
 
-#include "Mesh.hpp"
-#include "Transform.hpp"
+#include "Mesh.h"
+#include "Transform.h"
 
 class Scene;
 

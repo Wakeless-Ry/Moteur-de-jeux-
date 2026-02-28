@@ -1,14 +1,12 @@
 #ifndef FILE_LOADER
 #define FILE_LOADER
 
-#include <fstream>
 #include <optional>
-#include <string>
 #include <vector>
 
 #include <glm/ext.hpp>
 
-#include "Mesh.hpp"
+#include "Mesh.h"
 
 class FileLoader {
   public:

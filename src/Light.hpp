@@ -1,7 +1,7 @@
 #ifndef LIGHT
 #define LIGHT
 
-#include "glm/gtc/type_ptr.hpp"
+#include <glm/ext.hpp>
 
 struct Light {
     glm::vec3 pos;

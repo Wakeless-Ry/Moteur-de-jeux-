@@ -1,5 +1,3 @@
-#include "src/scene_examples.hpp"
-#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -10,14 +8,13 @@ GLFWwindow *window;
 
 #include <glm/ext.hpp>
 
-#include "src/Controls.hpp"
-#include "src/GameEngine.hpp"
-#include "src/Mesh.hpp"
-#include "src/Scene.hpp"
-#include "src/Texture.hpp"
-#include "src/Transform.hpp"
-#include <src/Camera.hpp>
-#include <src/FileLoader.hpp>
+#include "src/Controls.h"
+#include "src/GameEngine.h"
+#include "src/Scene.h"
+#include "src/Texture.h"
+#include "src/scene_examples.cpp"
+#include <src/Camera.h>
+#include <src/FileLoader.cpp>
 
 NodeId solarMovement;
 NodeId sun;

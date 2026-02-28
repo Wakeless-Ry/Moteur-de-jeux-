@@ -1,10 +1,9 @@
 #ifndef SCENE_EXAMPLES
 #define SCENE_EXAMPLES
 
-#include "FileLoader.hpp"
-#include "Scene.hpp"
-#include "glm/gtc/type_ptr.hpp"
-#include "src/Transform.hpp"
+#include "FileLoader.cpp"
+#include "Scene.h"
+#include "src/Transform.h"
 #include <cstddef>
 
 Scene getPBRbenchmarkScene(size_t nbcarre) {
