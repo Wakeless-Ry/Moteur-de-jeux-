@@ -1,7 +1,10 @@
 #ifndef FILE_LOADER
 #define FILE_LOADER
 
+#include <fstream>
+#include <map>
 #include <optional>
+#include <sstream>
 #include <vector>
 
 #include <glm/ext.hpp>
@@ -10,55 +13,80 @@
 
 class FileLoader {
   public:
-    // static optional<Mesh> buildMeshFromOFF(const char *vertexShaderPath,
-    //                                        const char *fragmentShaderPath,
-    //                                        const char *offFile,
-    //                                        bool load_normals = true) {
-    //     std::ifstream myfile;
+    static std::optional<Mesh> buildMeshFromOFF(const char *vertexShaderPath,
+                                                const char *fragmentShaderPath,
+                                                const char *offFile) {
+        std::ifstream myfile;
+        myfile.open(offFile);
 
-    //     myfile.open(offFile);
+        if (!myfile.is_open()) {
+            std::cout << offFile << " cannot be opened" << std::endl;
+            return std::nullopt;
+        }
 
-    //     if (!myfile.is_open()) {
-    //         std::cout << offFile << " cannot be opened" << std::endl;
-    //         return std::nullopt;
-    //     }
+        std::string magic_s;
+        myfile >> magic_s;
 
-    //     std::string magic_s;
+        if (magic_s != "OFF") {
+            std::cout << magic_s << " != OFF : Not a true OFF file"
+                      << std::endl;
+            myfile.close();
+            return std::nullopt;
+        }
 
-    //     myfile >> magic_s;
+        int n_vertices, n_faces, dummy_int;
+        myfile >> n_vertices >> n_faces >> dummy_int;
 
-    //     if (magic_s != "OFF") {
-    //         std::cout << magic_s << " != OFF : Not a true OFF file"
-    //                   << std::endl;
-    //         myfile.close();
-    //         return std::nullopt;
-    //     }
+        std::string first_line;
+        std::getline(myfile, first_line);
+        std::getline(myfile, first_line);
 
-    //     int n_vertices, n_faces, dummy_int;
-    //     myfile >> n_vertices >> n_faces >> dummy_int;
+        int float_count = 0;
+        std::istringstream iss(first_line);
+        float tmp;
+        while (iss >> tmp)
+            float_count++;
 
-    //     std::vector<glm::vec3> o_vertices;
-    //     std::vector<glm::vec3> o_normals;
+        bool has_normals = (float_count == 6);
 
-    //     o_vertices.clear();
-    //     o_normals.clear();
+        myfile.seekg(0);
+        myfile >> magic_s >> n_vertices >> n_faces >> dummy_int;
 
-    //     for (int v = 0; v < n_vertices; ++v) {
-    //         float x, y, z;
+        std::vector<glm::vec3> o_vertices;
+        std::vector<glm::vec3> o_normals;
 
-    //         myfile >> x >> y >> z;
-    //         o_vertices.push_back(glm::vec3(x, y, z));
+        for (int v = 0; v < n_vertices; ++v) {
+            float x, y, z;
+            myfile >> x >> y >> z;
+            o_vertices.push_back(glm::vec3(x, y, z));
 
-    //         if (load_normals) {
-    //             myfile >> x >> y >> z;
-    //             o_normals.push_back(glm::vec3(x, y, z));
-    //         }
-    //     }
+            if (has_normals) {
+                myfile >> x >> y >> z;
+                o_normals.push_back(glm::vec3(x, y, z));
+            }
+        }
 
-    //     Mesh mesh(vertexShaderPath, fragmentShaderPath, o_vertices);
-    //     mesh.setNormals(o_normals);
-    //     return mesh;
-    // }
+        std::vector<uint> o_indices;
+        for (int f = 0; f < n_faces; ++f) {
+            int n_verts_in_face;
+            myfile >> n_verts_in_face;
+            std::vector<uint> face_verts(n_verts_in_face);
+            for (int i = 0; i < n_verts_in_face; ++i)
+                myfile >> face_verts[i];
+            for (int i = 1; i < n_verts_in_face - 1; ++i) {
+                o_indices.push_back(face_verts[0]);
+                o_indices.push_back(face_verts[i]);
+                o_indices.push_back(face_verts[i + 1]);
+            }
+        }
+
+        myfile.close();
+
+        Mesh mesh(vertexShaderPath, fragmentShaderPath, o_vertices, o_indices);
+        if (has_normals)
+            mesh.setNormals(o_normals);
+        return mesh;
+    }
 
     static std::optional<Mesh> buildMeshFromOBJ(const char *vertexShaderPath,
                                                 const char *fragmentShaderPath,
@@ -161,10 +189,10 @@ class FileLoader {
             }
         }
 
-        vector<ushort> ushort_indices(indices.begin(), indices.end());
+        vector<uint> uint_indices(indices.begin(), indices.end());
 
         Mesh mesh(vertexShaderPath, fragmentShaderPath, unique_vertices,
-                  ushort_indices);
+                  uint_indices);
         mesh.setNormals(unique_normals);
         mesh.addTextureCoords(unique_uvs);
 
