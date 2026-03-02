@@ -3,6 +3,7 @@
 
 #include "FileLoader.cpp"
 #include "Scene.h"
+#include "src/SceneObject.h"
 #include "src/Transform.h"
 #include <cstddef>
 
@@ -11,12 +12,12 @@ Scene getPBRbenchmarkScene(size_t nbcarre) {
     for (size_t i = 0; i < nbcarre; i++) {
         for (size_t j = 0; j < nbcarre; j++) {
 
-            std::optional<SceneObject> sphereMesh =
-                FileLoader::buildMeshFromOBJ("shaders/PBR_sphere_vs.glsl",
-                                             "shaders/PBR_sphere_fs.glsl",
-                                             "assets/sphere.obj");
+            std::optional<Mesh> sphereMesh =
+                FileLoader::buildMeshFromOBJ("assets/sphere.obj");
             if (sphereMesh.has_value()) {
-                SceneObject sphere = sphereMesh.value();
+                SceneObject sphere("shaders/PBR_sphere_vs.glsl",
+                                   "shaders/PBR_sphere_fs.glsl",
+                                   sphereMesh.value());
 
                 sphere.setAlbedo({1., 0., 0.});
                 sphere.setMetallic((float)j / (nbcarre - 1));
@@ -34,11 +35,12 @@ Scene getPBRbenchmarkScene(size_t nbcarre) {
 Scene getRustedSphereScene() {
     Scene scene_result;
 
-    std::optional<SceneObject> sphereMesh = FileLoader::buildMeshFromOBJ(
-        "shaders/PBR_sphere_vs.glsl", "shaders/PBR_sphere_fs_texture.glsl",
-        "assets/sphere.obj");
+    std::optional<Mesh> sphereMesh =
+        FileLoader::buildMeshFromOBJ("assets/sphere.obj");
     if (sphereMesh.has_value()) {
-        SceneObject sphere = sphereMesh.value();
+        SceneObject sphere("shaders/PBR_sphere_vs.glsl",
+                           "shaders/PBR_sphere_fs_texture.glsl",
+                           sphereMesh.value());
 
         sphere.addTexture("assets/rustediron2_basecolor.png", "albedoMap");
 

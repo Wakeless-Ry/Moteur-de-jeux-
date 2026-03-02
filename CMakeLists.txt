@@ -50,6 +50,7 @@ add_executable(moteur
     src/GameEngine.cpp
     src/Texture.cpp
     src/SceneObject.cpp
+    src/Mesh.cpp
 
     lib/shader.cpp
     lib/shader.hpp

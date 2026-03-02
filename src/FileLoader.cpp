@@ -2,6 +2,7 @@
 #define FILE_LOADER
 
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <optional>
 #include <sstream>
@@ -9,13 +10,11 @@
 
 #include <glm/ext.hpp>
 
-#include "SceneObject.h"
+#include "Mesh.h"
 
 class FileLoader {
   public:
-    static std::optional<SceneObject>
-    buildMeshFromOFF(const char *vertexShaderPath,
-                     const char *fragmentShaderPath, const char *offFile) {
+    static std::optional<Mesh> buildMeshFromOFF(const char *offFile) {
         std::ifstream myfile;
         myfile.open(offFile);
 
@@ -82,16 +81,14 @@ class FileLoader {
 
         myfile.close();
 
-        SceneObject mesh(vertexShaderPath, fragmentShaderPath, o_vertices,
-                         o_indices);
-        if (has_normals)
-            mesh.setNormals(o_normals);
-        return mesh;
+        if (has_normals) {
+            return Mesh(o_vertices, o_indices, o_normals);
+        } else {
+            return Mesh(o_vertices, o_indices);
+        }
     }
 
-    static std::optional<SceneObject>
-    buildMeshFromOBJ(const char *vertexShaderPath,
-                     const char *fragmentShaderPath, const char *objFile) {
+    static std::optional<Mesh> buildMeshFromOBJ(const char *objFile) {
         printf("Loading OBJ file %s...\n", objFile);
 
         struct VertexKey {
@@ -155,7 +152,6 @@ class FileLoader {
 
         fclose(file);
 
-        // Center geometry at origin
         if (!temp_vertices.empty()) {
             glm::vec3 centroid(0.0f);
             for (const auto &v : temp_vertices)
@@ -165,7 +161,6 @@ class FileLoader {
                 v -= centroid;
         }
 
-        // Build unique vertex list and triangles
         std::vector<glm::vec3> unique_vertices;
         std::vector<glm::vec3> unique_normals;
         std::vector<glm::vec2> unique_uvs;
@@ -190,14 +185,9 @@ class FileLoader {
             }
         }
 
-        vector<uint> uint_indices(indices.begin(), indices.end());
+        std::vector<uint> uint_indices(indices.begin(), indices.end());
 
-        SceneObject mesh(vertexShaderPath, fragmentShaderPath, unique_vertices,
-                         uint_indices);
-        mesh.setNormals(unique_normals);
-        mesh.addTextureCoords(unique_uvs);
-
-        return mesh;
+        return Mesh(unique_vertices, uint_indices, unique_normals, unique_uvs);
     }
 };
 
