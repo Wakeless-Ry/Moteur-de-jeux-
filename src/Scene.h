@@ -7,7 +7,7 @@
 #include <stack>
 #include <vector>
 
-#include "Mesh.h"
+#include "SceneObject.h"
 #include "Transform.h"
 
 class Scene;
@@ -261,7 +261,7 @@ class Scene {
     BasicNode root;
     static const NodeId ROOT_ID = 0;
 
-    NodeList<Mesh> meshList;
+    NodeList<SceneObject> meshList;
     NodeList<BasicNode> basicNodeList;
 
     NodeId newId() {
@@ -307,7 +307,7 @@ class Scene {
         }
     }
 
-    NodeId addMesh(const Mesh &mesh) {
+    NodeId addMesh(const SceneObject &mesh) {
         NodeId newId = this->newId();
         this->meshList.addNode(newId, mesh);
 
@@ -316,7 +316,8 @@ class Scene {
         return newId;
     }
 
-    std::optional<NodeId> addMeshAsChild(NodeId parent, const Mesh &mesh) {
+    std::optional<NodeId> addMeshAsChild(NodeId parent,
+                                         const SceneObject &mesh) {
         if (this->meshList.hasId(parent) || this->basicNodeList.hasId(parent)) {
             NodeId newId = this->addMesh(mesh);
 
@@ -328,7 +329,7 @@ class Scene {
         return std::nullopt;
     }
 
-    std::optional<Mesh *> getMesh(NodeId id) {
+    std::optional<SceneObject *> getMesh(NodeId id) {
         return this->meshList.getNode(id);
     }
 

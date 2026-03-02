@@ -1,9 +1,10 @@
-#include "Mesh.h"
+#include "SceneObject.h"
 #include "lib/shader.hpp"
 
-Mesh::Mesh(const char *vertexShaderPath, const char *fragmentShaderPath,
-           const std::vector<glm::vec3> &vertices,
-           const std::vector<uint> &indices) {
+SceneObject::SceneObject(const char *vertexShaderPath,
+                         const char *fragmentShaderPath,
+                         const std::vector<glm::vec3> &vertices,
+                         const std::vector<uint> &indices) {
     this->programId = LoadShaders(vertexShaderPath, fragmentShaderPath);
     this->indexedVertices = vertices;
     this->indices = indices;
@@ -16,8 +17,8 @@ Mesh::Mesh(const char *vertexShaderPath, const char *fragmentShaderPath,
     glBufferData(GL_ARRAY_BUFFER,
                  this->indexedVertices.size() * sizeof(glm::vec3),
                  &this->indexedVertices[0], GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0); // Moved here
-    glEnableVertexAttribArray(0);                                  // Moved here
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    glEnableVertexAttribArray(0);
 
     glGenBuffers(1, &this->elementBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->elementBuffer);
@@ -27,19 +28,20 @@ Mesh::Mesh(const char *vertexShaderPath, const char *fragmentShaderPath,
     glBindVertexArray(0);
 }
 
-GLuint Mesh::getId() const { return this->programId; }
+GLuint SceneObject::getId() const { return this->programId; }
 
-const glm::vec3 &Mesh::getAlbedo() const { return albedo; }
-float Mesh::getMetallic() const { return metallic; }
-float Mesh::getRoughness() const { return roughness; }
-float Mesh::getAo() const { return ao; }
+const glm::vec3 &SceneObject::getAlbedo() const { return albedo; }
+float SceneObject::getMetallic() const { return metallic; }
+float SceneObject::getRoughness() const { return roughness; }
+float SceneObject::getAo() const { return ao; }
 
-void Mesh::setAlbedo(const glm::vec3 &value) { albedo = value; }
-void Mesh::setMetallic(float value) { metallic = value; }
-void Mesh::setRoughness(float value) { roughness = value; }
-void Mesh::setAo(float value) { ao = value; }
+void SceneObject::setAlbedo(const glm::vec3 &value) { albedo = value; }
+void SceneObject::setMetallic(float value) { metallic = value; }
+void SceneObject::setRoughness(float value) { roughness = value; }
+void SceneObject::setAo(float value) { ao = value; }
 
-void Mesh::addTextureCoords(const std::vector<glm::vec2> &textureCoords) {
+void SceneObject::addTextureCoords(
+    const std::vector<glm::vec2> &textureCoords) {
     this->textureCoords = textureCoords;
 
     glBindVertexArray(this->vao);
@@ -53,14 +55,14 @@ void Mesh::addTextureCoords(const std::vector<glm::vec2> &textureCoords) {
     glBindVertexArray(0);
 }
 
-void Mesh::addTexture(const char *texturePath, const char *varName) {
+void SceneObject::addTexture(const char *texturePath, const char *varName) {
     this->useTexture = true;
     Texture newTexture(texturePath, this->textures.size());
     newTexture.bind(this->programId, varName);
     this->textures.push_back(newTexture);
 }
 
-void Mesh::draw(const Camera &camera) const {
+void SceneObject::draw(const Camera &camera) const {
     glUseProgram(this->programId);
 
     glm::mat4 model = this->transform.getMatrix();
@@ -93,7 +95,7 @@ void Mesh::draw(const Camera &camera) const {
     glBindVertexArray(0);
 }
 
-void Mesh::cleanUp() {
+void SceneObject::cleanUp() {
     glDeleteBuffers(1, &this->vertexBuffer);
     glDeleteBuffers(1, &this->elementBuffer);
     glDeleteBuffers(1, &this->normalBuffer);
@@ -115,13 +117,13 @@ void Mesh::cleanUp() {
     this->programId = 0;
 }
 
-Transform Mesh::getTransform() const { return this->transform; }
+Transform SceneObject::getTransform() const { return this->transform; }
 
-void Mesh::setTransform(const Transform &transform) {
+void SceneObject::setTransform(const Transform &transform) {
     this->transform = transform;
 }
 
-void Mesh::setNormals(const std::vector<glm::vec3> &normals) {
+void SceneObject::setNormals(const std::vector<glm::vec3> &normals) {
     this->normals = normals;
 
     glBindVertexArray(this->vao);

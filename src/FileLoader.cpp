@@ -9,13 +9,13 @@
 
 #include <glm/ext.hpp>
 
-#include "Mesh.h"
+#include "SceneObject.h"
 
 class FileLoader {
   public:
-    static std::optional<Mesh> buildMeshFromOFF(const char *vertexShaderPath,
-                                                const char *fragmentShaderPath,
-                                                const char *offFile) {
+    static std::optional<SceneObject>
+    buildMeshFromOFF(const char *vertexShaderPath,
+                     const char *fragmentShaderPath, const char *offFile) {
         std::ifstream myfile;
         myfile.open(offFile);
 
@@ -82,15 +82,16 @@ class FileLoader {
 
         myfile.close();
 
-        Mesh mesh(vertexShaderPath, fragmentShaderPath, o_vertices, o_indices);
+        SceneObject mesh(vertexShaderPath, fragmentShaderPath, o_vertices,
+                         o_indices);
         if (has_normals)
             mesh.setNormals(o_normals);
         return mesh;
     }
 
-    static std::optional<Mesh> buildMeshFromOBJ(const char *vertexShaderPath,
-                                                const char *fragmentShaderPath,
-                                                const char *objFile) {
+    static std::optional<SceneObject>
+    buildMeshFromOBJ(const char *vertexShaderPath,
+                     const char *fragmentShaderPath, const char *objFile) {
         printf("Loading OBJ file %s...\n", objFile);
 
         struct VertexKey {
@@ -191,8 +192,8 @@ class FileLoader {
 
         vector<uint> uint_indices(indices.begin(), indices.end());
 
-        Mesh mesh(vertexShaderPath, fragmentShaderPath, unique_vertices,
-                  uint_indices);
+        SceneObject mesh(vertexShaderPath, fragmentShaderPath, unique_vertices,
+                         uint_indices);
         mesh.setNormals(unique_normals);
         mesh.addTextureCoords(unique_uvs);
 

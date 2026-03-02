@@ -10,7 +10,7 @@
 
 using uint = unsigned int;
 
-class Mesh : public Subject<glm::vec3> {
+class SceneObject : public Subject<glm::vec3> {
     GLuint programId;
     GLuint vao;
     std::vector<glm::vec3> indexedVertices;
@@ -30,9 +30,9 @@ class Mesh : public Subject<glm::vec3> {
     Transform transform;
 
   public:
-    Mesh(const char *vertexShaderPath, const char *fragmentShaderPath,
-         const std::vector<glm::vec3> &vertices,
-         const std::vector<uint> &indices);
+    SceneObject(const char *vertexShaderPath, const char *fragmentShaderPath,
+                const std::vector<glm::vec3> &vertices,
+                const std::vector<uint> &indices);
 
     GLuint getId() const;
     const glm::vec3 &getAlbedo() const;
