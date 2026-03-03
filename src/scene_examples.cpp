@@ -13,7 +13,7 @@ Scene getPBRbenchmarkScene(size_t nbcarre) {
         for (size_t j = 0; j < nbcarre; j++) {
 
             std::optional<Mesh> sphereMesh =
-                FileLoader::buildMeshFromOBJ("assets/sphere.obj");
+                FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
             if (sphereMesh.has_value()) {
                 SceneObject sphere("shaders/PBR_sphere_vs.glsl",
                                    "shaders/PBR_sphere_fs.glsl",
@@ -50,20 +50,25 @@ Scene getRustedSphereScene() {
     Scene scene_result;
 
     std::optional<Mesh> sphereMesh =
-        FileLoader::buildMeshFromOBJ("assets/sphere.obj");
+        FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
     if (sphereMesh.has_value()) {
         SceneObject sphere("shaders/PBR_sphere_vs.glsl",
                            "shaders/PBR_sphere_fs_texture.glsl",
                            sphereMesh.value());
 
-        sphere.addTexture("assets/rustediron2_basecolor.png", "albedoMap");
+        sphere.addTexture("assets/textures/rustediron2_albedo.png",
+                          "albedoMap");
 
-        sphere.addTexture("assets/rustediron2_normal.png", "normalMap");
+        sphere.addTexture("assets/textures/rustediron2_normal.png",
+                          "normalMap");
 
-        sphere.addTexture("assets/rustediron2_metallic.png", "metallicMap");
+        sphere.addTexture("assets/textures/rustediron2_metallic.png",
+                          "metallicMap");
 
-        sphere.addTexture("assets/rustediron2_roughness.png", "roughnessMap");
+        sphere.addTexture("assets/textures/rustediron2_roughness.png",
+                          "roughnessMap");
 
+<<<<<<< HEAD
         NodeId id = scene_result.addMesh(sphere);
         scene_result.setTransform(id, translate(0, 0, 0).scale(0.1));
 
@@ -80,6 +85,9 @@ Scene getRustedSphereScene() {
 
         scene_result.addLightToScene(
             Light(glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(intensity)));
+=======
+        scene_result.addMesh(sphere);
+>>>>>>> fcf1c3ca5794f771744139e36ee5c6a17be4bd30
     }
 
     return scene_result;
