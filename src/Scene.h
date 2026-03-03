@@ -7,6 +7,7 @@
 #include <stack>
 #include <vector>
 
+#include "Light.hpp"
 #include "SceneObject.h"
 #include "Transform.h"
 
@@ -268,6 +269,7 @@ class Scene {
         this->idCpt++;
         return this->idCpt - 1;
     }
+    std::vector<Light> lights;
 
   public:
     Scene() {
@@ -302,7 +304,7 @@ class Scene {
                         this->tree.getCumulativeTransform(this->meshList.ids[i])
                             .value());
                 }
-                this->meshList.nodes[i].draw(camera);
+                this->meshList.nodes[i].draw(camera, this->lights);
             }
         }
     }
@@ -376,6 +378,8 @@ class Scene {
 
         return removed.size();
     }
+
+    void addLightToScene(const Light &light) { this->lights.push_back(light); }
 };
 
 #endif // SCENE

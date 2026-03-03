@@ -1,5 +1,7 @@
 #version 330 core
 
+#define MAX_LIGHTS 10
+
 out vec4 FragColor;
 in vec2 TexCoords;
 in vec3 WorldPos;
@@ -15,8 +17,13 @@ uniform float ao;
 // uniform float metallic;
 // uniform float roughness;
 
-const vec3 lightPositions = vec3(5, 5, 5);
-const vec3 lightColors = vec3(500, 500, 500);
+struct Light {
+    vec3 position;
+    vec3 color;
+};
+
+uniform int lightCount;
+uniform Light lights[MAX_LIGHTS];
 
 const float PI = 3.14159265359;
 
@@ -92,30 +99,32 @@ void main()
     // reflectance equation
     vec3 Lo = vec3(0.0);
 
-    // calculate per-light radiance
-    vec3 L = normalize(lightPositions - WorldPos);
-    vec3 H = normalize(V + L);
-    float distance    = length(lightPositions - WorldPos);
-    float attenuation = 1.0 / (distance * distance);
-    vec3 radiance     = lightColors * attenuation;        
-    
-    // cook-torrance brdf
-    float NDF = DistributionGGX(N, H, roughness);        
-    float G   = GeometrySmith(N, V, L, roughness);      
-    vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
-    
-    vec3 kS = F;
-    vec3 kD = vec3(1.0) - kS;
-    kD *= 1.0 - metallic;	  
-    
-    vec3 numerator    = NDF * G * F;
-    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
-    vec3 specular     = numerator / denominator;  
+    for(int i = 0; i < lightCount; ++i)
+    {
+        // calculate per-light radiance
+        vec3 L = normalize(lights[i].position - WorldPos);
+        vec3 H = normalize(V + L);
+        float distance    = length(lights[i].position - WorldPos);
+        float attenuation = 1.0 / (distance * distance);
+        vec3 radiance     = lights[i].color * attenuation;        
         
-    // add to outgoing radiance Lo
-    float NdotL = max(dot(N, L), 0.0);                
-    Lo += (kD * albedo / PI + specular) * radiance * NdotL; 
-    
+        // cook-torrance brdf
+        float NDF = DistributionGGX(N, H, roughness);        
+        float G   = GeometrySmith(N, V, L, roughness);      
+        vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
+        
+        vec3 kS = F;
+        vec3 kD = vec3(1.0) - kS;
+        kD *= 1.0 - metallic;	  
+        
+        vec3 numerator    = NDF * G * F;
+        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+        vec3 specular     = numerator / denominator;  
+            
+        // add to outgoing radiance Lo
+        float NdotL = max(dot(N, L), 0.0);                
+        Lo += (kD * albedo / PI + specular) * radiance * NdotL; 
+    }
   
     vec3 ambient = vec3(0.03) * albedo * ao;
     vec3 color = ambient + Lo;

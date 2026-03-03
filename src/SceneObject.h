@@ -7,6 +7,7 @@
 #include <glm/ext.hpp>
 
 #include "Camera.h"
+#include "Light.hpp"
 #include "Mesh.h"
 #include "Observer.h"
 #include "Texture.h"
@@ -45,7 +46,7 @@ class SceneObject : public Subject<glm::vec3> {
 
     bool addTexture(const char *texturePath, const char *varName);
 
-    void draw(const Camera &camera) const;
+    void draw(const Camera &camera, const std::vector<Light> &lights) const;
 
     void cleanUp();
 

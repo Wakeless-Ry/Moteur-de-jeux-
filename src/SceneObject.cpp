@@ -32,7 +32,8 @@ bool SceneObject::addTexture(const char *texturePath, const char *varName) {
     return false;
 }
 
-void SceneObject::draw(const Camera &camera) const {
+void SceneObject::draw(const Camera &camera,
+                       const std::vector<Light> &lights) const {
     glUseProgram(this->programId);
 
     glm::mat4 model = this->transform.getMatrix();
@@ -58,6 +59,21 @@ void SceneObject::draw(const Camera &camera) const {
     glUniform1f(glGetUniformLocation(this->programId, "roughness"),
                 this->roughness);
     glUniform1f(glGetUniformLocation(this->programId, "ao"), this->ao);
+
+    const int MAX_LIGHTS = 10;
+    int count = std::min((int)lights.size(), MAX_LIGHTS);
+
+    glUniform1i(glGetUniformLocation(programId, "lightCount"), count);
+
+    for (int i = 0; i < count; ++i) {
+        std::string base = "lights[" + std::to_string(i) + "]";
+        glUniform3fv(
+            glGetUniformLocation(programId, (base + ".position").c_str()), 1,
+            glm::value_ptr(lights[i].getLightPos()));
+
+        glUniform3fv(glGetUniformLocation(programId, (base + ".color").c_str()),
+                     1, glm::value_ptr(lights[i].getLightColor()));
+    }
 
     this->mesh.draw();
 }

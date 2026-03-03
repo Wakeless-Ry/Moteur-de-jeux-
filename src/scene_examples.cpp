@@ -29,6 +29,20 @@ Scene getPBRbenchmarkScene(size_t nbcarre) {
             }
         }
     }
+    float intensity = 500.0f;
+
+    scene_result.addLightToScene(
+        Light(glm::vec3(-5.0f, 0.0f, 0.0f), glm::vec3(intensity)));
+
+    scene_result.addLightToScene(
+        Light(glm::vec3(5.0f, 0.0f, 0.0f), glm::vec3(intensity)));
+
+    scene_result.addLightToScene(
+        Light(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(intensity)));
+
+    scene_result.addLightToScene(
+        Light(glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(intensity)));
+
     return scene_result;
 }
 
@@ -52,6 +66,20 @@ Scene getRustedSphereScene() {
 
         NodeId id = scene_result.addMesh(sphere);
         scene_result.setTransform(id, translate(0, 0, 0).scale(0.1));
+
+        float intensity = 500.0f;
+
+        scene_result.addLightToScene(
+            Light(glm::vec3(-5.0f, 0.0f, 0.0f), glm::vec3(intensity)));
+
+        scene_result.addLightToScene(
+            Light(glm::vec3(5.0f, 0.0f, 0.0f), glm::vec3(intensity)));
+
+        scene_result.addLightToScene(
+            Light(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(intensity)));
+
+        scene_result.addLightToScene(
+            Light(glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(intensity)));
     }
 
     return scene_result;
