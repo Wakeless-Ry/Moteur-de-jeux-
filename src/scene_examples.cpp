@@ -68,7 +68,6 @@ Scene getRustedSphereScene() {
         sphere.addTexture("assets/textures/rustediron2_roughness.png",
                           "roughnessMap");
 
-<<<<<<< HEAD
         NodeId id = scene_result.addMesh(sphere);
         scene_result.setTransform(id, translate(0, 0, 0).scale(0.1));
 
@@ -85,9 +84,6 @@ Scene getRustedSphereScene() {
 
         scene_result.addLightToScene(
             Light(glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(intensity)));
-=======
-        scene_result.addMesh(sphere);
->>>>>>> fcf1c3ca5794f771744139e36ee5c6a17be4bd30
     }
 
     return scene_result;
