@@ -9,12 +9,12 @@
 
 Scene getPBRbenchmarkScene(size_t nbcarre) {
     Scene scene_result;
-    for (size_t i = 0; i < nbcarre; i++) {
-        for (size_t j = 0; j < nbcarre; j++) {
+    std::optional<Mesh> sphereMesh =
+        FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
+    if (sphereMesh.has_value()) {
+        for (size_t i = 0; i < nbcarre; i++) {
+            for (size_t j = 0; j < nbcarre; j++) {
 
-            std::optional<Mesh> sphereMesh =
-                FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
-            if (sphereMesh.has_value()) {
                 SceneObject sphere("shaders/PBR_sphere_vs.glsl",
                                    "shaders/PBR_sphere_fs.glsl",
                                    sphereMesh.value());
@@ -52,24 +52,21 @@ Scene getRustedSphereScene() {
     std::optional<Mesh> sphereMesh =
         FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
     if (sphereMesh.has_value()) {
+        Texture albedoMap("assets/textures/rustediron2_albedo.png");
+        Texture normalMap("assets/textures/rustediron2_normal.png");
+        Texture metallicMap("assets/textures/rustediron2_metallic.png");
+        Texture roughnessMap("assets/textures/rustediron2_roughness.png");
+
         SceneObject sphere("shaders/PBR_sphere_vs.glsl",
                            "shaders/PBR_sphere_fs_texture.glsl",
                            sphereMesh.value());
 
-        sphere.addTexture("assets/textures/rustediron2_albedo.png",
-                          "albedoMap");
-
-        sphere.addTexture("assets/textures/rustediron2_normal.png",
-                          "normalMap");
-
-        sphere.addTexture("assets/textures/rustediron2_metallic.png",
-                          "metallicMap");
-
-        sphere.addTexture("assets/textures/rustediron2_roughness.png",
-                          "roughnessMap");
+        sphere.addTexture(albedoMap, "albedoMap");
+        sphere.addTexture(normalMap, "normalMap");
+        sphere.addTexture(metallicMap, "metallicMap");
+        sphere.addTexture(roughnessMap, "roughnessMap");
 
         NodeId id = scene_result.addMesh(sphere);
-        scene_result.setTransform(id, translate(0, 0, 0).scale(0.1));
 
         float intensity = 100.0f;
 

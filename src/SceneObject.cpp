@@ -19,22 +19,28 @@ void SceneObject::setMetallic(float value) { metallic = value; }
 void SceneObject::setRoughness(float value) { roughness = value; }
 void SceneObject::setAo(float value) { ao = value; }
 
-bool SceneObject::addTexture(const char *texturePath, const char *varName) {
-    if (this->mesh.hasUVs()) {
-        this->useTexture = true;
-        Texture newTexture(texturePath, this->textures.size());
-        newTexture.bind(this->programId, varName);
-        this->textures.push_back(newTexture);
-
-        return true;
+bool SceneObject::addTexture(const Texture &texture, const char *varName) {
+    if (!this->mesh.hasUVs()) {
+        return false;
     }
 
-    return false;
+    this->useTexture = true;
+    int pos = this->textures.size();
+    this->textures.emplace_back(varName, texture);
+    texture.bind(this->programId, varName, pos);
+    return true;
 }
 
 void SceneObject::draw(const Camera &camera,
                        const std::vector<Light> &lights) const {
     glUseProgram(this->programId);
+
+    if (this->useTexture) {
+        for (int pos = 0; pos < (int)this->textures.size(); ++pos) {
+            const auto &[varName, texture] = this->textures[pos];
+            texture.bind(this->programId, varName.c_str(), pos);
+        }
+    }
 
     glm::mat4 model = this->transform.getMatrix();
     glUniformMatrix4fv(glGetUniformLocation(this->programId, "model"), 1,
@@ -81,10 +87,8 @@ void SceneObject::draw(const Camera &camera,
 void SceneObject::cleanUp() {
     this->mesh.cleanUp();
 
-    if (this->useTexture) {
-        for (auto &texture : this->textures) {
-            texture.cleanUp();
-        }
+    for (auto &[varName, texture] : this->textures) {
+        texture.cleanUp();
     }
 
     glDeleteProgram(this->programId);

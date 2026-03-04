@@ -1,6 +1,8 @@
 #ifndef SCENE_OBJECT
 #define SCENE_OBJECT
 
+#include <string>
+#include <utility>
 #include <vector>
 
 #include <GL/glew.h>
@@ -24,8 +26,10 @@ class SceneObject : public Subject<glm::vec3> {
     float metallic = 0.f;
     float roughness = 0.f;
     float ao = 1.f;
+
     bool useTexture = false;
-    std::vector<Texture> textures;
+    std::vector<std::pair<std::string, Texture>> textures;
+
     Transform transform;
 
   public:
@@ -44,10 +48,9 @@ class SceneObject : public Subject<glm::vec3> {
     void setRoughness(float value);
     void setAo(float value);
 
-    bool addTexture(const char *texturePath, const char *varName);
+    bool addTexture(const Texture &texture, const char *varName);
 
     void draw(const Camera &camera, const std::vector<Light> &lights) const;
-
     void cleanUp();
 
     Transform getTransform() const;
