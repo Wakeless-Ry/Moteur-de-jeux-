@@ -31,18 +31,22 @@ const ushort nombreCases = 1024;
 const ushort nombreVertices = nombreCases + 1;
 const float minX = -10;
 const float maxX = 10;
-const float minY = -10;
-const float maxY = 10;
+const float minY = minX;
+const float maxY = maxX;
 
 const float stepX = (maxX - minX) / nombreCases;
 const float stepY = (maxY - minY) / nombreCases;
 
-float getCase(float val) { return floor(((val + 10) * 1024) / 20.); }
+float getCase(float val) {
+    float c = floor((val - minX) / (maxX - minX) * nombreCases);
+    return clamp(c, 0.f, (float)(nombreCases - 1));
+}
+
 float getHauteur(glm::vec3 pos) {
 
-    std::vector<glm::vec3> vertices = terrainMesh->getVertices();
+    const std::vector<glm::vec3> &vertices = terrainMesh->getVertices();
 
-    return vertices[getCase(pos.x) * 1024 + getCase(pos.z)].y;
+    return vertices[getCase(pos.x) * 1025 + getCase(pos.z)].y;
 }
 
 Mesh *generateTerrain(const char *heightMap) {

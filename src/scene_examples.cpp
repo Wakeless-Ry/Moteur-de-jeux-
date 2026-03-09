@@ -15,8 +15,7 @@ Scene getPBRbenchmarkScene(size_t nbcarre) {
         for (size_t i = 0; i < nbcarre; i++) {
             for (size_t j = 0; j < nbcarre; j++) {
 
-                SceneObject sphere("shaders/PBR_sphere_vs.glsl",
-                                   "shaders/PBR_sphere_fs.glsl",
+                SceneObject sphere("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
                                    sphereMesh.value());
 
                 sphere.setAlbedo({1., 0., 0.});
@@ -46,27 +45,46 @@ Scene getPBRbenchmarkScene(size_t nbcarre) {
     return scene_result;
 }
 
-Scene getRustedSphereScene() {
+Scene getTexturedSphereScene() {
     Scene scene_result;
 
     std::optional<Mesh> sphereMesh =
         FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
     if (sphereMesh.has_value()) {
-        Texture albedoMap("assets/textures/rustediron2_albedo.png");
-        Texture normalMap("assets/textures/rustediron2_normal.png");
-        Texture metallicMap("assets/textures/rustediron2_metallic.png");
-        Texture roughnessMap("assets/textures/rustediron2_roughness.png");
+        Texture rustedAlbedoMap("assets/textures/rustediron2_albedo.png");
+        Texture rustedNormalMap("assets/textures/rustediron2_normal.png");
+        Texture rustedMetallicMap("assets/textures/rustediron2_metallic.png");
+        Texture rustedRoughnessMap("assets/textures/rustediron2_roughness.png");
 
-        SceneObject sphere("shaders/PBR_sphere_vs.glsl",
-                           "shaders/PBR_sphere_fs_texture.glsl",
+        SceneObject sphere("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
                            sphereMesh.value());
 
-        sphere.addAlbedoMap(albedoMap);
-        sphere.addNormalMap(normalMap);
-        sphere.addMetallicMap(metallicMap);
-        sphere.addRoughnessMap(roughnessMap);
+        sphere.addAlbedoMap(rustedAlbedoMap);
+        sphere.addNormalMap(rustedNormalMap);
+        sphere.addMetallicMap(rustedMetallicMap);
+        sphere.addRoughnessMap(rustedRoughnessMap);
 
-        NodeId id = scene_result.addMesh(sphere);
+        scene_result.addMesh(sphere);
+
+        Texture woodAlbedoMap("assets/textures/fancy-carved-wood_albedo.png");
+        Texture woodNormalMap("assets/textures/fancy-carved-wood_normal.png");
+        Texture woodMetallicMap(
+            "assets/textures/fancy-carved-wood_metallic.png");
+        Texture woodRoughnessMap(
+            "assets/textures/fancy-carved-wood_roughness.png");
+        Texture woodAoMap("assets/textures/fancy-carved-wood_ao.png");
+
+        SceneObject sphere2("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
+                            sphereMesh.value());
+
+        sphere2.addAlbedoMap(woodAlbedoMap);
+        sphere2.addNormalMap(woodNormalMap);
+        sphere2.addMetallicMap(woodMetallicMap);
+        sphere2.addRoughnessMap(woodRoughnessMap);
+        sphere2.addAoMap(woodAoMap);
+
+        NodeId id = scene_result.addMesh(sphere2);
+        scene_result.transform(id, translate(2, 0, 0));
 
         float intensity = 100.0f;
 
