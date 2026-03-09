@@ -21,9 +21,87 @@ GLFWwindow *window;
 
 NodeId sphereId;
 NodeId terrainId;
+Mesh *terrainMesh;
 
 glm::vec3 pos(0, 0.2, 0);
 glm::vec3 posTerrain(0, 0, 0);
+#include <lib/stb_image.h>
+
+const ushort nombreCases = 1024;
+const ushort nombreVertices = nombreCases + 1;
+const float minX = -10;
+const float maxX = 10;
+const float minY = -10;
+const float maxY = 10;
+
+const float stepX = (maxX - minX) / nombreCases;
+const float stepY = (maxY - minY) / nombreCases;
+
+float getCase(float val) { return floor(((val + 10) * 1024) / 20.); }
+float getHauteur(glm::vec3 pos) {
+
+    std::vector<glm::vec3> vertices = terrainMesh->getVertices();
+
+    return vertices[getCase(pos.x) * 1024 + getCase(pos.z)].y;
+}
+
+Mesh *generateTerrain(const char *heightMap) {
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load(heightMap, &width, &height, &nrChannels, 0);
+
+    std::vector<glm::vec3> vertices(nombreVertices * nombreVertices);
+    std::vector<uint> indices;
+    std::vector<glm::vec2> uvs(nombreVertices * nombreVertices);
+
+    for (ushort i = 0; i < nombreVertices; i++) {
+        for (ushort j = 0; j < nombreVertices; j++) {
+            float half = (nombreVertices - 1) / 2.;
+            float iWeight = (1 - abs(i - half) / half) * 0.25;
+            float jWeight = (1 - abs(j - half) / half) * 0.25;
+
+            glm::vec3 pos = glm::vec3(i * stepX + minX, 0, j * stepY + minY);
+
+            glm::vec2 uv((i + 0.5) / nombreVertices,
+                         (j + 0.5) / nombreVertices);
+            int x = static_cast<int>(uv.x * (width - 1));
+            int y = static_cast<int>(uv.y * (height - 1));
+
+            pos.y = ((float)data[(y * width + x) * nrChannels]) / 255.;
+            vertices[i * nombreVertices + j] = pos;
+            uvs[i * nombreVertices + j] = uv;
+        }
+    }
+
+    for (ushort i = 0; i < nombreCases; i++) {
+        for (ushort j = 0; j < nombreCases; j++) {
+            uint a = (i + 0) * nombreVertices + (j + 0);
+            uint b = (i + 0) * nombreVertices + (j + 1);
+            uint c = (i + 1) * nombreVertices + (j + 0);
+            uint d = (i + 1) * nombreVertices + (j + 1);
+
+            indices.push_back(a);
+            indices.push_back(b);
+            indices.push_back(c);
+            indices.push_back(b);
+            indices.push_back(d);
+            indices.push_back(c);
+        }
+    }
+
+    return new Mesh(vertices, indices, uvs);
+}
+
+SceneObject buildTerrain() {
+    terrainMesh = generateTerrain("assets/textures/heightmap.png");
+    Texture albedoMap("assets/textures/earth_albedo.png");
+
+    SceneObject terrain("shaders/terrain_vs.glsl", "shaders/terrain_fs.glsl",
+                        *terrainMesh);
+
+    terrain.addAlbedoMap(albedoMap);
+
+    return terrain;
+}
 
 class Moteur : public GameEngine {
     void init() override {
@@ -119,6 +197,7 @@ class Moteur : public GameEngine {
     void processInput(float deltaTime) override {}
 
     void update(float deltaTime) override {
+        pos.y = getHauteur(pos) + 0.2;
         this->getScene().setTransform(sphereId, translate(pos).scale(0.2));
         this->getCamera().setTarget(pos);
 
@@ -132,74 +211,6 @@ class Moteur : public GameEngine {
     Moteur(GLFWwindow *window, uint width, uint height)
         : GameEngine(window, width, height) {}
 };
-#include <lib/stb_image.h>
-
-Mesh generateTerrain(size_t nombreCases, const char *heightMap) {
-    const ushort nombreVertices = nombreCases + 1;
-    const float minX = -10;
-    const float maxX = 10;
-    const float minY = -10;
-    const float maxY = 10;
-
-    const float stepX = (maxX - minX) / nombreCases;
-    const float stepY = (maxY - minY) / nombreCases;
-
-    int width, height, nrChannels;
-    unsigned char *data = stbi_load(heightMap, &width, &height, &nrChannels, 0);
-
-    std::vector<glm::vec3> vertices(nombreVertices * nombreVertices);
-    std::vector<uint> indices;
-    std::vector<glm::vec2> uvs(nombreVertices * nombreVertices);
-
-    for (ushort i = 0; i < nombreVertices; i++) {
-        for (ushort j = 0; j < nombreVertices; j++) {
-            float half = (nombreVertices - 1) / 2.;
-            float iWeight = (1 - abs(i - half) / half) * 0.25;
-            float jWeight = (1 - abs(j - half) / half) * 0.25;
-
-            glm::vec3 pos = glm::vec3(i * stepX + minX, 0, j * stepY + minY);
-
-            glm::vec2 uv((i + 0.5) / nombreVertices,
-                         (j + 0.5) / nombreVertices);
-            int x = static_cast<int>(uv.x * (width - 1));
-            int y = static_cast<int>(uv.y * (height - 1));
-
-            pos.y = ((float)data[(y * width + x) * nrChannels]) / 255.;
-            vertices[i * nombreVertices + j] = pos;
-            uvs[i * nombreVertices + j] = uv;
-        }
-    }
-
-    for (ushort i = 0; i < nombreCases; i++) {
-        for (ushort j = 0; j < nombreCases; j++) {
-            uint a = (i + 0) * nombreVertices + (j + 0);
-            uint b = (i + 0) * nombreVertices + (j + 1);
-            uint c = (i + 1) * nombreVertices + (j + 0);
-            uint d = (i + 1) * nombreVertices + (j + 1);
-
-            indices.push_back(a);
-            indices.push_back(b);
-            indices.push_back(c);
-            indices.push_back(b);
-            indices.push_back(d);
-            indices.push_back(c);
-        }
-    }
-
-    return Mesh(vertices, indices, uvs);
-}
-
-SceneObject buildTerrain(size_t resolution) {
-    Mesh mesh = generateTerrain(resolution, "assets/textures/heightmap.png");
-    Texture albedoMap("assets/textures/earth_albedo.png");
-
-    SceneObject terrain("shaders/terrain_vs.glsl", "shaders/terrain_fs.glsl",
-                        mesh);
-
-    terrain.addAlbedoMap(albedoMap);
-
-    return terrain;
-}
 
 int initializeGlew() {
     glewExperimental = true;
@@ -271,7 +282,7 @@ int main(void) {
         std::cout << "Mesh pas chargé correctement" << std::endl;
     }
 
-    terrainId = engine.getScene().addMesh(buildTerrain(1024));
+    terrainId = engine.getScene().addMesh(buildTerrain());
     engine.getScene().setTransform(terrainId, translate(posTerrain));
 
     engine.run();

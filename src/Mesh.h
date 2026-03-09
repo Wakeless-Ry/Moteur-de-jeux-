@@ -9,7 +9,7 @@
 
 class Mesh {
   public:
-    class MeshData {
+    struct MeshData {
         GLuint vbo;
         GLuint nbo;
         GLuint ubo;
@@ -20,7 +20,6 @@ class Mesh {
         std::vector<glm::vec2> uvs;
         std::vector<uint> indices;
 
-      public:
         MeshData(const std::vector<glm::vec3> &vertices,
                  const std::vector<uint> &indices,
                  const std::vector<glm::vec3> &normals,
@@ -70,6 +69,11 @@ class Mesh {
 
     void draw() const;
     void cleanUp();
+
+    std::vector<glm::vec3> getVertices();
+    std::vector<uint> getIndices();
+    std::vector<glm::vec3> getNormals();
+    std::vector<glm::vec2> getUvs();
 };
 
 #endif // MESH
