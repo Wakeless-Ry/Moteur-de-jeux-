@@ -22,12 +22,17 @@ class SceneObject : public Subject<glm::vec3> {
 
     Mesh mesh;
 
-    glm::vec3 albedo = {1, 0, 0};
+    glm::vec3 albedo = {0, 0, 0};
     float metallic = 0.f;
     float roughness = 0.f;
     float ao = 1.f;
 
     bool useTexture = false;
+    bool useAlbedoMap = false;
+    bool useNormalMap = false;
+    bool useMetallicMap = false;
+    bool useRoughnessMap = false;
+    bool useAoMap = false;
     std::vector<std::pair<std::string, Texture>> textures;
 
     Transform transform;
@@ -49,6 +54,11 @@ class SceneObject : public Subject<glm::vec3> {
     void setAo(float value);
 
     bool addTexture(const Texture &texture, const char *varName);
+    bool addAlbedoMap(const Texture &texture);
+    bool addNormalMap(const Texture &texture);
+    bool addMetallicMap(const Texture &texture);
+    bool addRoughnessMap(const Texture &texture);
+    bool addAoMap(const Texture &texture);
 
     void draw(const Camera &camera, const std::vector<Light> &lights) const;
     void cleanUp();

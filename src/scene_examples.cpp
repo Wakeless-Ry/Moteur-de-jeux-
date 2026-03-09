@@ -61,10 +61,10 @@ Scene getRustedSphereScene() {
                            "shaders/PBR_sphere_fs_texture.glsl",
                            sphereMesh.value());
 
-        sphere.addTexture(albedoMap, "albedoMap");
-        sphere.addTexture(normalMap, "normalMap");
-        sphere.addTexture(metallicMap, "metallicMap");
-        sphere.addTexture(roughnessMap, "roughnessMap");
+        sphere.addAlbedoMap(albedoMap);
+        sphere.addNormalMap(normalMap);
+        sphere.addMetallicMap(metallicMap);
+        sphere.addRoughnessMap(roughnessMap);
 
         NodeId id = scene_result.addMesh(sphere);
 

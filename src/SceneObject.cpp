@@ -31,6 +31,36 @@ bool SceneObject::addTexture(const Texture &texture, const char *varName) {
     return true;
 }
 
+bool SceneObject::addAlbedoMap(const Texture &texture) {
+    bool added = this->addTexture(texture, "albedoMap");
+    this->useAlbedoMap = this->useTexture;
+    return added;
+}
+
+bool SceneObject::addNormalMap(const Texture &texture) {
+    bool added = this->addTexture(texture, "normalMap");
+    this->useNormalMap = this->useTexture;
+    return added;
+}
+
+bool SceneObject::addMetallicMap(const Texture &texture) {
+    bool added = this->addTexture(texture, "metallicMap");
+    this->useMetallicMap = this->useTexture;
+    return added;
+}
+
+bool SceneObject::addRoughnessMap(const Texture &texture) {
+    bool added = this->addTexture(texture, "roughnessMap");
+    this->useRoughnessMap = this->useTexture;
+    return added;
+}
+
+bool SceneObject::addAoMap(const Texture &texture) {
+    bool added = this->addTexture(texture, "aoMap");
+    this->useAoMap = this->useTexture;
+    return added;
+}
+
 void SceneObject::draw(const Camera &camera,
                        const std::vector<Light> &lights) const {
     glUseProgram(this->programId);
@@ -58,13 +88,37 @@ void SceneObject::draw(const Camera &camera,
     glUniform3fv(glGetUniformLocation(this->programId, "camPos"), 1,
                  glm::value_ptr(cameraPos));
 
-    glUniform3fv(glGetUniformLocation(this->programId, "albedo"), 1,
-                 glm::value_ptr(this->albedo));
-    glUniform1f(glGetUniformLocation(this->programId, "metallic"),
-                this->metallic);
-    glUniform1f(glGetUniformLocation(this->programId, "roughness"),
-                this->roughness);
-    glUniform1f(glGetUniformLocation(this->programId, "ao"), this->ao);
+    if (!this->useAlbedoMap) {
+        glUniform3fv(glGetUniformLocation(this->programId, "albedo"), 1,
+                     glm::value_ptr(this->albedo));
+    } else {
+        glUniform1i(glGetUniformLocation(this->programId, "useAlbedoMap"), 1);
+    }
+
+    if (this->useNormalMap) {
+        glUniform1i(glGetUniformLocation(this->programId, "useNormalMap"), 1);
+    }
+
+    if (!this->useMetallicMap) {
+        glUniform1f(glGetUniformLocation(this->programId, "metallic"),
+                    this->metallic);
+    } else {
+        glUniform1i(glGetUniformLocation(this->programId, "useMetallicMap"), 1);
+    }
+
+    if (!this->useRoughnessMap) {
+        glUniform1f(glGetUniformLocation(this->programId, "roughness"),
+                    this->roughness);
+    } else {
+        glUniform1i(glGetUniformLocation(this->programId, "useRoughnessMap"),
+                    1);
+    }
+
+    if (!this->useAoMap) {
+        glUniform1f(glGetUniformLocation(this->programId, "ao"), this->ao);
+    } else {
+        glUniform1i(glGetUniformLocation(this->programId, "useAoMap"), 1);
+    }
 
     const int MAX_LIGHTS = 10;
     int count = std::min((int)lights.size(), MAX_LIGHTS);

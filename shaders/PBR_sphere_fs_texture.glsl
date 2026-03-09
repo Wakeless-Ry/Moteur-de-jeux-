@@ -13,9 +13,18 @@ uniform sampler2D albedoMap;
 uniform sampler2D normalMap;
 uniform sampler2D metallicMap;
 uniform sampler2D roughnessMap;
-uniform float ao;
-// uniform float metallic;
-// uniform float roughness;
+uniform sampler2D aoMap;
+
+uniform vec3 albedo = vec3(0,0,0);
+uniform float metallic = 0;
+uniform float roughness = 0;
+uniform float ao = 1;
+
+uniform bool useAlbedoMap = false;
+uniform bool useNormalMap = false;
+uniform bool useMetallicMap = false;
+uniform bool useRoughnessMap = false;
+uniform bool useAoMap = false;
 
 struct Light {
     vec3 position;
@@ -84,17 +93,36 @@ vec3 getNormalFromMap()
 }
 
 void main()
-{		
-    vec3 albedo     = pow(texture(albedoMap, TexCoords).rgb, vec3(2.2));
-    float metallic  = texture(metallicMap, TexCoords).r;
-    float roughness = texture(roughnessMap, TexCoords).r;
+{
+    vec3 albedoVal = albedo;
+    if (useAlbedoMap) {
+        albedoVal = pow(texture(albedoMap, TexCoords).rgb, vec3(2.2));
+    }
 
-    vec3 N = getNormalFromMap();
-    // vec3 N = normalize(Normal);
+    vec3 N = normalize(Normal);
+    if (useNormalMap) {
+        N = getNormalFromMap();
+    }
+
+    float metallicVal = metallic;
+    if (useMetallicMap) {
+        metallicVal  = texture(metallicMap, TexCoords).r;
+    }
+
+    float roughnessVal = roughness;
+    if (useRoughnessMap) {
+        roughnessVal = texture(roughnessMap, TexCoords).r;
+    }
+
+    float aoVal = ao;
+    if (useAoMap) {
+        aoVal = texture(aoMap, TexCoords).r;
+    }
+
     vec3 V = normalize(camPos - WorldPos);
 
     vec3 F0 = vec3(0.04); 
-    F0 = mix(F0, albedo, metallic);
+    F0 = mix(F0, albedoVal, metallicVal);
 	           
     // reflectance equation
     vec3 Lo = vec3(0.0);
@@ -109,13 +137,13 @@ void main()
         vec3 radiance     = lights[i].color * attenuation;        
         
         // cook-torrance brdf
-        float NDF = DistributionGGX(N, H, roughness);        
-        float G   = GeometrySmith(N, V, L, roughness);      
+        float NDF = DistributionGGX(N, H, roughnessVal);        
+        float G   = GeometrySmith(N, V, L, roughnessVal);      
         vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
         
         vec3 kS = F;
         vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metallic;	  
+        kD *= 1.0 - metallicVal;	  
         
         vec3 numerator    = NDF * G * F;
         float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
@@ -123,10 +151,10 @@ void main()
             
         // add to outgoing radiance Lo
         float NdotL = max(dot(N, L), 0.0);                
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL; 
+        Lo += (kD * albedoVal / PI + specular) * radiance * NdotL; 
     }
   
-    vec3 ambient = vec3(0.03) * albedo * ao;
+    vec3 ambient = vec3(0.03) * albedoVal * aoVal;
     vec3 color = ambient + Lo;
 	
     color = color / (color + vec3(1.0));
