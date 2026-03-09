@@ -1,3 +1,5 @@
+#include "glm/detail/type_vec.hpp"
+#include "glm/gtx/transform.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -18,7 +20,10 @@ GLFWwindow *window;
 #include <src/FileLoader.cpp>
 
 NodeId sphereId;
+NodeId terrainId;
+
 glm::vec3 pos(0, 0.2, 0);
+glm::vec3 posTerrain(0, 0, 0);
 
 class Moteur : public GameEngine {
     void init() override {
@@ -81,41 +86,44 @@ class Moteur : public GameEngine {
         //                                 this->getCamera().down(deltaTime);
         //                             }));
 
+        controls.addKeyDownCallback(GLFW_KEY_LEFT,
+                                    new KeyCallback([this](float deltaTime) {
+                                        pos += glm::vec3(deltaTime * 2, 0, 0);
+                                    }));
+        controls.addKeyDownCallback(GLFW_KEY_RIGHT,
+                                    new KeyCallback([this](float deltaTime) {
+                                        pos -= glm::vec3(deltaTime * 2, 0, 0);
+                                    }));
+
+        controls.addKeyDownCallback(GLFW_KEY_UP,
+                                    new KeyCallback([this](float deltaTime) {
+                                        pos += glm::vec3(0, 0, deltaTime * 2);
+                                    }));
+
+        controls.addKeyDownCallback(GLFW_KEY_DOWN,
+                                    new KeyCallback([this](float deltaTime) {
+                                        pos -= glm::vec3(0, 0, deltaTime * 2);
+                                    }));
+
         controls.addKeyDownCallback(
-            GLFW_KEY_LEFT, new KeyCallback([this](float deltaTime) {
-                pos += glm::vec3(deltaTime * 2, 0, 0);
-                this->getScene().setTransform(sphereId,
-                                              translate(pos).scale(0.2));
-                this->getCamera().setTarget(pos);
-            }));
-        controls.addKeyDownCallback(
-            GLFW_KEY_RIGHT, new KeyCallback([this](float deltaTime) {
-                pos -= glm::vec3(deltaTime * 2, 0, 0);
-                this->getScene().setTransform(sphereId,
-                                              translate(pos).scale(0.2));
-                this->getCamera().setTarget(pos);
+            GLFW_KEY_SPACE, new KeyCallback([this](float deltaTime) {
+                posTerrain += glm::vec3(0, deltaTime * 2, 0);
             }));
 
         controls.addKeyDownCallback(
-            GLFW_KEY_UP, new KeyCallback([this](float deltaTime) {
-                pos += glm::vec3(0, 0, deltaTime * 2);
-                this->getScene().setTransform(sphereId,
-                                              translate(pos).scale(0.2));
-                this->getCamera().setTarget(pos);
-            }));
-
-        controls.addKeyDownCallback(
-            GLFW_KEY_DOWN, new KeyCallback([this](float deltaTime) {
-                pos -= glm::vec3(0, 0, deltaTime * 2);
-                this->getScene().setTransform(sphereId,
-                                              translate(pos).scale(0.2));
-                this->getCamera().setTarget(pos);
+            GLFW_KEY_LEFT_SHIFT, new KeyCallback([this](float deltaTime) {
+                posTerrain -= glm::vec3(0, deltaTime * 2, 0);
             }));
     }
 
     void processInput(float deltaTime) override {}
 
-    void update(float deltaTime) override {}
+    void update(float deltaTime) override {
+        this->getScene().setTransform(sphereId, translate(pos).scale(0.2));
+        this->getCamera().setTarget(pos);
+
+        this->getScene().setTransform(terrainId, translate(posTerrain));
+    }
 
     void render(float deltaTime) override {}
     void cleanUp() override {}
@@ -255,7 +263,8 @@ int main(void) {
         std::cout << "Mesh pas chargé correctement" << std::endl;
     }
 
-    engine.getScene().addMesh(buildTerrain(1024));
+    terrainId = engine.getScene().addMesh(buildTerrain(1024));
+    engine.getScene().setTransform(terrainId, translate(posTerrain));
 
     engine.run();
 
