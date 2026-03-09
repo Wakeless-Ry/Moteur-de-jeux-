@@ -116,6 +116,67 @@ class Moteur : public GameEngine {
         : GameEngine(window, width, height) {}
 };
 
+Mesh generateTerrain(size_t nombreCases) {
+    const ushort nombreVertices = nombreCases + 1;
+    const float minX = -10;
+    const float maxX = 10;
+    const float minY = -10;
+    const float maxY = 10;
+
+    const float stepX = (maxX - minX) / nombreCases;
+    const float stepY = (maxY - minY) / nombreCases;
+
+    std::vector<glm::vec3> vertices(nombreVertices * nombreVertices);
+    std::vector<uint> indices;
+    std::vector<glm::vec2> uvs(nombreVertices * nombreVertices);
+
+    for (ushort i = 0; i < nombreVertices; i++) {
+        for (ushort j = 0; j < nombreVertices; j++) {
+            float half = (nombreVertices - 1) / 2.;
+            float iWeight = (1 - abs(i - half) / half) * 0.25;
+            float jWeight = (1 - abs(j - half) / half) * 0.25;
+
+            glm::vec3 pos = glm::vec3(i * stepX + minX, 0, j * stepY + minY);
+
+            vertices[i * nombreVertices + j] = pos;
+            uvs[i * nombreVertices + j] = glm::vec2((i + 0.5) / nombreVertices,
+                                                    (j + 0.5) / nombreVertices);
+        }
+    }
+
+    for (ushort i = 0; i < nombreCases; i++) {
+        for (ushort j = 0; j < nombreCases; j++) {
+            uint a = (i + 0) * nombreVertices + (j + 0);
+            uint b = (i + 0) * nombreVertices + (j + 1);
+            uint c = (i + 1) * nombreVertices + (j + 0);
+            uint d = (i + 1) * nombreVertices + (j + 1);
+
+            indices.push_back(a);
+            indices.push_back(b);
+            indices.push_back(c);
+            indices.push_back(b);
+            indices.push_back(d);
+            indices.push_back(c);
+        }
+    }
+
+    return Mesh(vertices, indices, uvs);
+}
+
+SceneObject buildTerrain(size_t resolution) {
+    Mesh mesh = generateTerrain(resolution);
+    Texture albedoMap("assets/textures/earth_albedo.png");
+    Texture heightMap("assets/textures/heightmap.png");
+
+    SceneObject terrain("shaders/terrain_vs.glsl", "shaders/terrain_fs.glsl",
+                        mesh);
+
+    terrain.addAlbedoMap(albedoMap);
+    terrain.addTexture(heightMap, "heightMap");
+
+    return terrain;
+}
+
 int initializeGlew() {
     glewExperimental = true;
 
