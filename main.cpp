@@ -1,5 +1,4 @@
 #include "glm/detail/type_vec.hpp"
-#include "glm/gtx/transform.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -9,28 +8,30 @@
 GLFWwindow *window;
 
 #include <glm/ext.hpp>
+#include <glm/gtc/noise.hpp>
 
 #include "src/Controls.h"
 #include "src/GameEngine.h"
 #include "src/Scene.h"
 #include "src/SceneObject.h"
 #include "src/Texture.h"
-#include "src/scene_examples.cpp"
 #include <src/Camera.h>
 #include <src/FileLoader.cpp>
 
 NodeId sphereId;
-NodeId terrainId;
-Mesh *terrainMesh;
-
 glm::vec3 pos(0, 0.2, 0);
-glm::vec3 posTerrain(0, 0, 0);
-#include <lib/stb_image.h>
 
-const ushort nombreCases = 1024;
+struct TerrainChunk {
+    Mesh *mesh;
+    glm::vec2 offset;
+};
+
+std::vector<TerrainChunk> terrainChunks;
+
+const ushort nombreCases = 128;
 const ushort nombreVertices = nombreCases + 1;
-const float minX = -10;
-const float maxX = 10;
+const float minX = -2;
+const float maxX = 2;
 const float minY = minX;
 const float maxY = maxX;
 
@@ -43,16 +44,46 @@ float getCase(float val) {
 }
 
 float getHauteur(glm::vec3 pos) {
+    TerrainChunk *chunk = nullptr;
+    for (auto &tc : terrainChunks) {
+        float chunkMinX = tc.offset.x + minX;
+        float chunkMaxX = tc.offset.x + maxX;
+        float chunkMinZ = tc.offset.y + minY;
+        float chunkMaxZ = tc.offset.y + maxY;
+        if (pos.x >= chunkMinX && pos.x <= chunkMaxX && pos.z >= chunkMinZ &&
+            pos.z <= chunkMaxZ) {
+            chunk = &tc;
+            break;
+        }
+    }
+    if (!chunk)
+        return 0.0f;
 
-    const std::vector<glm::vec3> &vertices = terrainMesh->getVertices();
+    const std::vector<glm::vec3> &vertices = chunk->mesh->getVertices();
 
-    return vertices[getCase(pos.x) * 1025 + getCase(pos.z)].y;
+    float cx = (pos.x - (minX + chunk->offset.x)) / (maxX - minX) * nombreCases;
+    float cz = (pos.z - (minY + chunk->offset.y)) / (maxY - minY) * nombreCases;
+    cx = clamp(cx, 0.f, (float)(nombreCases - 1));
+    cz = clamp(cz, 0.f, (float)(nombreCases - 1));
+
+    int i = (int)floor(cx);
+    int j = (int)floor(cz);
+    float u = cx - i;
+    float v = cz - j;
+
+    glm::vec3 a = vertices[(i + 0) * nombreVertices + (j + 0)];
+    glm::vec3 b = vertices[(i + 0) * nombreVertices + (j + 1)];
+    glm::vec3 c = vertices[(i + 1) * nombreVertices + (j + 0)];
+    glm::vec3 d = vertices[(i + 1) * nombreVertices + (j + 1)];
+
+    if (u + v <= 1.0f) {
+        return (1 - u - v) * a.y + v * b.y + u * c.y;
+    } else {
+        return (1 - u) * b.y + (u + v - 1) * d.y + (1 - v) * c.y;
+    }
 }
 
-Mesh *generateTerrain(const char *heightMap) {
-    int width, height, nrChannels;
-    unsigned char *data = stbi_load(heightMap, &width, &height, &nrChannels, 0);
-
+Mesh *generateTerrain(glm::vec2 offset, size_t nbOctaves) {
     std::vector<glm::vec3> vertices(nombreVertices * nombreVertices);
     std::vector<uint> indices;
     std::vector<glm::vec2> uvs(nombreVertices * nombreVertices);
@@ -63,14 +94,27 @@ Mesh *generateTerrain(const char *heightMap) {
             float iWeight = (1 - abs(i - half) / half) * 0.25;
             float jWeight = (1 - abs(j - half) / half) * 0.25;
 
-            glm::vec3 pos = glm::vec3(i * stepX + minX, 0, j * stepY + minY);
+            glm::vec3 pos = glm::vec3(i * stepX + minX + offset.x, 0,
+                                      j * stepY + minY + offset.y);
 
             glm::vec2 uv((i + 0.5) / nombreVertices,
                          (j + 0.5) / nombreVertices);
-            int x = static_cast<int>(uv.x * (width - 1));
-            int y = static_cast<int>(uv.y * (height - 1));
 
-            pos.y = ((float)data[(y * width + x) * nrChannels]) / 255.;
+            float height = 0.0f;
+            float amplitude = 1.0f;
+            float frequency = 0.2f;
+            float totalAmplitude = 0.0f;
+
+            for (size_t octave = 0; octave < nbOctaves; octave++) {
+                height += glm::perlin(glm::vec2(pos.x, pos.z) * frequency) *
+                          amplitude;
+                totalAmplitude += amplitude;
+                amplitude *= 0.5f;
+                frequency *= 1.8f;
+            }
+
+            pos.y = std::max(4 * height / totalAmplitude, 0.f);
+
             vertices[i * nombreVertices + j] = pos;
             uvs[i * nombreVertices + j] = uv;
         }
@@ -95,16 +139,28 @@ Mesh *generateTerrain(const char *heightMap) {
     return new Mesh(vertices, indices, uvs);
 }
 
-SceneObject buildTerrain() {
-    terrainMesh = generateTerrain("assets/textures/heightmap.png");
-    Texture albedoMap("assets/textures/earth_albedo.png");
+std::vector<SceneObject> buildTerrains() {
+    const Texture water("assets/textures/water.png");
+    const Texture sand("assets/textures/sand.png");
+    const Texture grass("assets/textures/grass.png");
 
-    SceneObject terrain("shaders/terrain_vs.glsl", "shaders/terrain_fs.glsl",
-                        *terrainMesh);
+    std::vector<glm::vec2> offsets = {{0, 0}, {0, 4}, {0, -4}};
 
-    terrain.addAlbedoMap(albedoMap);
+    std::vector<SceneObject> terrains;
 
-    return terrain;
+    for (auto &offset : offsets) {
+        Mesh *mesh = generateTerrain(offset, 8);
+        terrainChunks.push_back({mesh, offset});
+
+        SceneObject terrain("shaders/terrain_vs.glsl",
+                            "shaders/terrain_fs.glsl", *mesh);
+        terrain.addTexture(water, "water");
+        terrain.addTexture(sand, "sand");
+        terrain.addTexture(grass, "grass");
+        terrains.push_back(terrain);
+    }
+
+    return terrains;
 }
 
 class Moteur : public GameEngine {
@@ -186,16 +242,6 @@ class Moteur : public GameEngine {
                                     new KeyCallback([this](float deltaTime) {
                                         pos -= glm::vec3(0, 0, deltaTime * 2);
                                     }));
-
-        controls.addKeyDownCallback(
-            GLFW_KEY_SPACE, new KeyCallback([this](float deltaTime) {
-                posTerrain += glm::vec3(0, deltaTime * 2, 0);
-            }));
-
-        controls.addKeyDownCallback(
-            GLFW_KEY_LEFT_SHIFT, new KeyCallback([this](float deltaTime) {
-                posTerrain -= glm::vec3(0, deltaTime * 2, 0);
-            }));
     }
 
     void processInput(float deltaTime) override {}
@@ -204,8 +250,6 @@ class Moteur : public GameEngine {
         pos.y = getHauteur(pos) + 0.2;
         this->getScene().setTransform(sphereId, translate(pos).scale(0.2));
         this->getCamera().setTarget(pos);
-
-        this->getScene().setTransform(terrainId, translate(posTerrain));
     }
 
     void render(float deltaTime) override {}
@@ -279,15 +323,21 @@ int main(void) {
     if (sphereMeshOpt.has_value()) {
         SceneObject sphere("shaders/PBR_sphere_vs.glsl",
                            "shaders/PBR_sphere_fs.glsl", sphereMeshOpt.value());
-        sphere.setAlbedo({1., 0., 0.});
+        sphere.setAlbedo({1., 1., 1.});
+        sphere.setMetallic(0.3);
+        sphere.setRoughness(0.3);
         sphereId = engine.getScene().addMesh(sphere);
         engine.getScene().setTransform(sphereId, translate(pos).scale(0.2));
+
+        engine.getScene().addLightToScene(
+            Light(glm::vec3(0, 5, 0), glm::vec3(100)));
     } else {
         std::cout << "Mesh pas chargé correctement" << std::endl;
     }
 
-    terrainId = engine.getScene().addMesh(buildTerrain());
-    engine.getScene().setTransform(terrainId, translate(posTerrain));
+    for (auto &terrain : buildTerrains()) {
+        engine.getScene().addMesh(terrain);
+    }
 
     engine.run();
 
