@@ -132,8 +132,9 @@ class Moteur : public GameEngine {
     Moteur(GLFWwindow *window, uint width, uint height)
         : GameEngine(window, width, height) {}
 };
+#include <lib/stb_image.h>
 
-Mesh generateTerrain(size_t nombreCases) {
+Mesh generateTerrain(size_t nombreCases, const char *heightMap) {
     const ushort nombreVertices = nombreCases + 1;
     const float minX = -10;
     const float maxX = 10;
@@ -142,6 +143,9 @@ Mesh generateTerrain(size_t nombreCases) {
 
     const float stepX = (maxX - minX) / nombreCases;
     const float stepY = (maxY - minY) / nombreCases;
+
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load(heightMap, &width, &height, &nrChannels, 0);
 
     std::vector<glm::vec3> vertices(nombreVertices * nombreVertices);
     std::vector<uint> indices;
@@ -155,9 +159,14 @@ Mesh generateTerrain(size_t nombreCases) {
 
             glm::vec3 pos = glm::vec3(i * stepX + minX, 0, j * stepY + minY);
 
+            glm::vec2 uv((i + 0.5) / nombreVertices,
+                         (j + 0.5) / nombreVertices);
+            int x = static_cast<int>(uv.x * (width - 1));
+            int y = static_cast<int>(uv.y * (height - 1));
+
+            pos.y = ((float)data[(y * width + x) * nrChannels]) / 255.;
             vertices[i * nombreVertices + j] = pos;
-            uvs[i * nombreVertices + j] = glm::vec2((i + 0.5) / nombreVertices,
-                                                    (j + 0.5) / nombreVertices);
+            uvs[i * nombreVertices + j] = uv;
         }
     }
 
@@ -181,9 +190,8 @@ Mesh generateTerrain(size_t nombreCases) {
 }
 
 SceneObject buildTerrain(size_t resolution) {
-    Mesh mesh = generateTerrain(resolution);
+    Mesh mesh = generateTerrain(resolution, "assets/textures/heightmap.png");
     Texture albedoMap("assets/textures/earth_albedo.png");
-    Texture heightMap("assets/textures/heightmap.png");
 
     SceneObject terrain("shaders/terrain_vs.glsl", "shaders/terrain_fs.glsl",
                         mesh);
