@@ -18,6 +18,7 @@ GLFWwindow *window;
 #include <src/FileLoader.cpp>
 
 NodeId sphereId;
+glm::vec3 pos(0, 0.2, 0);
 
 class Moteur : public GameEngine {
     void init() override {
@@ -82,25 +83,33 @@ class Moteur : public GameEngine {
 
         controls.addKeyDownCallback(
             GLFW_KEY_LEFT, new KeyCallback([this](float deltaTime) {
-                this->getScene().transform(sphereId,
-                                           translate(deltaTime * 2, 0., 0.));
+                pos += glm::vec3(deltaTime * 2, 0, 0);
+                this->getScene().setTransform(sphereId,
+                                              translate(pos).scale(0.2));
+                this->getCamera().setTarget(pos);
             }));
         controls.addKeyDownCallback(
             GLFW_KEY_RIGHT, new KeyCallback([this](float deltaTime) {
-                this->getScene().transform(sphereId,
-                                           translate(-(deltaTime * 2), 0., 0.));
+                pos -= glm::vec3(deltaTime * 2, 0, 0);
+                this->getScene().setTransform(sphereId,
+                                              translate(pos).scale(0.2));
+                this->getCamera().setTarget(pos);
             }));
 
         controls.addKeyDownCallback(
             GLFW_KEY_UP, new KeyCallback([this](float deltaTime) {
-                this->getScene().transform(sphereId,
-                                           translate(0., 0., deltaTime * 2));
+                pos += glm::vec3(0, 0, deltaTime * 2);
+                this->getScene().setTransform(sphereId,
+                                              translate(pos).scale(0.2));
+                this->getCamera().setTarget(pos);
             }));
 
         controls.addKeyDownCallback(
             GLFW_KEY_DOWN, new KeyCallback([this](float deltaTime) {
-                this->getScene().transform(sphereId,
-                                           translate(0., 0., -(deltaTime * 2)));
+                pos -= glm::vec3(0, 0, deltaTime * 2);
+                this->getScene().setTransform(sphereId,
+                                              translate(pos).scale(0.2));
+                this->getCamera().setTarget(pos);
             }));
     }
 
@@ -172,7 +181,6 @@ SceneObject buildTerrain(size_t resolution) {
                         mesh);
 
     terrain.addAlbedoMap(albedoMap);
-    terrain.addTexture(heightMap, "heightMap");
 
     return terrain;
 }
@@ -242,13 +250,12 @@ int main(void) {
                            "shaders/PBR_sphere_fs.glsl", sphereMeshOpt.value());
         sphere.setAlbedo({1., 0., 0.});
         sphereId = engine.getScene().addMesh(sphere);
-        engine.getScene().setTransform(sphereId, translate(0, 0, 0).scale(0.2));
+        engine.getScene().setTransform(sphereId, translate(pos).scale(0.2));
     } else {
         std::cout << "Mesh pas chargé correctement" << std::endl;
     }
 
-    // // engine.setScene(getPBRbenchmarkScene(10));
-    // engine.setScene(getRustedSphereScene());
+    engine.getScene().addMesh(buildTerrain(1024));
 
     engine.run();
 

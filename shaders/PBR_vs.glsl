@@ -9,13 +9,19 @@ uniform mat4 view;
 uniform mat4 projection; 
 
 out vec2 TexCoords;
+out vec3 WorldPos;
+out vec3 Normal;
 
 void main()
 {
-    TexCoords = vertices_texcoords;
-
     vec4 worldPos = model * vec4(vertices_position_modelspace, 1.0);
+    WorldPos = worldPos.xyz;
+
+    mat3 normalMatrix = transpose(inverse(mat3(model)));
+    Normal = normalize(normalMatrix * vertices_normals_modelspace);
 
     gl_Position = projection * view * worldPos;
+
+    TexCoords = vertices_texcoords;
 }
 
