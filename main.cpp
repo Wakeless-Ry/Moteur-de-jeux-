@@ -11,16 +11,13 @@ GLFWwindow *window;
 #include "src/Controls.h"
 #include "src/GameEngine.h"
 #include "src/Scene.h"
+#include "src/SceneObject.h"
 #include "src/Texture.h"
 #include "src/scene_examples.cpp"
 #include <src/Camera.h>
 #include <src/FileLoader.cpp>
 
-NodeId solarMovement;
-NodeId sun;
-NodeId earthOrbit;
-NodeId earth;
-NodeId moon;
+NodeId sphereId;
 
 class Moteur : public GameEngine {
     void init() override {
@@ -65,23 +62,46 @@ class Moteur : public GameEngine {
                                         this->getCamera().right(deltaTime);
                                     }));
 
+        // controls.addKeyDownCallback(
+        //     GLFW_KEY_UP, new KeyCallback([this](float deltaTime) {
+        //         this->getCamera().increaseRotationSpeed(deltaTime);
+        //     }));
+
+        // controls.addKeyDownCallback(
+        //     GLFW_KEY_DOWN, new KeyCallback([this](float deltaTime) {
+        //         this->getCamera().decreaseRotationSpeed(deltaTime);
+        //     }));
+        // controls.addKeyDownCallback(GLFW_KEY_SPACE,
+        //                             new KeyCallback([this](float deltaTime) {
+        //                                 this->getCamera().up(deltaTime);
+        //                             }));
+        // controls.addKeyDownCallback(GLFW_KEY_LEFT_SHIFT,
+        //                             new KeyCallback([this](float deltaTime) {
+        //                                 this->getCamera().down(deltaTime);
+        //                             }));
+
+        controls.addKeyDownCallback(
+            GLFW_KEY_LEFT, new KeyCallback([this](float deltaTime) {
+                this->getScene().transform(sphereId,
+                                           translate(deltaTime * 2, 0., 0.));
+            }));
+        controls.addKeyDownCallback(
+            GLFW_KEY_RIGHT, new KeyCallback([this](float deltaTime) {
+                this->getScene().transform(sphereId,
+                                           translate(-(deltaTime * 2), 0., 0.));
+            }));
+
         controls.addKeyDownCallback(
             GLFW_KEY_UP, new KeyCallback([this](float deltaTime) {
-                this->getCamera().increaseRotationSpeed(deltaTime);
+                this->getScene().transform(sphereId,
+                                           translate(0., 0., deltaTime * 2));
             }));
 
         controls.addKeyDownCallback(
             GLFW_KEY_DOWN, new KeyCallback([this](float deltaTime) {
-                this->getCamera().decreaseRotationSpeed(deltaTime);
+                this->getScene().transform(sphereId,
+                                           translate(0., 0., -(deltaTime * 2)));
             }));
-        controls.addKeyDownCallback(GLFW_KEY_SPACE,
-                                    new KeyCallback([this](float deltaTime) {
-                                        this->getCamera().up(deltaTime);
-                                    }));
-        controls.addKeyDownCallback(GLFW_KEY_LEFT_SHIFT,
-                                    new KeyCallback([this](float deltaTime) {
-                                        this->getCamera().down(deltaTime);
-                                    }));
     }
 
     void processInput(float deltaTime) override {}
@@ -152,8 +172,22 @@ int main(void) {
     glfwGetFramebufferSize(window, &width, &height);
 
     Moteur engine(window, width, height);
-    // engine.setScene(getPBRbenchmarkScene(10));
-    engine.setScene(getRustedSphereScene());
+
+    std::optional<Mesh> sphereMeshOpt =
+        FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
+
+    if (sphereMeshOpt.has_value()) {
+        SceneObject sphere("shaders/PBR_sphere_vs.glsl",
+                           "shaders/PBR_sphere_fs.glsl", sphereMeshOpt.value());
+        sphere.setAlbedo({1., 0., 0.});
+        sphereId = engine.getScene().addMesh(sphere);
+        engine.getScene().setTransform(sphereId, translate(0, 0, 0).scale(0.2));
+    } else {
+        std::cout << "Mesh pas chargé correctement" << std::endl;
+    }
+
+    // // engine.setScene(getPBRbenchmarkScene(10));
+    // engine.setScene(getRustedSphereScene());
 
     engine.run();
 

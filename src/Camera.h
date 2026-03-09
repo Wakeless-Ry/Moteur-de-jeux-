@@ -34,7 +34,8 @@ class Camera : public Observer<vec3> {
     float zFar = 100;
 
     vec3 position = vec3(0, 0, 0);
-    vec3 eulerAngle = vec3(45, 45, 0);
+    // vec3 eulerAngle = vec3(45, 45, 0);
+    vec3 eulerAngle = vec3(0, 0, 0);
     quat rotation = quat();
 
     mat4 viewMatrix = mat4();
