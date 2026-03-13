@@ -40,7 +40,7 @@ const float stepY = (maxY - minY) / nombreCases;
 
 float getCase(float val) {
     float c = floor((val - minX) / (maxX - minX) * nombreCases);
-    return clamp(c, 0.f, (float)(nombreCases - 1));
+    return std::clamp(c, 0.f, (float)(nombreCases - 1));
 }
 
 float getHauteur(glm::vec3 pos) {
@@ -63,8 +63,8 @@ float getHauteur(glm::vec3 pos) {
 
     float cx = (pos.x - (minX + chunk->offset.x)) / (maxX - minX) * nombreCases;
     float cz = (pos.z - (minY + chunk->offset.y)) / (maxY - minY) * nombreCases;
-    cx = clamp(cx, 0.f, (float)(nombreCases - 1));
-    cz = clamp(cz, 0.f, (float)(nombreCases - 1));
+    cx = std::clamp(cx, 0.f, (float)(nombreCases - 1));
+    cz = std::clamp(cz, 0.f, (float)(nombreCases - 1));
 
     int i = (int)floor(cx);
     int j = (int)floor(cz);
@@ -83,37 +83,51 @@ float getHauteur(glm::vec3 pos) {
     }
 }
 
-Mesh *generateTerrain(glm::vec2 offset, size_t nbOctaves) {
+Mesh *generateTerrain(glm::vec2 offset, ushort nombreCases, size_t nbOctaves)
+{
+
+    ushort nombreVertices = nombreCases + 1;
+
+    float stepX = (maxX - minX) / nombreCases;
+    float stepY = (maxY - minY) / nombreCases;
+
     std::vector<glm::vec3> vertices(nombreVertices * nombreVertices);
     std::vector<uint> indices;
     std::vector<glm::vec2> uvs(nombreVertices * nombreVertices);
+   
+    auto computeHeight = [&](float wx, float wz, size_t nbOct) -> float
+    {
+        float height = 0.0f;
+        float amplitude = 1.0f;
+        float frequency = 0.2f;
+        float totalAmplitude = 0.0f;
+        for (size_t octave = 0; octave < nbOct; octave++)
+        {
+            height += glm::perlin(glm::vec2(wx, wz) * frequency) * amplitude;
+            totalAmplitude += amplitude;
+            amplitude *= 0.5f;
+            frequency *= 1.8f;
+        }
+        return std::max(4 * height / totalAmplitude, 0.f);
+    };
 
     for (ushort i = 0; i < nombreVertices; i++) {
         for (ushort j = 0; j < nombreVertices; j++) {
-            float half = (nombreVertices - 1) / 2.;
-            float iWeight = (1 - abs(i - half) / half) * 0.25;
-            float jWeight = (1 - abs(j - half) / half) * 0.25;
 
-            glm::vec3 pos = glm::vec3(i * stepX + minX + offset.x, 0,
-                                      j * stepY + minY + offset.y);
+            float wx = i * stepX + minX + offset.x;
+            float wz = j * stepY + minY + offset.y;
 
-            glm::vec2 uv((i + 0.5) / nombreVertices,
-                         (j + 0.5) / nombreVertices);
+            glm::vec3 pos(wx, 0, wz);
+            glm::vec2 uv((i + 0.5f) / nombreVertices, (j + 0.5f) / nombreVertices);
+            // bord -> 2 octaves
+            bool isBorder = (i == 0 || i == nombreCases || j == 0 || j == nombreCases);
+            size_t octavesForVertex;
+            if (isBorder)
+                octavesForVertex = 2;
+            else
+                octavesForVertex = nbOctaves;
 
-            float height = 0.0f;
-            float amplitude = 1.0f;
-            float frequency = 0.2f;
-            float totalAmplitude = 0.0f;
-
-            for (size_t octave = 0; octave < nbOctaves; octave++) {
-                height += glm::perlin(glm::vec2(pos.x, pos.z) * frequency) *
-                          amplitude;
-                totalAmplitude += amplitude;
-                amplitude *= 0.5f;
-                frequency *= 1.8f;
-            }
-
-            pos.y = std::max(4 * height / totalAmplitude, 0.f);
+            pos.y = computeHeight(wx, wz, octavesForVertex);
 
             vertices[i * nombreVertices + j] = pos;
             uvs[i * nombreVertices + j] = uv;
@@ -126,17 +140,34 @@ Mesh *generateTerrain(glm::vec2 offset, size_t nbOctaves) {
             uint b = (i + 0) * nombreVertices + (j + 1);
             uint c = (i + 1) * nombreVertices + (j + 0);
             uint d = (i + 1) * nombreVertices + (j + 1);
-
-            indices.push_back(a);
-            indices.push_back(b);
-            indices.push_back(c);
-            indices.push_back(b);
-            indices.push_back(d);
-            indices.push_back(c);
+            indices.push_back(a); indices.push_back(b); indices.push_back(c);
+            indices.push_back(b); indices.push_back(d); indices.push_back(c);
         }
     }
 
     return new Mesh(vertices, indices, uvs);
+}
+
+int get_ring(glm::ivec2 chunk, glm::ivec2 center)
+{
+    int dx = std::abs(chunk.x - center.x);
+    int dz = std::abs(chunk.y - center.y);
+
+    return std::max(dx, dz);
+}
+
+void compute_lod(int ring, int& resolution, int& octaves)
+{
+    // "puissance de 2"
+    resolution = 128 >> ring;
+
+    if(resolution < 32)
+        resolution = 32;
+
+    octaves = 8 - 2 * ring;
+
+    if(octaves < 2)
+        octaves = 2;
 }
 
 std::vector<SceneObject> buildTerrains() {
@@ -144,20 +175,61 @@ std::vector<SceneObject> buildTerrains() {
     const Texture sand("assets/textures/sand.png");
     const Texture grass("assets/textures/grass.png");
 
+    int max_rings = 10;
+    int grid_size = 2 * max_rings + 1;
+    float chunkSize = maxX - minX;
+
     std::vector<glm::vec2> offsets = {{0, 0}, {0, 4}, {0, -4}};
-
     std::vector<SceneObject> terrains;
+    std::vector<std::vector<TerrainChunk>> grid(grid_size, std::vector<TerrainChunk>(grid_size));
 
-    for (auto &offset : offsets) {
-        Mesh *mesh = generateTerrain(offset, 8);
-        terrainChunks.push_back({mesh, offset});
+    
+    glm::ivec2 centerChunk(
+        floor(pos.x / chunkSize),
+        floor(pos.z / chunkSize)
+    );
 
-        SceneObject terrain("shaders/terrain_vs.glsl",
-                            "shaders/terrain_fs.glsl", *mesh);
-        terrain.addTexture(water, "water");
-        terrain.addTexture(sand, "sand");
-        terrain.addTexture(grass, "grass");
-        terrains.push_back(terrain);
+    
+    for(int x = -max_rings; x <= max_rings; x++)
+    {
+        for(int z = -max_rings; z <= max_rings; z++)
+        {
+            glm::ivec2 chunkCoord = centerChunk + glm::ivec2(x, z);
+
+            int ring = get_ring(chunkCoord, centerChunk);
+
+            int resolution, octaves;
+            compute_lod(ring, resolution, octaves);
+
+            glm::vec2 offset(
+                chunkCoord.x * chunkSize,
+                chunkCoord.y * chunkSize
+            );
+
+            Mesh* mesh = generateTerrain(offset, resolution, octaves);
+
+            TerrainChunk chunk = {mesh, offset};
+            terrainChunks.push_back(chunk);
+            grid[x + max_rings][z + max_rings] = chunk;
+        }
+    }
+
+    for(int x = 0; x < grid_size; x++)
+    {
+        for(int z = 0; z < grid_size; z++)
+        {
+            SceneObject terrain(
+                "shaders/terrain_vs.glsl",
+                "shaders/terrain_fs.glsl",
+                *grid[x][z].mesh
+            );
+
+            terrain.addTexture(water, "water");
+            terrain.addTexture(sand, "sand");
+            terrain.addTexture(grass, "grass");
+
+            terrains.push_back(terrain);
+        }
     }
 
     return terrains;
