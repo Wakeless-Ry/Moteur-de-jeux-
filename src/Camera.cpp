@@ -102,18 +102,29 @@ mat4 Camera::getView() const { return this->viewMatrix; }
 
 mat4 Camera::getProjection() const { return this->projectionMatrix; }
 
+// void Camera::rotateWithMouse(float deltaX, float deltaY) {
+//     const static float ROTATE_MOUSE_FACTOR = 500.f;
+
+//     if (deltaY != 0) {
+//         this->eulerAngle.x +=
+//             (deltaY * this->rotationSpeed) / ROTATE_MOUSE_FACTOR;
+//     }
+
+//     if (deltaX != 0) {
+//         this->eulerAngle.y +=
+//             (-deltaX * this->rotationSpeed) / ROTATE_MOUSE_FACTOR;
+//     }
+// }
+
 void Camera::rotateWithMouse(float deltaX, float deltaY) {
-    const static float ROTATE_MOUSE_FACTOR = 500.f;
+    const float sensitivity = 0.05f;
+    const static float ROTATE_MOUSE_FACTOR = 50.f;
 
-    if (deltaY != 0) {
-        this->eulerAngle.x +=
-            (deltaY * this->rotationSpeed) / ROTATE_MOUSE_FACTOR;
-    }
+    deltaX = glm::clamp(deltaX, -ROTATE_MOUSE_FACTOR, ROTATE_MOUSE_FACTOR);
+    deltaY = glm::clamp(deltaY, -ROTATE_MOUSE_FACTOR, ROTATE_MOUSE_FACTOR);
 
-    if (deltaX != 0) {
-        this->eulerAngle.y +=
-            (-deltaX * this->rotationSpeed) / ROTATE_MOUSE_FACTOR;
-    }
+    this->eulerAngle.x += deltaY * sensitivity;
+    this->eulerAngle.y -= deltaX * sensitivity;
 }
 
 void Camera::forward(float deltaTime) {

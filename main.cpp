@@ -41,7 +41,7 @@ const float stepY = (maxY - minY) / nombreCases;
 
 float getCase(float val) {
     float c = floor((val - minX) / (maxX - minX) * nombreCases);
-    return clamp(c, 0.f, (float)(nombreCases - 1));
+    return std::clamp(c, 0.f, (float)(nombreCases - 1));
 }
 
 float getHauteur(glm::vec3 pos) {
@@ -66,8 +66,8 @@ float getHauteur(glm::vec3 pos) {
 
     float cx = (pos.x - (minX + chunk->offset.x)) / (maxX - minX) * chunkCases;
     float cz = (pos.z - (minY + chunk->offset.y)) / (maxY - minY) * chunkCases;
-    cx = clamp(cx, 0.f, (float)(chunkCases - 1));
-    cz = clamp(cz, 0.f, (float)(chunkCases - 1));
+    cx = std::clamp(cx, 0.f, (float)(chunkCases - 1));
+    cz = std::clamp(cz, 0.f, (float)(chunkCases - 1));
 
     int i = (int)floor(cx);
     int j = (int)floor(cz);
@@ -285,24 +285,42 @@ class Moteur : public GameEngine {
         //                                 this->getCamera().down(deltaTime);
         //                             }));
 
-        controls.addKeyDownCallback(GLFW_KEY_LEFT,
-                                    new KeyCallback([this](float deltaTime) {
-                                        pos += glm::vec3(deltaTime * 2, 0, 0);
-                                    }));
-        controls.addKeyDownCallback(GLFW_KEY_RIGHT,
-                                    new KeyCallback([this](float deltaTime) {
-                                        pos -= glm::vec3(deltaTime * 2, 0, 0);
-                                    }));
+        auto getHorizontalForward = [this]() -> glm::vec3 {
+            float yawRadian = glm::radians(this->getCamera().getEulerAngle().y);
+            return glm::normalize(
+                glm::vec3(sin(yawRadian), 0.f, cos(yawRadian)));
+        };
 
-        controls.addKeyDownCallback(GLFW_KEY_UP,
-                                    new KeyCallback([this](float deltaTime) {
-                                        pos += glm::vec3(0, 0, deltaTime * 2);
-                                    }));
+        auto getHorizontalRight = [this, getHorizontalForward]() -> glm::vec3 {
+            return glm::normalize(
+                glm::cross(getHorizontalForward(), glm::vec3(0.f, 1.f, 0.f)));
+        };
 
-        controls.addKeyDownCallback(GLFW_KEY_DOWN,
-                                    new KeyCallback([this](float deltaTime) {
-                                        pos -= glm::vec3(0, 0, deltaTime * 2);
-                                    }));
+        const float speed = 2.0f;
+
+        controls.addKeyDownCallback(
+            GLFW_KEY_UP, new KeyCallback([this, getHorizontalForward,
+                                          speed](float deltaTime) {
+                pos += getHorizontalForward() * speed * deltaTime;
+            }));
+
+        controls.addKeyDownCallback(
+            GLFW_KEY_DOWN, new KeyCallback([this, getHorizontalForward,
+                                            speed](float deltaTime) {
+                pos -= getHorizontalForward() * speed * deltaTime;
+            }));
+
+        controls.addKeyDownCallback(
+            GLFW_KEY_LEFT,
+            new KeyCallback([this, getHorizontalRight, speed](float deltaTime) {
+                pos -= getHorizontalRight() * speed * deltaTime;
+            }));
+
+        controls.addKeyDownCallback(
+            GLFW_KEY_RIGHT,
+            new KeyCallback([this, getHorizontalRight, speed](float deltaTime) {
+                pos += getHorizontalRight() * speed * deltaTime;
+            }));
     }
 
     void processInput(float deltaTime) override {}
