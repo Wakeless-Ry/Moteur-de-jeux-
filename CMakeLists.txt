@@ -52,10 +52,10 @@ add_executable(moteur
     src/SceneObject.cpp
     src/Mesh.cpp
 
-    ecs/ECSManager.cpp
-    ecs/Entity.cpp
-    ecs/Component.cpp
-    ecs/System.cpp
+    src/ecs/ECSManager.cpp
+    src/ecs/Entity.cpp
+    src/ecs/Component.cpp
+    src/ecs/System.cpp
 
     lib/shader.cpp
     lib/shader.hpp

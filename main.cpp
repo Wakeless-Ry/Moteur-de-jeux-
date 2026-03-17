@@ -41,7 +41,7 @@ const float stepY = (maxY - minY) / nombreCases;
 
 float getCase(float val) {
     float c = floor((val - minX) / (maxX - minX) * nombreCases);
-    return clamp(c, 0.f, (float)(nombreCases - 1));
+    return std::clamp(c, 0.f, (float)(nombreCases - 1));
 }
 
 float getHauteur(glm::vec3 pos) {
@@ -66,8 +66,8 @@ float getHauteur(glm::vec3 pos) {
 
     float cx = (pos.x - (minX + chunk->offset.x)) / (maxX - minX) * chunkCases;
     float cz = (pos.z - (minY + chunk->offset.y)) / (maxY - minY) * chunkCases;
-    cx = clamp(cx, 0.f, (float)(chunkCases - 1));
-    cz = clamp(cz, 0.f, (float)(chunkCases - 1));
+    cx = std::clamp(cx, 0.f, (float)(chunkCases - 1));
+    cz = std::clamp(cz, 0.f, (float)(chunkCases - 1));
 
     int i = (int)floor(cx);
     int j = (int)floor(cz);
