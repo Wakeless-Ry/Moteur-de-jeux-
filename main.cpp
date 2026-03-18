@@ -20,8 +20,14 @@ GLFWwindow *window;
 #include <src/FileLoader.cpp>
 #include <src/ecs/ECSManager.h>
 
-NodeId sphereId;
-glm::vec3 pos(0, 0.2, 0);
+NodeId cubeId;
+const float SPHERE_RADIUS = 0.2;
+glm::vec3 pos(0, SPHERE_RADIUS, 0);
+
+glm::vec3 velocity(0., 0., 0.);
+const glm::vec3 gravity(0., -9.81, 0.);
+const float friction = 0.95;
+const float frictionAir = 1.f;
 
 struct TerrainChunk {
     Mesh *mesh;
@@ -46,7 +52,7 @@ float getCase(float val) {
     return std::clamp(c, 0.f, (float)(nombreCases - 1));
 }
 
-float getHauteur(glm::vec3 pos) {
+std::optional<std::pair<float, glm::vec3>> getContact(glm::vec3 pos) {
     TerrainChunk *chunk = nullptr;
     for (auto &tc : terrainChunks) {
         float chunkMinX = tc.offset.x + minX;
@@ -60,7 +66,7 @@ float getHauteur(glm::vec3 pos) {
         }
     }
     if (!chunk)
-        return 0.0f;
+        return std::nullopt;
 
     const std::vector<glm::vec3> &vertices = chunk->mesh->getVertices();
     ushort chunkCases = chunk->resolution;
@@ -81,10 +87,19 @@ float getHauteur(glm::vec3 pos) {
     glm::vec3 c = vertices[(i + 1) * chunkVerts + (j + 0)];
     glm::vec3 d = vertices[(i + 1) * chunkVerts + (j + 1)];
 
-    if (u + v <= 1.0f)
-        return (1 - u - v) * a.y + v * b.y + u * c.y;
-    else
-        return (1 - u) * b.y + (u + v - 1) * d.y + (1 - v) * c.y;
+    if (u + v <= 1.0f) {
+        glm::vec3 nA = b - a;
+        glm::vec3 nB = c - a;
+        glm::vec3 normal = glm::cross(nA, nB);
+        return {
+            {(1 - u - v) * a.y + v * b.y + u * c.y, glm::normalize(normal)}};
+    } else {
+        glm::vec3 nA = d - b;
+        glm::vec3 nB = c - b;
+        glm::vec3 normal = glm::cross(nA, nB);
+        return {{(1 - u) * b.y + (u + v - 1) * d.y + (1 - v) * c.y,
+                 glm::normalize(normal)}};
+    }
 }
 
 Mesh *generateTerrain(glm::vec2 offset, ushort nombreCases, size_t nbOctaves) {
@@ -269,24 +284,6 @@ class Moteur : public GameEngine {
                                         this->getCamera().right(deltaTime);
                                     }));
 
-        // controls.addKeyDownCallback(
-        //     GLFW_KEY_UP, new KeyCallback([this](float deltaTime) {
-        //         this->getCamera().increaseRotationSpeed(deltaTime);
-        //     }));
-
-        // controls.addKeyDownCallback(
-        //     GLFW_KEY_DOWN, new KeyCallback([this](float deltaTime) {
-        //         this->getCamera().decreaseRotationSpeed(deltaTime);
-        //     }));
-        // controls.addKeyDownCallback(GLFW_KEY_SPACE,
-        //                             new KeyCallback([this](float deltaTime) {
-        //                                 this->getCamera().up(deltaTime);
-        //                             }));
-        // controls.addKeyDownCallback(GLFW_KEY_LEFT_SHIFT,
-        //                             new KeyCallback([this](float deltaTime) {
-        //                                 this->getCamera().down(deltaTime);
-        //                             }));
-
         auto getHorizontalForward = [this]() -> glm::vec3 {
             float yawRadian = glm::radians(this->getCamera().getEulerAngle().y);
             return glm::normalize(
@@ -298,38 +295,37 @@ class Moteur : public GameEngine {
                 glm::cross(getHorizontalForward(), glm::vec3(0.f, 1.f, 0.f)));
         };
 
-        const float speed = 2.0f;
+        const float speed = 0.2f;
 
         controls.addKeyDownCallback(
             GLFW_KEY_UP, new KeyCallback([this, getHorizontalForward,
                                           speed](float deltaTime) {
-                pos += getHorizontalForward() * speed * deltaTime;
+                velocity += getHorizontalForward() * speed;
             }));
 
         controls.addKeyDownCallback(
-            GLFW_KEY_DOWN, new KeyCallback([this, getHorizontalForward,
-                                            speed](float deltaTime) {
-                pos -= getHorizontalForward() * speed * deltaTime;
-            }));
-
-        controls.addKeyDownCallback(
-            GLFW_KEY_LEFT,
-            new KeyCallback([this, getHorizontalRight, speed](float deltaTime) {
-                pos -= getHorizontalRight() * speed * deltaTime;
-            }));
-
-        controls.addKeyDownCallback(
-            GLFW_KEY_RIGHT,
-            new KeyCallback([this, getHorizontalRight, speed](float deltaTime) {
-                pos += getHorizontalRight() * speed * deltaTime;
-            }));
+            GLFW_KEY_SPACE,
+            new KeyCallback([this](float deltaTime) { velocity.y += 0.5f; }));
     }
 
     void processInput(float deltaTime) override {}
 
     void update(float deltaTime) override {
-        pos.y = getHauteur(pos) + 0.2;
-        this->getScene().setTransform(sphereId, translate(pos).scale(0.2));
+        velocity += gravity * deltaTime;
+        pos += velocity * deltaTime;
+        auto pair = getContact(pos);
+        if (pair.has_value()) {
+            auto &[hauteur, normal] = pair.value();
+            pos.y = std::max(pos.y, SPHERE_RADIUS + hauteur);
+            if (pos.y <= SPHERE_RADIUS + hauteur) {
+                float tmp = -velocity.y;
+                velocity.y = 0;
+                velocity += normal * tmp;
+                velocity *= pow(1.0 - friction, deltaTime);
+            }
+        }
+        velocity *= exp(-frictionAir * deltaTime);
+        this->getScene().setTransform(cubeId, translate(pos).scale(0.2));
         this->getCamera().setTarget(pos);
     }
 
@@ -398,20 +394,26 @@ int main(void) {
 
     Moteur engine(window, width, height);
 
-    std::optional<Mesh> sphereMeshOpt =
+    std::optional<Mesh> cubeMeshOpt =
         FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
 
-    if (sphereMeshOpt.has_value()) {
-        SceneObject sphere("shaders/PBR_sphere_vs.glsl",
-                           "shaders/PBR_sphere_fs.glsl", sphereMeshOpt.value());
-        sphere.setAlbedo({1., 1., 1.});
-        sphere.setMetallic(0.3);
-        sphere.setRoughness(0.3);
-        sphereId = engine.getScene().addMesh(sphere);
-        engine.getScene().setTransform(sphereId, translate(pos).scale(0.2));
+    if (cubeMeshOpt.has_value()) {
+        SceneObject cube("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
+                         cubeMeshOpt.value());
+        Texture rustedAlbedoMap("assets/textures/rustediron2_albedo.png");
+        Texture rustedNormalMap("assets/textures/rustediron2_normal.png");
+        Texture rustedMetallicMap("assets/textures/rustediron2_metallic.png");
+        Texture rustedRoughnessMap("assets/textures/rustediron2_roughness.png");
+
+        cube.addAlbedoMap(rustedAlbedoMap);
+        cube.addNormalMap(rustedNormalMap);
+        cube.addMetallicMap(rustedMetallicMap);
+        cube.addRoughnessMap(rustedRoughnessMap);
+        cubeId = engine.getScene().addMesh(cube);
+        engine.getScene().setTransform(cubeId, translate(pos).scale(0.2));
 
         engine.getScene().addLightToScene(
-            Light(glm::vec3(0, 5, 0), glm::vec3(100)));
+            Light(glm::vec3(0, 20, 0), glm::vec3(10000)));
     } else {
         std::cout << "Mesh pas chargé correctement" << std::endl;
     }
