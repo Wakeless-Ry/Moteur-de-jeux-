@@ -3,33 +3,44 @@
 
 #include <map>
 #include <memory>
+#include <optional>
+#include <queue>
 #include <typeindex>
+#include <unordered_set>
 #include <vector>
 
 #include "Component.h"
 #include "Entity.h"
 #include "System.h"
-#include <optional>
-#include <queue>
-
-typedef unsigned long ulong;
 
 struct EntityId {
-    unsigned long value;
+    ulong value;
     bool operator<(const EntityId &other) const { return value < other.value; }
-};
-
-struct ComponentId {
-    unsigned long value;
-    bool operator<(const ComponentId &other) const {
-        return value < other.value;
+    bool operator==(const EntityId &other) const {
+        return value == other.value;
     }
 };
 
 struct SystemId {
-    unsigned long value;
+    ulong value;
     bool operator<(const SystemId &other) const { return value < other.value; }
+    bool operator==(const SystemId &other) const {
+        return value == other.value;
+    }
 };
+
+namespace std {
+template <> struct hash<EntityId> {
+    size_t operator()(const EntityId &id) const noexcept {
+        return std::hash<ulong>{}(id.value);
+    }
+};
+template <> struct hash<SystemId> {
+    size_t operator()(const SystemId &id) const noexcept {
+        return std::hash<ulong>{}(id.value);
+    }
+};
+} // namespace std
 
 class ECSManager {
     struct ComponentListBase {
@@ -73,9 +84,29 @@ class ECSManager {
         }
     };
 
-    unsigned long eCounter = 0;
-    unsigned long cCounter = 0;
-    unsigned long sCounter = 0;
+    template <typename T> struct IdManager {
+        ulong counter = 0;
+        std::unordered_set<T> unused;
+
+        T generateId() {
+            if (unused.empty()) {
+                return T{++this->counter};
+            } else {
+                T front = *this->unused.begin();
+                this->unused.erase(this->unused.begin());
+                return front;
+            }
+        }
+
+        void removeId(T id) {
+            if (id.value < this->counter) {
+                this->unused.insert(id);
+            }
+        }
+    };
+
+    IdManager<EntityId> eIdManager;
+    IdManager<SystemId> sIdManager;
 
     std::map<std::type_index, std::unique_ptr<ComponentListBase>> componentMap;
 
@@ -108,9 +139,11 @@ class ECSManager {
         return instance;
     }
 
-    EntityId generateEntityId() { return EntityId{++eCounter}; }
-    ComponentId generateComponentId() { return ComponentId{++cCounter}; }
-    SystemId generateSystemId() { return SystemId{++sCounter}; }
+    EntityId generateEntityId() { return this->eIdManager.generateId(); }
+    void removeEntityId(EntityId id) { return this->eIdManager.removeId(id); }
+
+    SystemId generateSystemId() { return this->sIdManager.generateId(); }
+    void removeSystemId(SystemId id) { return this->sIdManager.removeId(id); }
 
     template <typename T>
     void addComponentToEntity(T &&component, EntityId entity) {
