@@ -56,8 +56,6 @@ add_executable(moteur
     src/Mesh.cpp
 
     src/ecs/ECSManager.cpp
-    src/ecs/Entity.cpp
-    src/ecs/Component.cpp
     src/ecs/System.cpp
 
     lib/shader.cpp

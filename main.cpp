@@ -18,6 +18,7 @@ GLFWwindow *window;
 #include "src/Texture.h"
 #include <src/Camera.h>
 #include <src/FileLoader.cpp>
+#include <src/ecs/ECSManager.h>
 
 NodeId sphereId;
 glm::vec3 pos(0, 0.2, 0);

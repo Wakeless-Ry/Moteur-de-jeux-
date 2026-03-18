@@ -9,7 +9,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "Component.h"
 #include "System.h"
 #include "utils.h"
 
@@ -39,9 +38,9 @@ class ECSManager {
 
         void remove(EntityId entity) override {
             auto it = this->indices.find(entity);
-            if (it == this->indices.end())
+            if (it == this->indices.end()) {
                 return;
-
+            }
             this->components[it->second] = T{};
             this->empty_indices.push(it->second);
             this->indices.erase(entity);
@@ -50,8 +49,9 @@ class ECSManager {
         std::optional<std::reference_wrapper<const T>>
         get(EntityId entity) const {
             auto it = this->indices.find(entity);
-            if (it == this->indices.end())
+            if (it == this->indices.end()) {
                 return std::nullopt;
+            }
             return std::cref(this->components[it->second]);
         }
     };
@@ -129,51 +129,24 @@ class ECSManager {
         (registerType<std::tuple_element_t<Is, Tuple>>(Is), ...);
     }
 
-    ECSManager() {
-        registerAll<ComponentTypes>(
-            std::make_index_sequence<std::tuple_size_v<ComponentTypes>>{});
-    };
-
-    template <typename T> inline ComponentList<T> &getList() {
+    template <typename T> ComponentList<T> &getList() {
         return static_cast<ComponentList<T> &>(
             *componentMap.at(std::type_index(typeid(T))));
     }
 
-    template <typename T> inline ComponentList<T> &getList() const {
-        return this->getList<T>();
+    template <typename T> ComponentList<T> &getList() const {
+        return const_cast<ECSManager *>(this)->getList<T>();
     }
 
-    void entityComponentsChanged(EntityId entity) {
-        ECS::Signature eSignature = this->entityManager.getSignature(entity);
-        for (auto &[id, system] : this->systems) {
-            ECS::Signature sSignature = this->systemManager.getSignature(id);
+    void entityComponentsChanged(EntityId entity);
 
-            if ((eSignature & sSignature) == sSignature) {
-                system->addEntity(entity);
-            } else {
-                system->removeEntity(entity);
-            }
-        }
-    }
+    ECSManager();
 
   public:
-    static ECSManager &getManager() {
-        static ECSManager instance;
-        return instance;
-    }
+    static ECSManager &getManager();
 
-    EntityId generateEntityId() {
-        EntityId entity = this->entityManager.generateId();
-        assert(entity.value < ECS::MAX_ENTITIES &&
-               "Too many entities in existence.");
-        return entity;
-    }
-    void removeEntity(EntityId entity) {
-        for (auto &[_, list] : this->componentMap) {
-            list->remove(entity);
-        }
-        this->entityManager.remove(entity);
-    }
+    EntityId generateEntityId();
+    void removeEntity(EntityId entity);
 
     template <typename T>
     void setComponentToEntity(T &&component, EntityId entity) {
@@ -197,11 +170,7 @@ class ECSManager {
         return this->getList<T>().get(entity);
     }
 
-    SystemId registerSystem(std::shared_ptr<System> system) {
-        SystemId id = this->systemManager.generateId();
-        this->systems[id] = system;
-        return id;
-    }
+    SystemId registerSystem(std::shared_ptr<System> system);
 
     template <typename T> void registerComponentToSystem(SystemId system) {
         this->systemManager.registerComponent(system,
@@ -212,10 +181,7 @@ class ECSManager {
         this->systems[system]->setEntities(compatible);
     }
 
-    void removeSystem(SystemId system) {
-        this->systemManager.remove(system);
-        this->systems.erase(system);
-    }
+    void removeSystem(SystemId system);
 };
 
 #endif // ECS_MANAGER
