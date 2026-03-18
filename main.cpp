@@ -264,22 +264,22 @@ class Moteur : public GameEngine {
                 CameraMode mode = this->getCamera().changeMode();
             }));
 
-        controls.addKeyDownCallback(GLFW_KEY_W,
+        controls.addKeyDownCallback(GLFW_KEY_UP,
                                     new KeyCallback([this](float deltaTime) {
                                         this->getCamera().forward(deltaTime);
                                     }));
 
-        controls.addKeyDownCallback(GLFW_KEY_A,
+        controls.addKeyDownCallback(GLFW_KEY_LEFT,
                                     new KeyCallback([this](float deltaTime) {
                                         this->getCamera().left(deltaTime);
                                     }));
 
-        controls.addKeyDownCallback(GLFW_KEY_S,
+        controls.addKeyDownCallback(GLFW_KEY_DOWN,
                                     new KeyCallback([this](float deltaTime) {
                                         this->getCamera().backward(deltaTime);
                                     }));
 
-        controls.addKeyDownCallback(GLFW_KEY_D,
+        controls.addKeyDownCallback(GLFW_KEY_RIGHT,
                                     new KeyCallback([this](float deltaTime) {
                                         this->getCamera().right(deltaTime);
                                     }));
@@ -298,9 +298,27 @@ class Moteur : public GameEngine {
         const float speed = 0.2f;
 
         controls.addKeyDownCallback(
-            GLFW_KEY_UP, new KeyCallback([this, getHorizontalForward,
-                                          speed](float deltaTime) {
+            GLFW_KEY_W, new KeyCallback([this, getHorizontalForward,
+                                         speed](float deltaTime) {
                 velocity += getHorizontalForward() * speed;
+            }));
+
+        controls.addKeyDownCallback(
+            GLFW_KEY_S, new KeyCallback([this, getHorizontalForward,
+                                         speed](float deltaTime) {
+                velocity -= getHorizontalForward() * speed;
+            }));
+
+        controls.addKeyDownCallback(
+            GLFW_KEY_D,
+            new KeyCallback([this, getHorizontalRight, speed](float deltaTime) {
+                velocity += getHorizontalRight() * speed;
+            }));
+
+        controls.addKeyDownCallback(
+            GLFW_KEY_A,
+            new KeyCallback([this, getHorizontalRight, speed](float deltaTime) {
+                velocity -= getHorizontalRight() * speed;
             }));
 
         controls.addKeyDownCallback(
