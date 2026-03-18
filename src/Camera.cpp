@@ -1,4 +1,7 @@
 #include "Camera.h"
+
+#include <algorithm>
+
 #include "glm/gtc/matrix_transform.hpp"
 
 static float clipAngle180(float _angle) {
@@ -67,7 +70,7 @@ void Camera::update(float deltaTime) {
     this->eulerAngle =
         vec3(clipAngle180(this->eulerAngle.x), clipAngle180(this->eulerAngle.y),
              clipAngle180(this->eulerAngle.z));
-    this->eulerAngle.x = clamp(this->eulerAngle.x, -89.f, 89.f);
+    this->eulerAngle.x = std::clamp(this->eulerAngle.x, -89.f, 89.f);
     this->rotation = quat(this->eulerAngle * (float)M_PI / 180.0f);
 
     if (this->targetDistance < this->zNear) {
@@ -120,8 +123,8 @@ void Camera::rotateWithMouse(float deltaX, float deltaY) {
     const float sensitivity = 0.05f;
     const static float ROTATE_MOUSE_FACTOR = 50.f;
 
-    deltaX = glm::clamp(deltaX, -ROTATE_MOUSE_FACTOR, ROTATE_MOUSE_FACTOR);
-    deltaY = glm::clamp(deltaY, -ROTATE_MOUSE_FACTOR, ROTATE_MOUSE_FACTOR);
+    deltaX = std::clamp(deltaX, -ROTATE_MOUSE_FACTOR, ROTATE_MOUSE_FACTOR);
+    deltaY = std::clamp(deltaY, -ROTATE_MOUSE_FACTOR, ROTATE_MOUSE_FACTOR);
 
     this->eulerAngle.x += deltaY * sensitivity;
     this->eulerAngle.y -= deltaX * sensitivity;

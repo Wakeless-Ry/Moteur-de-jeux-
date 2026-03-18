@@ -1,12 +1,13 @@
-#include "glm/detail/type_vec.hpp"
-#include <stdio.h>
-#include <stdlib.h>
+#include <algorithm>
+#include <cmath>
+#include <optional>
 
 #include <GL/glew.h>
 
 #include <GLFW/glfw3.h>
 GLFWwindow *window;
 
+#include "glm/detail/type_vec.hpp"
 #include <glm/ext.hpp>
 #include <glm/gtc/noise.hpp>
 
