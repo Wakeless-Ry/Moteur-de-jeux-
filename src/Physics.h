@@ -18,14 +18,13 @@ class Physics : public System {
     void update(float deltaTime) {
         ECSManager &ecs = ECSManager::getManager();
         for (EntityId entity : this->getEntities()) {
-            std::optional<Positionable> pos =
-                ecs.getComponentOfEntity<Positionable>(entity);
-            std::optional<Velocity> velocity =
-                ecs.getComponentOfEntity<Velocity>(entity);
+            auto pos = ecs.getComponentOfEntity<Positionable>(entity);
+            auto velocity = ecs.getComponentOfEntity<Velocity>(entity);
             if (pos.has_value() && velocity.has_value()) {
-                velocity.value().velocity += GRAVITY * deltaTime;
-                pos.value().pos += velocity.value().velocity * deltaTime;
-                std::cout << pos.value().pos.y << std::endl;
+                velocity.value().get().velocity += GRAVITY * deltaTime; 
+                pos.value().get().pos +=
+                    velocity.value().get().velocity * deltaTime;
+                std::cout << pos.value().get().pos.y << std::endl;
             }
         }
     }

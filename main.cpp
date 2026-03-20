@@ -359,18 +359,18 @@ class Moteur : public GameEngine {
                                   .velocity;
 
         physics.get()->update(deltaTime);
-        // auto pair = getContact(pos);
-        // if (pair.has_value()) {
-        //     auto &[hauteur, normal] = pair.value();
-        //     pos.y = std::max(pos.y, SPHERE_RADIUS + hauteur);
-        //     if (pos.y <= SPHERE_RADIUS + hauteur) {
-        //         float tmp = -velocity.y;
-        //         velocity.y = 0;
-        //         velocity += normal * tmp;
-        //         velocity *= pow(1.0 - friction, deltaTime);
-        //     }
-        // }
-        // velocity *= exp(-frictionAir * deltaTime);
+        auto pair = getContact(pos);
+        if (pair.has_value()) {
+            auto &[hauteur, normal] = pair.value();
+            pos.y = std::max(pos.y, SPHERE_RADIUS + hauteur);
+            if (pos.y <= SPHERE_RADIUS + hauteur) {
+                float tmp = -velocity.y;
+                velocity.y = 0;
+                velocity += normal * tmp;
+                velocity *= pow(1.0 - friction, deltaTime);
+            }
+        }
+        velocity *= exp(-frictionAir * deltaTime);
         std::cout << "TEST ICI" << pos.y << std::endl;
         this->getScene().setTransform(cubeId, translate(pos).scale(0.2));
         this->getCamera().setTarget(pos);
