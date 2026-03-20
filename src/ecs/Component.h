@@ -2,21 +2,14 @@
 #define COMPONENT
 
 #include <tuple>
-
-#include <glm/ext.hpp>
 #include <variant>
 
-#include "src/Transform.h"
+#include <glm/ext.hpp>
 
-struct Positionable {
-    glm::vec3 pos;
-};
+#include "src/ecs/components/Positionable.h"
+#include "src/ecs/components/Velocity.h"
 
-struct Transformable {
-    Transform t;
-};
-
-using ComponentTypes = std::tuple<Positionable, Transformable>;
+using ComponentTypes = std::tuple<Positionable, Velocity>;
 
 template <typename Tuple> struct VariantFromTuple;
 

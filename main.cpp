@@ -1,5 +1,7 @@
+#include "src/ecs/components/Velocity.h"
 #include <algorithm>
 #include <cmath>
+#include <memory>
 #include <optional>
 
 #include <GL/glew.h>
@@ -13,19 +15,21 @@ GLFWwindow *window;
 
 #include "src/Controls.h"
 #include "src/GameEngine.h"
+#include "src/Physics.h"
 #include "src/Scene.h"
 #include "src/SceneObject.h"
 #include "src/Texture.h"
+#include "src/ecs/utils.h"
 #include <src/Camera.h>
 #include <src/FileLoader.cpp>
 #include <src/ecs/ECSManager.h>
 
 NodeId cubeId;
+EntityId sphereId;
 const float SPHERE_RADIUS = 0.2;
-glm::vec3 pos(0, SPHERE_RADIUS, 0);
 
-glm::vec3 velocity(0., 0., 0.);
-const glm::vec3 gravity(0., -9.81, 0.);
+auto physics = std::make_shared<Physics>();
+
 const float friction = 0.95;
 const float frictionAir = 1.f;
 
@@ -203,6 +207,12 @@ std::vector<SceneObject> buildTerrains() {
     std::vector<std::vector<TerrainChunk>> grid(
         grid_size, std::vector<TerrainChunk>(grid_size));
 
+    glm::vec3 &pos = ECSManager::getManager()
+                         .getComponentOfEntity<Positionable>(sphereId)
+                         .value()
+                         .get()
+                         .pos;
+
     glm::ivec2 centerChunk(floor(pos.x / chunkSize), floor(pos.z / chunkSize));
 
     for (int x = -max_rings; x <= max_rings; x++) {
@@ -297,52 +307,71 @@ class Moteur : public GameEngine {
 
         const float speed = 0.2f;
 
+        glm::vec3 &velocity = ECSManager::getManager()
+                                  .getComponentOfEntity<Velocity>(sphereId)
+                                  .value()
+                                  .get()
+                                  .velocity;
+
         controls.addKeyDownCallback(
-            GLFW_KEY_W, new KeyCallback([this, getHorizontalForward,
-                                         speed](float deltaTime) {
+            GLFW_KEY_W, new KeyCallback([this, getHorizontalForward, speed,
+                                         &velocity](float deltaTime) {
                 velocity += getHorizontalForward() * speed;
             }));
 
         controls.addKeyDownCallback(
-            GLFW_KEY_S, new KeyCallback([this, getHorizontalForward,
-                                         speed](float deltaTime) {
+            GLFW_KEY_S, new KeyCallback([this, getHorizontalForward, speed,
+                                         &velocity](float deltaTime) {
                 velocity -= getHorizontalForward() * speed;
             }));
 
         controls.addKeyDownCallback(
-            GLFW_KEY_D,
-            new KeyCallback([this, getHorizontalRight, speed](float deltaTime) {
+            GLFW_KEY_D, new KeyCallback([this, getHorizontalRight, speed,
+                                         &velocity](float deltaTime) {
                 velocity += getHorizontalRight() * speed;
             }));
 
         controls.addKeyDownCallback(
-            GLFW_KEY_A,
-            new KeyCallback([this, getHorizontalRight, speed](float deltaTime) {
+            GLFW_KEY_A, new KeyCallback([this, getHorizontalRight, speed,
+                                         &velocity](float deltaTime) {
                 velocity -= getHorizontalRight() * speed;
             }));
 
         controls.addKeyDownCallback(
-            GLFW_KEY_SPACE,
-            new KeyCallback([this](float deltaTime) { velocity.y += 0.5f; }));
+            GLFW_KEY_SPACE, new KeyCallback([this, &velocity](float deltaTime) {
+                velocity.y += 0.5f;
+            }));
     }
 
     void processInput(float deltaTime) override {}
 
     void update(float deltaTime) override {
-        velocity += gravity * deltaTime;
-        pos += velocity * deltaTime;
-        auto pair = getContact(pos);
-        if (pair.has_value()) {
-            auto &[hauteur, normal] = pair.value();
-            pos.y = std::max(pos.y, SPHERE_RADIUS + hauteur);
-            if (pos.y <= SPHERE_RADIUS + hauteur) {
-                float tmp = -velocity.y;
-                velocity.y = 0;
-                velocity += normal * tmp;
-                velocity *= pow(1.0 - friction, deltaTime);
-            }
-        }
-        velocity *= exp(-frictionAir * deltaTime);
+        glm::vec3 &pos = ECSManager::getManager()
+                             .getComponentOfEntity<Positionable>(sphereId)
+                             .value()
+                             .get()
+                             .pos;
+
+        glm::vec3 &velocity = ECSManager::getManager()
+                                  .getComponentOfEntity<Velocity>(sphereId)
+                                  .value()
+                                  .get()
+                                  .velocity;
+
+        physics.get()->update(deltaTime);
+        // auto pair = getContact(pos);
+        // if (pair.has_value()) {
+        //     auto &[hauteur, normal] = pair.value();
+        //     pos.y = std::max(pos.y, SPHERE_RADIUS + hauteur);
+        //     if (pos.y <= SPHERE_RADIUS + hauteur) {
+        //         float tmp = -velocity.y;
+        //         velocity.y = 0;
+        //         velocity += normal * tmp;
+        //         velocity *= pow(1.0 - friction, deltaTime);
+        //     }
+        // }
+        // velocity *= exp(-frictionAir * deltaTime);
+        std::cout << "TEST ICI" << pos.y << std::endl;
         this->getScene().setTransform(cubeId, translate(pos).scale(0.2));
         this->getCamera().setTarget(pos);
     }
@@ -410,6 +439,14 @@ int main(void) {
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
+    SystemId physicsId = ECSManager::getManager().registerSystem(physics);
+    ECSManager::getManager().registerComponentToSystem<Positionable>(physicsId);
+    ECSManager::getManager().registerComponentToSystem<Velocity>(physicsId);
+
+    sphereId = ECSManager::getManager().generateEntityId();
+    ECSManager::getManager().setComponentToEntity(Positionable(), sphereId);
+    ECSManager::getManager().setComponentToEntity(Velocity(), sphereId);
+
     Moteur engine(window, width, height);
 
     std::optional<Mesh> cubeMeshOpt =
@@ -428,7 +465,13 @@ int main(void) {
         cube.addMetallicMap(rustedMetallicMap);
         cube.addRoughnessMap(rustedRoughnessMap);
         cubeId = engine.getScene().addMesh(cube);
-        engine.getScene().setTransform(cubeId, translate(pos).scale(0.2));
+        engine.getScene().setTransform(
+            cubeId, translate(ECSManager::getManager()
+                                  .getComponentOfEntity<Positionable>(sphereId)
+                                  .value()
+                                  .get()
+                                  .pos)
+                        .scale(0.2));
 
         engine.getScene().addLightToScene(
             Light(glm::vec3(0, 20, 0), glm::vec3(10000)));
@@ -439,7 +482,6 @@ int main(void) {
     for (auto &terrain : buildTerrains()) {
         engine.getScene().addMesh(terrain);
     }
-
     engine.run();
 
     return 0;

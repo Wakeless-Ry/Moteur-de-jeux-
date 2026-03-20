@@ -8,6 +8,7 @@
 #include <typeindex>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "System.h"
 #include "utils.h"
@@ -19,7 +20,7 @@ class ECSManager {
     };
 
     template <typename T> struct ComponentList : ComponentListBase {
-        std::array<T, ECS::MAX_ENTITIES> components;
+        std::vector<T> components;
 
         std::unordered_map<EntityId, size_t> indices;
         std::queue<size_t> empty_indices;
@@ -46,13 +47,12 @@ class ECSManager {
             this->indices.erase(entity);
         }
 
-        std::optional<std::reference_wrapper<const T>>
-        get(EntityId entity) const {
+        std::optional<std::reference_wrapper<T>> get(EntityId entity) {
             auto it = this->indices.find(entity);
             if (it == this->indices.end()) {
                 return std::nullopt;
             }
-            return std::cref(this->components[it->second]);
+            return std::ref(this->components[it->second]);
         }
     };
 
@@ -90,7 +90,7 @@ class ECSManager {
 
             for (auto const &[element, other] : this->signatures) {
                 if ((other & signature) == signature) {
-                    result.insert(other);
+                    result.insert(element);
                 }
             }
 
@@ -134,10 +134,6 @@ class ECSManager {
             *componentMap.at(std::type_index(typeid(T))));
     }
 
-    template <typename T> ComponentList<T> &getList() const {
-        return const_cast<ECSManager *>(this)->getList<T>();
-    }
-
     void entityComponentsChanged(EntityId entity);
 
     ECSManager();
@@ -165,8 +161,8 @@ class ECSManager {
     }
 
     template <typename T>
-    std::optional<std::reference_wrapper<const T>>
-    getComponentOfEntity(EntityId entity) const {
+    std::optional<std::reference_wrapper<T>>
+    getComponentOfEntity(EntityId entity) {
         return this->getList<T>().get(entity);
     }
 
