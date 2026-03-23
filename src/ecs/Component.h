@@ -7,9 +7,9 @@
 #include <glm/ext.hpp>
 
 #include "src/ecs/components/Positionable.h"
-#include "src/ecs/components/Velocity.h"
+#include "src/ecs/components/RigidBody.h"
 
-using ComponentTypes = std::tuple<Positionable, Velocity>;
+using ComponentTypes = std::tuple<Positionable, RigidBody>;
 
 template <typename Tuple> struct VariantFromTuple;
 

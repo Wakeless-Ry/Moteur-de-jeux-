@@ -1,4 +1,3 @@
-#include "src/ecs/components/Velocity.h"
 #include <algorithm>
 #include <cmath>
 #include <memory>
@@ -19,6 +18,7 @@ GLFWwindow *window;
 #include "src/Scene.h"
 #include "src/SceneObject.h"
 #include "src/Texture.h"
+#include "src/ecs/components/RigidBody.h"
 #include "src/ecs/utils.h"
 #include <src/Camera.h>
 #include <src/FileLoader.cpp>
@@ -305,41 +305,41 @@ class Moteur : public GameEngine {
                 glm::cross(getHorizontalForward(), glm::vec3(0.f, 1.f, 0.f)));
         };
 
-        const float speed = 0.2f;
+        const float speed = 0.02f;
 
-        glm::vec3 &velocity = ECSManager::getManager()
-                                  .getComponentOfEntity<Velocity>(sphereId)
-                                  .value()
-                                  .get()
-                                  .velocity;
+        glm::vec3 &force = ECSManager::getManager()
+                               .getComponentOfEntity<RigidBody>(sphereId)
+                               .value()
+                               .get()
+                               .force;
 
         controls.addKeyDownCallback(
             GLFW_KEY_W, new KeyCallback([this, getHorizontalForward, speed,
-                                         &velocity](float deltaTime) {
-                velocity += getHorizontalForward() * speed;
+                                         &force](float deltaTime) {
+                force += getHorizontalForward() * speed;
             }));
 
         controls.addKeyDownCallback(
             GLFW_KEY_S, new KeyCallback([this, getHorizontalForward, speed,
-                                         &velocity](float deltaTime) {
-                velocity -= getHorizontalForward() * speed;
+                                         &force](float deltaTime) {
+                force -= getHorizontalForward() * speed;
             }));
 
         controls.addKeyDownCallback(
             GLFW_KEY_D, new KeyCallback([this, getHorizontalRight, speed,
-                                         &velocity](float deltaTime) {
-                velocity += getHorizontalRight() * speed;
+                                         &force](float deltaTime) {
+                force += getHorizontalRight() * speed;
             }));
 
         controls.addKeyDownCallback(
             GLFW_KEY_A, new KeyCallback([this, getHorizontalRight, speed,
-                                         &velocity](float deltaTime) {
-                velocity -= getHorizontalRight() * speed;
+                                         &force](float deltaTime) {
+                force -= getHorizontalRight() * speed;
             }));
 
         controls.addKeyDownCallback(
-            GLFW_KEY_SPACE, new KeyCallback([this, &velocity](float deltaTime) {
-                velocity.y += 0.5f;
+            GLFW_KEY_SPACE, new KeyCallback([this, &force](float deltaTime) {
+                force.y += 15.f * deltaTime;
             }));
     }
 
@@ -353,7 +353,7 @@ class Moteur : public GameEngine {
                              .pos;
 
         glm::vec3 &velocity = ECSManager::getManager()
-                                  .getComponentOfEntity<Velocity>(sphereId)
+                                  .getComponentOfEntity<RigidBody>(sphereId)
                                   .value()
                                   .get()
                                   .velocity;
@@ -363,15 +363,14 @@ class Moteur : public GameEngine {
         if (pair.has_value()) {
             auto &[hauteur, normal] = pair.value();
             pos.y = std::max(pos.y, SPHERE_RADIUS + hauteur);
-            if (pos.y <= SPHERE_RADIUS + hauteur) {
-                float tmp = -velocity.y;
-                velocity.y = 0;
-                velocity += normal * tmp;
-                velocity *= pow(1.0 - friction, deltaTime);
-            }
+            // if (pos.y <= SPHERE_RADIUS + hauteur) {
+            //     float tmp = -velocity.y;
+            //     velocity.y = 0;
+            //     velocity += normal * tmp;
+            //     velocity *= pow(1.0 - friction, deltaTime);
+            // }
         }
-        velocity *= exp(-frictionAir * deltaTime);
-        std::cout << "TEST ICI" << pos.y << std::endl;
+        // velocity *= exp(-frictionAir * deltaTime);
         this->getScene().setTransform(cubeId, translate(pos).scale(0.2));
         this->getCamera().setTarget(pos);
     }
@@ -441,11 +440,11 @@ int main(void) {
 
     SystemId physicsId = ECSManager::getManager().registerSystem(physics);
     ECSManager::getManager().registerComponentToSystem<Positionable>(physicsId);
-    ECSManager::getManager().registerComponentToSystem<Velocity>(physicsId);
+    ECSManager::getManager().registerComponentToSystem<RigidBody>(physicsId);
 
     sphereId = ECSManager::getManager().generateEntityId();
     ECSManager::getManager().setComponentToEntity(Positionable(), sphereId);
-    ECSManager::getManager().setComponentToEntity(Velocity(), sphereId);
+    ECSManager::getManager().setComponentToEntity(RigidBody(), sphereId);
 
     Moteur engine(window, width, height);
 
