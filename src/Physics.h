@@ -5,6 +5,7 @@
 #include <iostream>
 #include <optional>
 
+#include "glm/detail/func_geometric.hpp"
 #include "glm/detail/type_vec.hpp"
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/System.h"
@@ -16,6 +17,8 @@
 
 const glm::vec3 DOWN(0., -1, 0.);
 const float GRAVITY = 9.81;
+const float STATIC_FRICTION = 0.74;
+const float KINETIC_FRICTION = 0.57;
 
 class Physics : public System {
   private:
@@ -27,44 +30,56 @@ class Physics : public System {
         ECSManager &ecs = ECSManager::getManager();
         for (EntityId entity : this->getEntities()) {
 
-            auto pos = ecs.getComponentOfEntity<Positionable>(entity);
-            auto rigidBody = ecs.getComponentOfEntity<RigidBody>(entity);
+            auto posOpt = ecs.getComponentOfEntity<Positionable>(entity);
+            auto rigidBodyOpt = ecs.getComponentOfEntity<RigidBody>(entity);
             float y;
-            bool setY = false;
+            bool collisionFound = false;
 
-            if (pos.has_value() && rigidBody.has_value()) {
-                auto pair =
-                    this->terrain.value().getContact(pos.value().get().pos);
+            if (posOpt.has_value() && rigidBodyOpt.has_value()) {
+                Positionable &pos = posOpt.value();
+                RigidBody &rigidBody = rigidBodyOpt.value();
+
+                glm::vec3 weight = rigidBody.mass * GRAVITY * DOWN;
+                glm::vec3 projection;
+                auto pair = this->terrain.value().getProjectedContact(pos.pos);
 
                 if (pair.has_value()) {
 
                     auto &[hauteur, normal] = pair.value();
-                    if (pos.value().get().pos.y <= 0.2f + hauteur) {
+                    bool isCollinding = pos.pos.y <= 0.2f + hauteur;
 
-                        rigidBody.value().get().force +=
-                            rigidBody.value().get().mass * GRAVITY * normal *
-                            deltaTime;
+                    if (isCollinding) {
+
+                        float dotProduct = glm::dot(-weight, normal);
+                        float square = glm::dot(normal, normal);
+                        projection = (dotProduct / square) * normal;
+
+                        rigidBody.force += projection * deltaTime;
 
                         y = hauteur + 0.2f;
-                        setY = true;
+                        collisionFound = true;
                     }
                 }
 
-                rigidBody.value().get().force +=
-                    rigidBody.value().get().mass * GRAVITY * DOWN * deltaTime;
+                rigidBody.force += weight * deltaTime;
+                rigidBody.velocity += rigidBody.force / rigidBody.mass;
 
-                rigidBody.value().get().velocity +=
-                    rigidBody.value().get().force /
-                    rigidBody.value().get().mass;
+                glm::vec3 horizontalVelocity = rigidBody.velocity;
+                horizontalVelocity.y = 0;
 
-                pos.value().get().pos +=
-                    rigidBody.value().get().velocity * deltaTime;
-                rigidBody.value().get().force = glm::vec3(0);
+                if (collisionFound &&
+                    glm::length(horizontalVelocity) <=
+                        glm::length(projection) * STATIC_FRICTION * deltaTime) {
 
-                if (setY) {
-                    pos.value().get().pos.y =
-                        std::max(pos.value().get().pos.y, y);
-                    rigidBody.value().get().velocity.y = 0;
+                    rigidBody.velocity -= horizontalVelocity;
+                }
+
+                pos.pos += rigidBody.velocity * deltaTime;
+                rigidBody.force = glm::vec3(0);
+
+                if (collisionFound) {
+                    pos.pos.y = std::max(pos.pos.y, y);
+                    rigidBody.velocity.y = 0;
                 }
             }
         }

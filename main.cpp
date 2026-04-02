@@ -12,13 +12,13 @@ GLFWwindow *window;
 #include <glm/ext.hpp>
 #include <glm/gtc/noise.hpp>
 
-#include "src/Write_csv.h"
 #include "src/Controls.h"
 #include "src/GameEngine.h"
 #include "src/Physics.h"
 #include "src/Scene.h"
 #include "src/SceneObject.h"
 #include "src/Texture.h"
+#include "src/Write_csv.h"
 #include "src/ecs/components/RigidBody.h"
 #include "src/ecs/utils.h"
 #include <src/Camera.h>
@@ -88,7 +88,7 @@ class Moteur : public GameEngine {
                 glm::cross(getHorizontalForward(), glm::vec3(0.f, 1.f, 0.f)));
         };
 
-        const float speed = 0.02f;
+        static float speed = 7.3f;
 
         glm::vec3 &force = ECSManager::getManager()
                                .getComponentOfEntity<RigidBody>(sphereId)
@@ -97,27 +97,27 @@ class Moteur : public GameEngine {
                                .force;
 
         controls.addKeyDownCallback(
-            GLFW_KEY_W, new KeyCallback([this, getHorizontalForward, speed,
+            GLFW_KEY_W, new KeyCallback([this, getHorizontalForward,
                                          &force](float deltaTime) {
-                force += getHorizontalForward() * speed;
+                force += getHorizontalForward() * speed * deltaTime;
             }));
 
         controls.addKeyDownCallback(
-            GLFW_KEY_S, new KeyCallback([this, getHorizontalForward, speed,
+            GLFW_KEY_S, new KeyCallback([this, getHorizontalForward,
                                          &force](float deltaTime) {
-                force -= getHorizontalForward() * speed;
+                force -= getHorizontalForward() * speed * deltaTime;
             }));
 
         controls.addKeyDownCallback(
-            GLFW_KEY_D, new KeyCallback([this, getHorizontalRight, speed,
+            GLFW_KEY_D, new KeyCallback([this, getHorizontalRight,
                                          &force](float deltaTime) {
-                force += getHorizontalRight() * speed;
+                force += getHorizontalRight() * speed * deltaTime;
             }));
 
         controls.addKeyDownCallback(
-            GLFW_KEY_A, new KeyCallback([this, getHorizontalRight, speed,
+            GLFW_KEY_A, new KeyCallback([this, getHorizontalRight,
                                          &force](float deltaTime) {
-                force -= getHorizontalRight() * speed;
+                force -= getHorizontalRight() * speed * deltaTime;
             }));
 
         controls.addKeyDownCallback(
@@ -203,10 +203,11 @@ int main(void) {
 
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
-    
+
     SystemId write_csv_id = ECSManager::getManager().registerSystem(write_csv);
-    ECSManager::getManager().registerComponentToSystem<Positionable>(write_csv_id);
-    ECSManager::getManager().registerComponentToSystem<Velocity>(write_csv_id);
+    ECSManager::getManager().registerComponentToSystem<Positionable>(
+        write_csv_id);
+    ECSManager::getManager().registerComponentToSystem<RigidBody>(write_csv_id);
 
     SystemId physicsId = ECSManager::getManager().registerSystem(physics);
     ECSManager::getManager().registerComponentToSystem<Positionable>(physicsId);

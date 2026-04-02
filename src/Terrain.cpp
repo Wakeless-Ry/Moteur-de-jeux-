@@ -187,7 +187,8 @@ class Terrain {
 
     std::vector<SceneObject> getSceneObjects() { return this->sceneObjects; }
 
-    std::optional<std::pair<float, glm::vec3>> getContact(glm::vec3 pos) {
+    std::optional<std::pair<float, glm::vec3>>
+    getProjectedContact(glm::vec3 pos) {
         TerrainChunk *chunk = nullptr;
         for (auto &tc : terrainChunks) {
             float chunkMinX = tc.offset.x + minX;
