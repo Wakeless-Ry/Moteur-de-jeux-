@@ -12,6 +12,7 @@ GLFWwindow *window;
 #include <glm/ext.hpp>
 #include <glm/gtc/noise.hpp>
 
+#include "src/Write_csv.h"
 #include "src/Controls.h"
 #include "src/GameEngine.h"
 #include "src/Physics.h"
@@ -29,7 +30,7 @@ EntityId sphereId;
 const float SPHERE_RADIUS = 0.2;
 
 auto physics = std::make_shared<Physics>();
-
+auto write_csv = std::make_shared<Write_CSV>();
 const float friction = 0.95;
 const float frictionAir = 1.f;
 
@@ -202,6 +203,10 @@ int main(void) {
 
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
+    
+    SystemId write_csv_id = ECSManager::getManager().registerSystem(write_csv);
+    ECSManager::getManager().registerComponentToSystem<Positionable>(write_csv_id);
+    ECSManager::getManager().registerComponentToSystem<Velocity>(write_csv_id);
 
     SystemId physicsId = ECSManager::getManager().registerSystem(physics);
     ECSManager::getManager().registerComponentToSystem<Positionable>(physicsId);
