@@ -8,7 +8,6 @@
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/System.h"
 #include "src/ecs/components/Positionable.h"
-#include "src/ecs/components/Velocity.h"
 #include "src/ecs/utils.h"
 
 using namespace std;
@@ -26,9 +25,10 @@ class Write_CSV : public System {
             for (EntityId entity : this->getEntities())
             {
                 auto pos_ecs = ecs.getComponentOfEntity<Positionable>(entity);
-                auto velocity_ecs = ecs.getComponentOfEntity<Velocity>(entity);
+                auto velocity_ecs = ecs.getComponentOfEntity<RigidBody>(entity);
                 auto pos = pos_ecs.value().get().pos;
                 auto velocity = velocity_ecs.value().get().velocity;
+                
                 string tmp = to_string(entity.value) + "," + to_string(deltaTime) + ",";
                 tmp += to_string(pos.x) + "," + to_string(pos.y) + "," + to_string(pos.z)+ ",";
                 tmp += to_string(velocity.x) + "," + to_string(velocity.y) + "," + to_string(velocity.z)+ "\n";

@@ -8,6 +8,7 @@ struct RigidBody {
     glm::vec3 velocity;
     glm::vec3 force;
     float mass = 1.f;
+    float volume;
 };
 
 #endif // RIGIDBODY

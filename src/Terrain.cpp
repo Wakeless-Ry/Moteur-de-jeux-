@@ -11,6 +11,8 @@
 #include "src/Texture.h"
 
 class Terrain {
+    float density;
+    bool is_liquid = false;
     struct TerrainChunk {
         Mesh *mesh;
         glm::vec2 offset;
@@ -66,7 +68,8 @@ class Terrain {
                 amplitude *= 0.5f;
                 frequency *= 1.8f;
             }
-            return std::max(4 * height / totalAmplitude, 0.f);
+            // return std::max(4 * height / totalAmplitude, 0.f);
+            return 4 * height / totalAmplitude;
         };
 
         for (ushort i = 0; i < nombreVertices; i++) {
@@ -238,4 +241,6 @@ class Terrain {
                      glm::normalize(normal)}};
         }
     }
+    float getDensity() { return this->density; };
+    bool getIsLiquid() { return this->is_liquid; };
 };

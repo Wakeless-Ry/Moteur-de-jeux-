@@ -15,6 +15,7 @@
 #include "src/Terrain.cpp"
 
 const glm::vec3 DOWN(0., -1, 0.);
+const glm::vec3 UP(0., 1, 0.);
 const float GRAVITY = 9.81;
 
 class Physics : public System {
@@ -53,6 +54,23 @@ class Physics : public System {
                 rigidBody.value().get().force +=
                     rigidBody.value().get().mass * GRAVITY * DOWN * deltaTime;
 
+                float coef = 1.0f;
+                if (pos.value().get().pos.y - 0.2f < 0.0f)
+                    coef -= (100.0f * (pos.value().get().pos.y - 0.2f)) / 0.4f;
+                float density_air = 1.0f;
+                float density_eau = 1000.0f;
+
+                float flotaison_air = std::clamp(density_air * GRAVITY * rigidBody.value().get().volume, 0.0f, GRAVITY + 2.0f);
+                float flotaison_eau = std::clamp(density_air * GRAVITY * rigidBody.value().get().volume, 0.0f, GRAVITY + 2.0f);
+                rigidBody.value().get().force += (coef * flotaison_air + (1 - coef) * flotaison_eau) * UP * deltaTime;
+                printf("%f\n", coef);
+                float traine;
+                // if (rigidBody.value().get().velocity.x > 5)
+                // {
+
+                // }
+                // else
+
                 rigidBody.value().get().velocity +=
                     rigidBody.value().get().force /
                     rigidBody.value().get().mass;
@@ -60,6 +78,7 @@ class Physics : public System {
                 pos.value().get().pos +=
                     rigidBody.value().get().velocity * deltaTime;
                 rigidBody.value().get().force = glm::vec3(0);
+
 
                 if (setY) {
                     pos.value().get().pos.y =

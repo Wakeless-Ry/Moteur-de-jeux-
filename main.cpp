@@ -28,7 +28,8 @@ GLFWwindow *window;
 NodeId cubeId;
 EntityId sphereId;
 const float SPHERE_RADIUS = 0.2;
-
+const float SPHERE_RADIUS_CUBE = SPHERE_RADIUS * SPHERE_RADIUS * SPHERE_RADIUS;
+const float SPHERE_VOLUME = 4.0 / 3.0 * 3.14 * SPHERE_RADIUS_CUBE;
 auto physics = std::make_shared<Physics>();
 auto write_csv = std::make_shared<Write_CSV>();
 const float friction = 0.95;
@@ -206,7 +207,7 @@ int main(void) {
     
     SystemId write_csv_id = ECSManager::getManager().registerSystem(write_csv);
     ECSManager::getManager().registerComponentToSystem<Positionable>(write_csv_id);
-    ECSManager::getManager().registerComponentToSystem<Velocity>(write_csv_id);
+    ECSManager::getManager().registerComponentToSystem<RigidBody>(write_csv_id);
 
     SystemId physicsId = ECSManager::getManager().registerSystem(physics);
     ECSManager::getManager().registerComponentToSystem<Positionable>(physicsId);
@@ -215,6 +216,7 @@ int main(void) {
     sphereId = ECSManager::getManager().generateEntityId();
     ECSManager::getManager().setComponentToEntity(Positionable(), sphereId);
     ECSManager::getManager().setComponentToEntity(RigidBody(), sphereId);
+    ECSManager::getManager().getComponentOfEntity<RigidBody>(sphereId).value().get().volume = SPHERE_VOLUME;
 
     Moteur engine(window, width, height);
 
