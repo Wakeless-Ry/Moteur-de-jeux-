@@ -23,6 +23,7 @@ const float density_eau = 1000.0f;
 const float density_air = 1.0f;
 const float Cd = 0.47f;
 const float A_ = M_PI * r * r;
+const float V_total = (4.0f / 3.0f) * M_PI * r * r * r;
 class Physics : public System {
   private:
     std::optional<Terrain> terrain;
@@ -53,33 +54,33 @@ class Physics : public System {
                         setY = true;
                     }
                 }
-
                 rigidBody.value().get().force +=
                     rigidBody.value().get().mass * GRAVITY * DOWN;
 
                 bool inWater = pos.value().get().pos.y < waterLevel;
 
                 if (inWater) {
+                    float V_total = (4.0f / 3.0f) * M_PI * r * r * r;
+                    float density_balle = rigidBody.value().get().mass / V_total;
+                    float coef = density_balle / density_eau;
+
                     float deep = waterLevel - pos.value().get().pos.y;
                     float height = deep + r;
                     height = std::clamp(height, 0.0f, 2.0f * r);
 
-                    float V_immerge = M_PI * height * height * (3 * r - height) / 3.0f;
+                    float V_immerge = M_PI * height * height * (3.0f * r - height) / 3.0f;
 
-                    float Flotaison = density_eau * GRAVITY * V_immerge * 0.05f;
-
+                    float Flotaison = density_eau * GRAVITY * V_immerge * coef;
                     rigidBody.value().get().force += Flotaison * UP;
+
                     glm::vec3 v = rigidBody.value().get().velocity;
-                    glm::vec3 vHoriz(v.x, 0.0f, v.z);
-                    float speed = glm::length(vHoriz);
+                    float speed = glm::length(v);
                     if (speed > 0.001f)
                     {
-                        glm::vec3 dragWater(0.0f);
-                        glm::vec3 dir = vHoriz / speed;
-                        dragWater = -0.5f * density_eau * Cd * A_ * speed * speed * dir;
-
+                        glm::vec3 dir = v / speed;
                         float immersion = std::clamp((waterLevel - pos.value().get().pos.y) / (2.0f * r), 0.0f, 1.0f);
-                        dragWater *= immersion * 0.0001f;
+                        glm::vec3 dragWater = -0.5f * density_eau * Cd * A_ * speed * speed * dir;
+                        dragWater *= immersion * coef;
                         rigidBody.value().get().force += dragWater;
                     }
                 }
