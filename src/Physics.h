@@ -17,7 +17,12 @@
 const glm::vec3 DOWN(0., -1, 0.);
 const glm::vec3 UP(0., 1, 0.);
 const float GRAVITY = 9.81;
-
+const float r = 0.2f;
+const float waterLevel = 0.0f;
+const float density_eau = 1000.0f;
+const float density_air = 1.0f;
+const float Cd = 0.47f;
+const float A_ = M_PI * r * r;
 class Physics : public System {
   private:
     std::optional<Terrain> terrain;
@@ -38,13 +43,11 @@ class Physics : public System {
                     this->terrain.value().getContact(pos.value().get().pos);
 
                 if (pair.has_value()) {
-
                     auto &[hauteur, normal] = pair.value();
                     if (pos.value().get().pos.y <= 0.2f + hauteur) {
 
                         rigidBody.value().get().force +=
-                            rigidBody.value().get().mass * GRAVITY * normal *
-                            deltaTime;
+                            rigidBody.value().get().mass * GRAVITY * normal;
 
                         y = hauteur + 0.2f;
                         setY = true;
@@ -52,28 +55,39 @@ class Physics : public System {
                 }
 
                 rigidBody.value().get().force +=
-                    rigidBody.value().get().mass * GRAVITY * DOWN * deltaTime;
+                    rigidBody.value().get().mass * GRAVITY * DOWN;
 
-                float coef = 1.0f;
-                if (pos.value().get().pos.y - 0.2f < 0.0f)
-                    coef -= (100.0f * (pos.value().get().pos.y - 0.2f)) / 0.4f;
-                float density_air = 1.0f;
-                float density_eau = 1000.0f;
+                bool inWater = pos.value().get().pos.y < waterLevel;
 
-                float flotaison_air = std::clamp(density_air * GRAVITY * rigidBody.value().get().volume, 0.0f, GRAVITY + 2.0f);
-                float flotaison_eau = std::clamp(density_air * GRAVITY * rigidBody.value().get().volume, 0.0f, GRAVITY + 2.0f);
-                rigidBody.value().get().force += (coef * flotaison_air + (1 - coef) * flotaison_eau) * UP * deltaTime;
-                printf("%f\n", coef);
-                float traine;
-                // if (rigidBody.value().get().velocity.x > 5)
-                // {
+                if (inWater) {
+                    float deep = waterLevel - pos.value().get().pos.y;
+                    float height = deep + r;
+                    height = std::clamp(height, 0.0f, 2.0f * r);
 
-                // }
-                // else
+                    float V_immerge = M_PI * height * height * (3 * r - height) / 3.0f;
+
+                    float Flotaison = density_eau * GRAVITY * V_immerge * 0.05f;
+
+                    rigidBody.value().get().force += Flotaison * UP;
+                    glm::vec3 v = rigidBody.value().get().velocity;
+                    glm::vec3 vHoriz(v.x, 0.0f, v.z);
+                    float speed = glm::length(vHoriz);
+                    if (speed > 0.001f)
+                    {
+                        glm::vec3 dragWater(0.0f);
+                        glm::vec3 dir = vHoriz / speed;
+                        dragWater = -0.5f * density_eau * Cd * A_ * speed * speed * dir;
+
+                        float immersion = std::clamp((waterLevel - pos.value().get().pos.y) / (2.0f * r), 0.0f, 1.0f);
+                        dragWater *= immersion * 0.0001f;
+                        rigidBody.value().get().force += dragWater;
+                    }
+                }
 
                 rigidBody.value().get().velocity +=
-                    rigidBody.value().get().force /
-                    rigidBody.value().get().mass;
+                    (rigidBody.value().get().force /
+                    rigidBody.value().get().mass) *
+                    deltaTime;
 
                 pos.value().get().pos +=
                     rigidBody.value().get().velocity * deltaTime;
