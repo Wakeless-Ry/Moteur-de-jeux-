@@ -16,7 +16,7 @@ class Write_CSV : public System {
         ofstream csv;
     public:
         Write_CSV() : csv("./assets/csv/out.csv") {
-            this->csv << "id,deltaime,pos_x,pos_y,pos_z,vel_x,vel_y,vel_z";
+            this->csv << "id,deltatime,pos_x,pos_y,pos_z,vel_x,vel_y,vel_z";
         }
 
         void update(float deltaTime)
