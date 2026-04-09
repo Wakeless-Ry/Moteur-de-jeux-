@@ -135,7 +135,7 @@ class Moteur : public GameEngine {
                              .value()
                              .get()
                              .pos;
-
+        write_csv.get()->update(deltaTime);
         physics.get()->update(deltaTime);
 
         this->getScene().setTransform(cubeId, translate(pos).scale(0.2));

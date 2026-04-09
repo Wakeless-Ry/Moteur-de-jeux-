@@ -4,7 +4,6 @@
 #include <fstream>
 #include <string>
 #include <optional>
-#include <iostream>
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/System.h"
 #include "src/ecs/components/Positionable.h"
@@ -16,7 +15,9 @@ class Write_CSV : public System {
     private:
         ofstream csv;
     public:
-        Write_CSV() : csv("./assets/csv/out.csv") {}
+        Write_CSV() : csv("./assets/csv/out.csv") {
+            this->csv << "id,deltaime,pos_x,pos_y,pos_z,vel_x,vel_y,vel_z";
+        }
 
         void update(float deltaTime)
         {
