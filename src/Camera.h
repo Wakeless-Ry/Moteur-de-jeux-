@@ -89,6 +89,8 @@ class Camera : public Observer<vec3> {
     float getRotationSpeed() const;
     void setRotationSpeed(float newRotationSpeed);
 
+    vec3 getFront() const;
+
     void update(float deltaTime);
     void update(float deltaTime, vec3 newTarget);
 

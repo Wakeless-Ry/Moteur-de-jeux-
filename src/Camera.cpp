@@ -62,6 +62,8 @@ vec3 Camera::projectVectorOnPlan(vec3 toProject, vec3 normal) {
     return cross(normal, cross(toProject, normal));
 }
 
+vec3 Camera::getFront() const { return this->rotation * VEC_FRONT; }
+
 void Camera::update(float deltaTime) {
     if (this->mode == ROTATE) {
         this->eulerAngle.y = this->eulerAngle.y + deltaTime * rotationSpeed;

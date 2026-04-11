@@ -1,40 +1,44 @@
-#include <algorithm>
-#include <cmath>
+#include "src/SceneObject.h"
 #include <memory>
 #include <optional>
 
 #include <GL/glew.h>
-
 #include <GLFW/glfw3.h>
 GLFWwindow *window;
 
-#include "glm/detail/type_vec.hpp"
-#include <glm/ext.hpp>
-#include <glm/gtc/noise.hpp>
-
-#include "src/Controls.h"
+#include "src/FileLoader.cpp"
 #include "src/GameEngine.h"
 #include "src/Physics.h"
 #include "src/Scene.h"
-#include "src/SceneObject.h"
-#include "src/Texture.h"
 #include "src/Write_csv.h"
-#include "src/ecs/components/RigidBody.h"
 #include "src/ecs/utils.h"
-#include <src/Camera.h>
-#include <src/FileLoader.cpp>
-#include <src/ecs/ECSManager.h>
 
-NodeId cubeId;
-EntityId sphereId;
-const float SPHERE_RADIUS = 0.2;
+const float BALL_RADIUS = 0.2;
 
 auto physics = std::make_shared<Physics>();
 auto write_csv = std::make_shared<Write_CSV>();
-const float friction = 0.95;
-const float frictionAir = 1.f;
 
 class Moteur : public GameEngine {
+    std::optional<SceneObject> ballMesh;
+    std::vector<NodeId> ballIds;
+    std::vector<EntityId> ballEntityIds;
+
+    void spawnBall(glm::vec3 pos, glm::vec3 direction, float speed,
+                   float deltaTime) {
+        NodeId ballId = this->getScene().addMesh(this->ballMesh.value());
+        this->ballIds.push_back(ballId);
+
+        EntityId ballEntityId = ECSManager::getManager().generateEntityId();
+        this->ballEntityIds.push_back(ballEntityId);
+
+        ECSManager::getManager().setComponentToEntity(Positionable(pos),
+                                                      ballEntityId);
+        ECSManager::getManager().setComponentToEntity(
+            RigidBody(direction * speed * deltaTime), ballEntityId);
+
+        std::cout << "Ball spawned" << std::endl;
+    }
+
     void init() override {
         glfwPollEvents();
         glfwSetCursorPos(this->getWindow(),
@@ -42,6 +46,9 @@ class Moteur : public GameEngine {
                          this->getCamera().getScreenHeight() / 2.);
 
         Controls &controls = this->getControls();
+        this->getCamera().setPosition({10, 10, 10});
+        this->getCamera().setTranslationSpeed(5);
+        this->getCamera().changeMode();
 
         controls.addMouseDeltaCallback(
             new MouseMoveCallback([this](float dx, float dy) {
@@ -57,88 +64,87 @@ class Moteur : public GameEngine {
                 CameraMode mode = this->getCamera().changeMode();
             }));
 
-        controls.addKeyDownCallback(GLFW_KEY_UP,
+        controls.addKeyDownCallback(GLFW_KEY_W,
                                     new KeyCallback([this](float deltaTime) {
                                         this->getCamera().forward(deltaTime);
                                     }));
 
-        controls.addKeyDownCallback(GLFW_KEY_LEFT,
+        controls.addKeyDownCallback(GLFW_KEY_A,
                                     new KeyCallback([this](float deltaTime) {
                                         this->getCamera().left(deltaTime);
                                     }));
 
-        controls.addKeyDownCallback(GLFW_KEY_DOWN,
+        controls.addKeyDownCallback(GLFW_KEY_S,
                                     new KeyCallback([this](float deltaTime) {
                                         this->getCamera().backward(deltaTime);
                                     }));
 
-        controls.addKeyDownCallback(GLFW_KEY_RIGHT,
+        controls.addKeyDownCallback(GLFW_KEY_D,
                                     new KeyCallback([this](float deltaTime) {
                                         this->getCamera().right(deltaTime);
                                     }));
 
-        auto getHorizontalForward = [this]() -> glm::vec3 {
-            float yawRadian = glm::radians(this->getCamera().getEulerAngle().y);
-            return glm::normalize(
-                glm::vec3(sin(yawRadian), 0.f, cos(yawRadian)));
-        };
+        controls.addKeyDownCallback(GLFW_KEY_E,
+                                    new KeyCallback([this](float deltaTime) {
+                                        this->getCamera().up(deltaTime);
+                                    }));
 
-        auto getHorizontalRight = [this, getHorizontalForward]() -> glm::vec3 {
-            return glm::normalize(
-                glm::cross(getHorizontalForward(), glm::vec3(0.f, 1.f, 0.f)));
-        };
+        controls.addKeyDownCallback(GLFW_KEY_Q,
+                                    new KeyCallback([this](float deltaTime) {
+                                        this->getCamera().down(deltaTime);
+                                    }));
 
-        static float speed = 7.3f;
-
-        glm::vec3 &force = ECSManager::getManager()
-                               .getComponentOfEntity<RigidBody>(sphereId)
-                               .value()
-                               .get()
-                               .force;
-
-        controls.addKeyDownCallback(
-            GLFW_KEY_W, new KeyCallback([this, getHorizontalForward,
-                                         &force](float deltaTime) {
-                force += getHorizontalForward() * speed * deltaTime;
+        controls.addKeyPressedCallback(
+            GLFW_KEY_LEFT_SHIFT, new KeyCallback([this](float deltaTime) {
+                this->getCamera().setTranslationSpeed(20);
             }));
 
-        controls.addKeyDownCallback(
-            GLFW_KEY_S, new KeyCallback([this, getHorizontalForward,
-                                         &force](float deltaTime) {
-                force -= getHorizontalForward() * speed * deltaTime;
+        controls.addKeyReleasedCallback(
+            GLFW_KEY_LEFT_SHIFT, new KeyCallback([this](float deltaTime) {
+                this->getCamera().setTranslationSpeed(5);
             }));
 
-        controls.addKeyDownCallback(
-            GLFW_KEY_D, new KeyCallback([this, getHorizontalRight,
-                                         &force](float deltaTime) {
-                force += getHorizontalRight() * speed * deltaTime;
+        controls.addKeyPressedCallback(
+            GLFW_KEY_SPACE, new KeyCallback([this](float deltaTime) {
+                this->spawnBall(this->getCamera().getPosition(),
+                                this->getCamera().getFront(), 500, deltaTime);
             }));
 
-        controls.addKeyDownCallback(
-            GLFW_KEY_A, new KeyCallback([this, getHorizontalRight,
-                                         &force](float deltaTime) {
-                force -= getHorizontalRight() * speed * deltaTime;
-            }));
+        std::optional<Mesh> ballMeshOpt =
+            FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
 
-        controls.addKeyDownCallback(
-            GLFW_KEY_SPACE, new KeyCallback([this, &force](float deltaTime) {
-                force.y += 15.f * deltaTime;
-            }));
+        if (ballMeshOpt.has_value()) {
+            this->ballMesh =
+                SceneObject("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
+                            ballMeshOpt.value());
+
+            this->ballMesh.value().setAlbedo({0.5, 0.5, 0.5});
+            this->ballMesh.value().setMetallic(0.5);
+            this->ballMesh.value().setRoughness(0.4);
+        } else {
+            std::cout << "Mesh pas chargé correctement" << std::endl;
+        }
+
+        this->getScene().addLightToScene(
+            Light(glm::vec3(0, 20, 0), glm::vec3(10000)));
     }
 
     void processInput(float deltaTime) override {}
 
     void update(float deltaTime) override {
-        glm::vec3 &pos = ECSManager::getManager()
-                             .getComponentOfEntity<Positionable>(sphereId)
-                             .value()
-                             .get()
-                             .pos;
-
         physics.get()->update(deltaTime);
 
-        this->getScene().setTransform(cubeId, translate(pos).scale(0.2));
-        this->getCamera().setTarget(pos);
+        for (size_t i = 0; i < this->ballIds.size(); i++) {
+            this->getScene().setTransform(
+                this->ballIds[i],
+                translate(ECSManager::getManager()
+                              .getComponentOfEntity<Positionable>(
+                                  this->ballEntityIds[i])
+                              .value()
+                              .get()
+                              .pos)
+                    .scale(BALL_RADIUS));
+        }
     }
 
     void render(float deltaTime) override {}
@@ -213,46 +219,14 @@ int main(void) {
     ECSManager::getManager().registerComponentToSystem<Positionable>(physicsId);
     ECSManager::getManager().registerComponentToSystem<RigidBody>(physicsId);
 
-    sphereId = ECSManager::getManager().generateEntityId();
-    ECSManager::getManager().setComponentToEntity(Positionable(), sphereId);
-    ECSManager::getManager().setComponentToEntity(RigidBody(), sphereId);
-
     Moteur engine(window, width, height);
 
-    std::optional<Mesh> cubeMeshOpt =
-        FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
-
-    if (cubeMeshOpt.has_value()) {
-        SceneObject cube("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
-                         cubeMeshOpt.value());
-        Texture rustedAlbedoMap("assets/textures/rustediron2_albedo.png");
-        Texture rustedNormalMap("assets/textures/rustediron2_normal.png");
-        Texture rustedMetallicMap("assets/textures/rustediron2_metallic.png");
-        Texture rustedRoughnessMap("assets/textures/rustediron2_roughness.png");
-
-        cube.addAlbedoMap(rustedAlbedoMap);
-        cube.addNormalMap(rustedNormalMap);
-        cube.addMetallicMap(rustedMetallicMap);
-        cube.addRoughnessMap(rustedRoughnessMap);
-        cubeId = engine.getScene().addMesh(cube);
-        engine.getScene().setTransform(
-            cubeId, translate(ECSManager::getManager()
-                                  .getComponentOfEntity<Positionable>(sphereId)
-                                  .value()
-                                  .get()
-                                  .pos)
-                        .scale(0.2));
-
-        engine.getScene().addLightToScene(
-            Light(glm::vec3(0, 20, 0), glm::vec3(10000)));
-    } else {
-        std::cout << "Mesh pas chargé correctement" << std::endl;
-    }
-
     physics->generateTerrain();
+
     for (auto &terrain : physics->getTerrain().getSceneObjects()) {
         engine.getScene().addMesh(terrain);
     }
+
     engine.run();
 
     return 0;
