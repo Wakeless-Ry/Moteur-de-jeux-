@@ -33,7 +33,7 @@ class Physics : public System {
             auto posOpt = ecs.getComponentOfEntity<Positionable>(entity);
             auto rigidBodyOpt = ecs.getComponentOfEntity<RigidBody>(entity);
             float y;
-            bool collisionFound = false;
+            bool touchingGround = false;
 
             if (posOpt.has_value() && rigidBodyOpt.has_value()) {
                 Positionable &pos = posOpt.value();
@@ -44,12 +44,10 @@ class Physics : public System {
                 auto pair = this->terrain.value().getProjectedContact(pos.pos);
 
                 if (pair.has_value()) {
-
                     auto &[hauteur, normal] = pair.value();
-                    bool isCollinding = pos.pos.y <= 0.2f + hauteur;
+                    touchingGround = pos.pos.y <= 0.2f + hauteur;
 
-                    if (isCollinding) {
-
+                    if (touchingGround) {
                         float dotProduct = glm::dot(-weight, normal);
                         float square = glm::dot(normal, normal);
                         projection = (dotProduct / square) * normal;
@@ -57,7 +55,6 @@ class Physics : public System {
                         rigidBody.force += projection * deltaTime;
 
                         y = hauteur + 0.2f;
-                        collisionFound = true;
                     }
                 }
 
@@ -67,17 +64,20 @@ class Physics : public System {
                 glm::vec3 horizontalVelocity = rigidBody.velocity;
                 horizontalVelocity.y = 0;
 
-                if (collisionFound &&
-                    glm::length(horizontalVelocity) <=
+                if (touchingGround) {
+                    if (glm::length(horizontalVelocity) <=
                         glm::length(projection) * STATIC_FRICTION * deltaTime) {
 
-                    rigidBody.velocity -= horizontalVelocity;
+                        rigidBody.velocity -= horizontalVelocity;
+                    } else {
+                        rigidBody.velocity *= 0.98;
+                    }
                 }
 
                 pos.pos += rigidBody.velocity * deltaTime;
                 rigidBody.force = glm::vec3(0);
 
-                if (collisionFound) {
+                if (touchingGround) {
                     pos.pos.y = std::max(pos.pos.y, y);
                     rigidBody.velocity.y = 0;
                 }
