@@ -70,7 +70,8 @@ class Physics : public System {
 
                         rigidBody.velocity -= horizontalVelocity;
                     } else {
-                        rigidBody.velocity *= 0.98;
+                        rigidBody.velocity -=
+                            horizontalVelocity * KINETIC_FRICTION * deltaTime;
                     }
                 }
 
