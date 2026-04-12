@@ -1,4 +1,5 @@
 #include "src/SceneObject.h"
+#include "src/ecs/components/VerletBody.h"
 #include <memory>
 #include <optional>
 
@@ -8,14 +9,14 @@ GLFWwindow *window;
 
 #include "src/FileLoader.cpp"
 #include "src/GameEngine.h"
-#include "src/Physics.h"
 #include "src/Scene.h"
+#include "src/Verlet.h"
 #include "src/Write_csv.h"
 #include "src/ecs/utils.h"
 
 const float BALL_RADIUS = 0.2;
 
-auto physics = std::make_shared<Physics>();
+auto verlet = std::make_shared<Verlet>();
 auto write_csv = std::make_shared<Write_CSV>();
 
 class Moteur : public GameEngine {
@@ -34,9 +35,8 @@ class Moteur : public GameEngine {
         ECSManager::getManager().setComponentToEntity(Positionable(pos),
                                                       ballEntityId);
         ECSManager::getManager().setComponentToEntity(
-            RigidBody(direction * speed * deltaTime), ballEntityId);
-
-        std::cout << "Ball spawned" << std::endl;
+            VerletBody(pos, direction * speed * deltaTime, BALL_RADIUS),
+            ballEntityId);
     }
 
     void init() override {
@@ -107,7 +107,7 @@ class Moteur : public GameEngine {
         controls.addKeyPressedCallback(
             GLFW_KEY_SPACE, new KeyCallback([this](float deltaTime) {
                 this->spawnBall(this->getCamera().getPosition(),
-                                this->getCamera().getFront(), 500, deltaTime);
+                                this->getCamera().getFront(), 30000, deltaTime);
             }));
 
         std::optional<Mesh> ballMeshOpt =
@@ -132,7 +132,7 @@ class Moteur : public GameEngine {
     void processInput(float deltaTime) override {}
 
     void update(float deltaTime) override {
-        physics.get()->update(deltaTime);
+        verlet.get()->update(deltaTime);
 
         for (size_t i = 0; i < this->ballIds.size(); i++) {
             this->getScene().setTransform(
@@ -215,15 +215,15 @@ int main(void) {
         write_csv_id);
     ECSManager::getManager().registerComponentToSystem<RigidBody>(write_csv_id);
 
-    SystemId physicsId = ECSManager::getManager().registerSystem(physics);
-    ECSManager::getManager().registerComponentToSystem<Positionable>(physicsId);
-    ECSManager::getManager().registerComponentToSystem<RigidBody>(physicsId);
+    SystemId verletId = ECSManager::getManager().registerSystem(verlet);
+    ECSManager::getManager().registerComponentToSystem<Positionable>(verletId);
+    ECSManager::getManager().registerComponentToSystem<VerletBody>(verletId);
 
     Moteur engine(window, width, height);
 
-    physics->generateTerrain();
+    verlet->generateTerrain();
 
-    for (auto &terrain : physics->getTerrain().getSceneObjects()) {
+    for (auto &terrain : verlet->getTerrain().getSceneObjects()) {
         engine.getScene().addMesh(terrain);
     }
 

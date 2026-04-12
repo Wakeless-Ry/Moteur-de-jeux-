@@ -146,6 +146,9 @@ class ECSManager {
 
     template <typename T>
     void setComponentToEntity(T &&component, EntityId entity) {
+        static_assert(is_in_tuple<T, ComponentTypes>::value,
+                      "Component type T is not registered in ComponentTypes. "
+                      "Did you forget to add it to the tuple in Component.h?");
         using C = std::remove_reference_t<T>;
         this->getList<C>().set(std::forward<T>(component), entity);
         this->entityManager.registerComponent(entity,
@@ -154,6 +157,9 @@ class ECSManager {
     }
 
     template <typename T> void removeComponentFromEntity(EntityId entity) {
+        static_assert(is_in_tuple<T, ComponentTypes>::value,
+                      "Component type T is not registered in ComponentTypes. "
+                      "Did you forget to add it to the tuple in Component.h?");
         this->getList<T>().remove(entity);
         this->entityManager.unregisterComponent(entity,
                                                 componentIndices.at(typeid(T)));
@@ -163,6 +169,9 @@ class ECSManager {
     template <typename T>
     std::optional<std::reference_wrapper<T>>
     getComponentOfEntity(EntityId entity) {
+        static_assert(is_in_tuple<T, ComponentTypes>::value,
+                      "Component type T is not registered in ComponentTypes. "
+                      "Did you forget to add it to the tuple in Component.h?");
         return this->getList<T>().get(entity);
     }
 
