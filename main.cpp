@@ -39,6 +39,26 @@ class Moteur : public GameEngine {
             ballEntityId);
     }
 
+    void spawnOrbitalBall(glm::vec3 pos, glm::vec3 tangentDirection,
+                          float deltaTime) {
+        NodeId ballId = this->getScene().addMesh(this->ballMesh.value());
+        this->ballIds.push_back(ballId);
+
+        EntityId ballEntityId = ECSManager::getManager().generateEntityId();
+        this->ballEntityIds.push_back(ballEntityId);
+
+        glm::vec3 orbitalVelocity =
+            verlet->calculateOrbitalVelocity(pos, tangentDirection);
+
+        glm::vec3 initialAcceleration = orbitalVelocity * deltaTime;
+        ECSManager::getManager().setComponentToEntity(Positionable(pos),
+                                                      ballEntityId);
+        ECSManager::getManager().setComponentToEntity(
+            VerletBody(pos - initialAcceleration, initialAcceleration,
+                       BALL_RADIUS),
+            ballEntityId);
+    }
+
     void init() override {
         glfwPollEvents();
         glfwSetCursorPos(this->getWindow(),
@@ -49,6 +69,10 @@ class Moteur : public GameEngine {
         this->getCamera().setPosition({10, 10, 10});
         this->getCamera().setTranslationSpeed(5);
         this->getCamera().changeMode();
+
+        glm::vec3 orbitalCenter = {0, 25, 0};
+        float orbitalMass = 1000.0f;
+        verlet->setOrbitalBody(orbitalCenter, orbitalMass);
 
         controls.addMouseDeltaCallback(
             new MouseMoveCallback([this](float dx, float dy) {
@@ -106,8 +130,15 @@ class Moteur : public GameEngine {
 
         controls.addKeyPressedCallback(
             GLFW_KEY_SPACE, new KeyCallback([this](float deltaTime) {
+                glm::vec3 cameraPos = this->getCamera().getPosition();
+                glm::vec3 cameraFront = this->getCamera().getFront();
+                this->spawnOrbitalBall(cameraPos, cameraFront, deltaTime);
+            }));
+
+        controls.addKeyPressedCallback(
+            GLFW_KEY_O, new KeyCallback([this](float deltaTime) {
                 this->spawnBall(this->getCamera().getPosition(),
-                                this->getCamera().getFront(), 30000, deltaTime);
+                                this->getCamera().getFront(), 30, deltaTime);
             }));
 
         std::optional<Mesh> ballMeshOpt =

@@ -12,11 +12,37 @@
 
 class Verlet : public System {
     const glm::vec3 GRAVITY = {0, -9.81, 0};
+    const float GRAVITATIONAL_CONSTANT = 10.0f;
 
     std::optional<Terrain> terrain;
 
+    struct OrbitalBody {
+        glm::vec3 position;
+        float mass;
+        bool enabled;
+    };
+    OrbitalBody orbitalBody = {{0, 30, 0}, 100.0f, false};
+
   public:
     void generateTerrain() { this->terrain = Terrain(); }
+
+    void setOrbitalBody(glm::vec3 position, float mass) {
+        orbitalBody.position = position;
+        orbitalBody.mass = mass;
+        orbitalBody.enabled = true;
+    }
+    glm::vec3 calculateOrbitalVelocity(glm::vec3 objectPos,
+                                       glm::vec3 tangentDir) {
+        glm::vec3 toCenter = orbitalBody.position - objectPos;
+        float distance = glm::length(toCenter);
+
+        if (distance < 0.001f)
+            return glm::vec3(0);
+
+        float orbitalSpeed =
+            glm::sqrt(GRAVITATIONAL_CONSTANT * orbitalBody.mass / distance);
+        return glm::normalize(tangentDir) * orbitalSpeed;
+    }
 
     void update(float deltaTime) {
         float radius = 42;
@@ -30,12 +56,28 @@ class Verlet : public System {
     void applyGravity() {
         ECSManager &ecs = ECSManager::getManager();
         for (EntityId entity : this->getEntities()) {
+            auto posOpt = ecs.getComponentOfEntity<Positionable>(entity);
             auto verletBodyOpt = ecs.getComponentOfEntity<VerletBody>(entity);
 
-            if (verletBodyOpt.has_value()) {
+            if (posOpt.has_value() && verletBodyOpt.has_value()) {
+                Positionable &pos = posOpt.value();
                 VerletBody &verletBody = verletBodyOpt.value();
 
-                verletBody.acceleration += GRAVITY;
+                if (orbitalBody.enabled) {
+                    glm::vec3 toCenter = orbitalBody.position - pos.pos;
+                    float distanceSq = glm::length2(toCenter);
+
+                    if (distanceSq > 0.001f) {
+                        float distance = glm::sqrt(distanceSq);
+                        glm::vec3 direction = toCenter / distance;
+                        float acceleration = GRAVITATIONAL_CONSTANT *
+                                             orbitalBody.mass / distanceSq;
+
+                        verletBody.acceleration += direction * acceleration;
+                    }
+                } else {
+                    verletBody.acceleration += GRAVITY;
+                }
             }
         }
     }
