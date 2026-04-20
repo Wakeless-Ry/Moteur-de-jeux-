@@ -20,13 +20,17 @@ auto verlet = std::make_shared<Verlet>();
 auto write_csv = std::make_shared<Write_CSV>();
 
 class Moteur : public GameEngine {
+    NodeId ballSubScene;
     std::optional<SceneObject> ballMesh;
     std::vector<NodeId> ballIds;
     std::vector<EntityId> ballEntityIds;
 
     void spawnBall(glm::vec3 pos, glm::vec3 direction, float speed,
                    float deltaTime) {
-        NodeId ballId = this->getScene().addMesh(this->ballMesh.value());
+        NodeId ballId =
+            this->getScene()
+                .addMeshAsChild(this->ballSubScene, this->ballMesh.value())
+                .value();
         this->ballIds.push_back(ballId);
 
         EntityId ballEntityId = ECSManager::getManager().generateEntityId();
@@ -41,7 +45,10 @@ class Moteur : public GameEngine {
 
     void spawnOrbitalBall(glm::vec3 pos, glm::vec3 tangentDirection,
                           float deltaTime) {
-        NodeId ballId = this->getScene().addMesh(this->ballMesh.value());
+        NodeId ballId =
+            this->getScene()
+                .addMeshAsChild(this->ballSubScene, this->ballMesh.value())
+                .value();
         this->ballIds.push_back(ballId);
 
         EntityId ballEntityId = ECSManager::getManager().generateEntityId();
@@ -73,6 +80,8 @@ class Moteur : public GameEngine {
         glm::vec3 orbitalCenter = {0, 25, 0};
         float orbitalMass = 1000.0f;
         verlet->setOrbitalBody(orbitalCenter, orbitalMass);
+
+        this->ballSubScene = this->getScene().addBasicNode();
 
         controls.addMouseDeltaCallback(
             new MouseMoveCallback([this](float dx, float dy) {
@@ -139,6 +148,11 @@ class Moteur : public GameEngine {
             GLFW_KEY_O, new KeyCallback([this](float deltaTime) {
                 this->spawnBall(this->getCamera().getPosition(),
                                 this->getCamera().getFront(), 30, deltaTime);
+            }));
+
+        controls.addKeyPressedCallback(
+            GLFW_KEY_H, new KeyCallback([this](float deltaTime) {
+                this->getScene().toogleNode(this->ballSubScene);
             }));
 
         std::optional<Mesh> ballMeshOpt =

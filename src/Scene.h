@@ -228,11 +228,13 @@ class Scene {
         std::vector<Content> nodes;
         std::vector<NodeId> ids;
         std::vector<bool> flags;
+        std::vector<bool> hidden;
 
         void addNode(NodeId id, Content node) {
             this->nodes.push_back(node);
             this->ids.push_back(id);
             this->flags.push_back(true);
+            this->hidden.push_back(false);
             this->idNodeMap[id] = nodes.size() - 1;
         }
 
@@ -249,6 +251,11 @@ class Scene {
                 return true;
             }
             return false;
+        }
+
+        void toggle(NodeId id) {
+            this->hidden[this->idNodeMap[id]] =
+                !this->hidden[this->idNodeMap[id]];
         }
 
         bool hasId(NodeId id) { return this->idNodeMap.count(id); }
@@ -297,7 +304,7 @@ class Scene {
 
     void draw(const Camera &camera) {
         for (size_t i = 0; i < this->meshList.flags.size(); i++) {
-            if (this->meshList.flags[i]) {
+            if (this->meshList.flags[i] && !this->meshList.hidden[i]) {
 
                 if (this->tree.shouldUpdate(this->meshList.ids[i])) {
                     this->meshList.nodes[i].setTransform(
@@ -377,6 +384,12 @@ class Scene {
         }
 
         return removed.size();
+    }
+
+    void toogleNode(NodeId id) {
+        for (NodeId child : this->tree.getAllChildren(id)) {
+            this->meshList.toggle(child);
+        }
     }
 
     void addLightToScene(const Light &light) { this->lights.push_back(light); }
