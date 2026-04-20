@@ -6,7 +6,8 @@
 
 #include "Camera.h"
 #include "Controls.h"
-#include "Scene.h"
+#include "GlobalScene.h"
+#include "PVS.h"
 
 using namespace std;
 using namespace glm;
@@ -20,7 +21,8 @@ class GameEngine {
     float lastFrame = 0;
     Camera camera;
     Controls controls;
-    Scene scene;
+    GlobalScene scene;
+    PVS pvs;
     GLuint vertexArrayId;
     bool stop = false;
 
@@ -40,8 +42,9 @@ class GameEngine {
     GLFWwindow *getWindow();
     Camera &getCamera();
     Controls &getControls();
-    Scene &getScene();
-    void setScene(const Scene &other);
+    GlobalScene &getScene();
+    PVS &getPVS();
+    void setScene(const GlobalScene &other);
 
     virtual void init() {};
     virtual void processInput(float deltaTime) {};

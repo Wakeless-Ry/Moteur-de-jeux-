@@ -9,7 +9,7 @@ GLFWwindow *window;
 
 #include "src/FileLoader.cpp"
 #include "src/GameEngine.h"
-#include "src/Scene.h"
+#include "src/GlobalScene.h"
 #include "src/Verlet.h"
 #include "src/Write_csv.h"
 #include "src/ecs/utils.h"
@@ -152,7 +152,7 @@ class Moteur : public GameEngine {
 
         controls.addKeyPressedCallback(
             GLFW_KEY_H, new KeyCallback([this](float deltaTime) {
-                this->getScene().toogleNode(this->ballSubScene);
+                this->getScene().toggleNode(this->ballSubScene);
             }));
 
         std::optional<Mesh> ballMeshOpt =

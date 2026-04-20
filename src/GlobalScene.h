@@ -11,11 +11,11 @@
 #include "SceneObject.h"
 #include "Transform.h"
 
-class Scene;
+class GlobalScene;
 
 typedef size_t NodeId;
 
-class Scene {
+class GlobalScene {
     struct SceneNode {
         NodeId node;
         Transform localTransform;
@@ -258,6 +258,10 @@ class Scene {
                 !this->hidden[this->idNodeMap[id]];
         }
 
+        void show(NodeId id) { this->hidden[this->idNodeMap[id]] = true; }
+
+        void hide(NodeId id) { this->hidden[this->idNodeMap[id]] = false; }
+
         bool hasId(NodeId id) { return this->idNodeMap.count(id); }
     };
 
@@ -279,7 +283,7 @@ class Scene {
     std::vector<Light> lights;
 
   public:
-    Scene() {
+    GlobalScene() {
         this->basicNodeList.addNode(ROOT_ID, BasicNode());
         this->tree.addNode(ROOT_ID);
     }
@@ -386,9 +390,21 @@ class Scene {
         return removed.size();
     }
 
-    void toogleNode(NodeId id) {
+    void toggleNode(NodeId id) {
         for (NodeId child : this->tree.getAllChildren(id)) {
             this->meshList.toggle(child);
+        }
+    }
+
+    void showNode(NodeId id) {
+        for (NodeId child : this->tree.getAllChildren(id)) {
+            this->meshList.show(child);
+        }
+    }
+
+    void hideNode(NodeId id) {
+        for (NodeId child : this->tree.getAllChildren(id)) {
+            this->meshList.hide(child);
         }
     }
 

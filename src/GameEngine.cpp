@@ -1,7 +1,7 @@
 #include "GameEngine.h"
 
 GameEngine::GameEngine(GLFWwindow *window, uint width, uint height)
-    : camera(width, height), controls() {
+    : camera(width, height), controls(), pvs(scene) {
     this->window = window;
 }
 
@@ -61,5 +61,6 @@ void GameEngine::stopRunning() { this->stop = true; }
 GLFWwindow *GameEngine::getWindow() { return this->window; }
 Camera &GameEngine::getCamera() { return this->camera; }
 Controls &GameEngine::getControls() { return this->controls; }
-Scene &GameEngine::getScene() { return this->scene; }
-void GameEngine::setScene(const Scene &other) { this->scene = other; }
+GlobalScene &GameEngine::getScene() { return this->scene; }
+PVS &GameEngine::getPVS() { return this->pvs; }
+void GameEngine::setScene(const GlobalScene &other) { this->scene = other; }
