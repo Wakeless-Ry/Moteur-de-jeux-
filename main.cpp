@@ -20,6 +20,7 @@ auto verlet = std::make_shared<Verlet>();
 auto write_csv = std::make_shared<Write_CSV>();
 
 class Moteur : public GameEngine {
+    NodeId terrainScene;
     NodeId ballSubScene;
     std::optional<SceneObject> ballMesh;
     std::vector<NodeId> ballIds;
@@ -81,7 +82,13 @@ class Moteur : public GameEngine {
         float orbitalMass = 1000.0f;
         verlet->setOrbitalBody(orbitalCenter, orbitalMass);
 
-        this->ballSubScene = this->getScene().addBasicNode();
+        this->terrainScene = this->getPVS().addScene();
+
+        this->ballSubScene = this->getPVS().addScene();
+
+        for (auto &terrain : verlet->getTerrain().getSceneObjects()) {
+            this->getScene().addMeshAsChild(this->terrainScene, terrain);
+        }
 
         controls.addMouseDeltaCallback(
             new MouseMoveCallback([this](float dx, float dy) {
@@ -152,7 +159,12 @@ class Moteur : public GameEngine {
 
         controls.addKeyPressedCallback(
             GLFW_KEY_H, new KeyCallback([this](float deltaTime) {
-                this->getScene().toggleNode(this->ballSubScene);
+                this->getPVS().enterScene(terrainScene);
+            }));
+
+        controls.addKeyPressedCallback(
+            GLFW_KEY_J, new KeyCallback([this](float deltaTime) {
+                this->getPVS().enterScene(this->ballSubScene);
             }));
 
         std::optional<Mesh> ballMeshOpt =
@@ -265,12 +277,7 @@ int main(void) {
     ECSManager::getManager().registerComponentToSystem<VerletBody>(verletId);
 
     Moteur engine(window, width, height);
-
     verlet->generateTerrain();
-
-    for (auto &terrain : verlet->getTerrain().getSceneObjects()) {
-        engine.getScene().addMesh(terrain);
-    }
 
     engine.run();
 
