@@ -143,10 +143,12 @@ void Mesh::cleanUp() {
     this->vao = 0;
 }
 
-std::vector<glm::vec3> Mesh::getVertices() { return this->data->vertices; }
+std::vector<glm::vec3> Mesh::getVertices() const {
+    return this->data->vertices;
+}
 
-std::vector<uint> Mesh::getIndices() { return this->data->indices; }
+std::vector<uint> Mesh::getIndices() const { return this->data->indices; }
 
-std::vector<glm::vec3> Mesh::getNormals() { return this->data->normals; }
+std::vector<glm::vec3> Mesh::getNormals() const { return this->data->normals; }
 
-std::vector<glm::vec2> Mesh::getUvs() { return this->data->uvs; }
+std::vector<glm::vec2> Mesh::getUvs() const { return this->data->uvs; }

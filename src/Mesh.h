@@ -70,10 +70,10 @@ class Mesh {
     void draw() const;
     void cleanUp();
 
-    std::vector<glm::vec3> getVertices();
-    std::vector<uint> getIndices();
-    std::vector<glm::vec3> getNormals();
-    std::vector<glm::vec2> getUvs();
+    std::vector<glm::vec3> getVertices() const;
+    std::vector<uint> getIndices() const;
+    std::vector<glm::vec3> getNormals() const;
+    std::vector<glm::vec2> getUvs() const;
 };
 
 #endif // MESH

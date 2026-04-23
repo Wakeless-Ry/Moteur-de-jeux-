@@ -9,8 +9,9 @@
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/RigidBody.h"
 #include "src/ecs/components/VerletBody.h"
+#include "src/ecs/components/LOD.h"
 
-using ComponentTypes = std::tuple<Positionable, RigidBody, VerletBody>;
+using ComponentTypes = std::tuple<Positionable, RigidBody, VerletBody, LOD>;
 
 template <typename Tuple> struct VariantFromTuple;
 

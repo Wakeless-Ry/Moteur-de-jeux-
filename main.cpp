@@ -7,6 +7,7 @@
 #include <GLFW/glfw3.h>
 GLFWwindow *window;
 
+#include "src/ContinuousLOD.h"
 #include "src/FileLoader.cpp"
 #include "src/GameEngine.h"
 #include "src/Scene.h"
@@ -18,11 +19,16 @@ const float BALL_RADIUS = 0.2;
 
 auto verlet = std::make_shared<Verlet>();
 auto write_csv = std::make_shared<Write_CSV>();
+auto continuousLOD = std::make_shared<ContinuousLOD>();
 
 class Moteur : public GameEngine {
     std::optional<SceneObject> ballMesh;
     std::vector<NodeId> ballIds;
     std::vector<EntityId> ballEntityIds;
+
+    std::optional<SceneObject> lodTestMesh;
+    NodeId lodTestMeshId;
+    EntityId lodTestMeshEntityId;
 
     void spawnBall(glm::vec3 pos, glm::vec3 direction, float speed,
                    float deltaTime) {
@@ -129,13 +135,6 @@ class Moteur : public GameEngine {
             }));
 
         controls.addKeyPressedCallback(
-            GLFW_KEY_SPACE, new KeyCallback([this](float deltaTime) {
-                glm::vec3 cameraPos = this->getCamera().getPosition();
-                glm::vec3 cameraFront = this->getCamera().getFront();
-                this->spawnOrbitalBall(cameraPos, cameraFront, deltaTime);
-            }));
-
-        controls.addKeyPressedCallback(
             GLFW_KEY_O, new KeyCallback([this](float deltaTime) {
                 this->spawnBall(this->getCamera().getPosition(),
                                 this->getCamera().getFront(), 30, deltaTime);
@@ -154,6 +153,30 @@ class Moteur : public GameEngine {
             this->ballMesh.value().setRoughness(0.4);
         } else {
             std::cout << "Mesh pas chargé correctement" << std::endl;
+        }
+
+        std::optional<Mesh> lodMeshOpt =
+            FileLoader::buildMeshFromOFF("assets/meshes/suzanne.off");
+
+        if (lodMeshOpt.has_value()) {
+            this->lodTestMesh =
+                SceneObject("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
+                            lodMeshOpt.value());
+
+            this->lodTestMesh.value().setAlbedo({0.5, 0.5, 0.5});
+            this->lodTestMesh.value().setMetallic(0.5);
+            this->lodTestMesh.value().setRoughness(0.4);
+            this->lodTestMeshId =
+                this->getScene().addMesh(this->lodTestMesh.value());
+
+            this->lodTestMeshEntityId =
+                ECSManager::getManager().generateEntityId();
+            ECSManager::getManager().setComponentToEntity(
+                Positionable(glm::vec3(0, 0, 0)), this->lodTestMeshEntityId);
+            ECSManager::getManager().setComponentToEntity(
+                LOD(lodMeshOpt.value()), this->lodTestMeshEntityId);
+        } else {
+            std::cout << "LOD mesh pas chargé correctement" << std::endl;
         }
 
         this->getScene().addLightToScene(
@@ -176,6 +199,11 @@ class Moteur : public GameEngine {
                               .pos)
                     .scale(BALL_RADIUS));
         }
+
+        continuousLOD.get()->update(deltaTime, this->getCamera().getPosition());
+
+        this->getScene().setTransform(this->lodTestMeshId,
+                                      translate(glm::vec3(0, 5, 0)));
     }
 
     void render(float deltaTime) override {}
@@ -249,6 +277,10 @@ int main(void) {
     SystemId verletId = ECSManager::getManager().registerSystem(verlet);
     ECSManager::getManager().registerComponentToSystem<Positionable>(verletId);
     ECSManager::getManager().registerComponentToSystem<VerletBody>(verletId);
+
+    SystemId lodId = ECSManager::getManager().registerSystem(continuousLOD);
+    ECSManager::getManager().registerComponentToSystem<LOD>(lodId);
+    ECSManager::getManager().registerComponentToSystem<Positionable>(lodId);
 
     Moteur engine(window, width, height);
 
