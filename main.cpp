@@ -1,3 +1,4 @@
+#include "src/AssetManager.h"
 #include "src/SceneObject.h"
 #include "src/ecs/components/VerletBody.h"
 #include <memory>
@@ -7,7 +8,6 @@
 #include <GLFW/glfw3.h>
 GLFWwindow *window;
 
-#include "src/FileLoader.cpp"
 #include "src/GameEngine.h"
 #include "src/GlobalScene.h"
 #include "src/Verlet.h"
@@ -167,13 +167,13 @@ class Moteur : public GameEngine {
                 this->getPVS().enterScene(this->ballSubScene);
             }));
 
-        std::optional<Mesh> ballMeshOpt =
-            FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
+        std::optional<Mesh *> ballMeshOpt =
+            AssetManager::loadMesh("assets/meshes/sphere.obj");
 
         if (ballMeshOpt.has_value()) {
             this->ballMesh =
                 SceneObject("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
-                            ballMeshOpt.value());
+                            *ballMeshOpt.value());
 
             this->ballMesh.value().setAlbedo({0.5, 0.5, 0.5});
             this->ballMesh.value().setMetallic(0.5);

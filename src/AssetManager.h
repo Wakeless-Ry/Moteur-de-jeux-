@@ -1,19 +1,37 @@
-#ifndef FILE_LOADER
-#define FILE_LOADER
+#ifndef ASSET_MANAGER
+#define ASSET_MANAGER
 
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <optional>
 #include <sstream>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <glm/ext.hpp>
 
-#include "Mesh.h"
+#include "src/Mesh.h"
+#include "src/Texture.h"
 
-class FileLoader {
-  public:
+class AssetManager {
+
+    std::vector<Texture> textures;
+    std::vector<Mesh> meshes;
+
+    std::unordered_map<std::string, std::size_t> texture_map;
+    std::unordered_map<std::string, std::size_t> mesh_map;
+
+  private:
+    AssetManager() {}
+
+    static AssetManager &getAssetManager() {
+        static AssetManager instance;
+        return instance;
+    }
+
     static std::optional<Mesh> buildMeshFromOFF(const char *offFile) {
         std::ifstream myfile;
         myfile.open(offFile);
@@ -189,6 +207,49 @@ class FileLoader {
 
         return Mesh(unique_vertices, uint_indices, unique_normals, unique_uvs);
     }
+
+  public:
+    static std::optional<Mesh *> loadMesh(const char *filepath) {
+        AssetManager &manager = AssetManager::getAssetManager();
+
+        std::string name(filepath);
+        if (manager.mesh_map.count(name) == 0) {
+            manager.mesh_map[name] = manager.meshes.size();
+
+            std::optional<Mesh> mesh = AssetManager::buildMeshFromOBJ(filepath);
+
+            if (mesh.has_value()) {
+                manager.meshes.push_back(mesh.value());
+            } else {
+                std::optional<Mesh> mesh =
+                    AssetManager::buildMeshFromOFF(filepath);
+
+                if (mesh.has_value()) {
+                    manager.meshes.push_back(mesh.value());
+                } else {
+                    return std::nullopt;
+                }
+            }
+        }
+
+        return &manager.meshes[manager.mesh_map[name]];
+    }
+
+    static Texture &loadTexture(const char *filepath) {
+        AssetManager &manager = AssetManager::getAssetManager();
+
+        std::string name(filepath);
+
+        if (manager.texture_map.count(name) == 0) {
+            manager.texture_map[name] = manager.textures.size();
+
+            Texture texture(filepath);
+
+            manager.textures.push_back(texture);
+        }
+
+        return manager.textures[manager.texture_map[name]];
+    }
 };
 
-#endif // FILE_LOADER
+#endif // ASSET_MANAGER

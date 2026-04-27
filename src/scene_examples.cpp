@@ -1,22 +1,23 @@
 #ifndef SCENE_EXAMPLES
 #define SCENE_EXAMPLES
 
-#include "FileLoader.cpp"
-#include "Scene.h"
+#include "GlobalScene.h"
+#include "src/AssetManager.h"
 #include "src/SceneObject.h"
+#include "src/Texture.h"
 #include "src/Transform.h"
 #include <cstddef>
 
-Scene getPBRbenchmarkScene(size_t nbcarre) {
-    Scene scene_result;
-    std::optional<Mesh> sphereMesh =
-        FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
+GlobalScene getPBRbenchmarkScene(size_t nbcarre) {
+    GlobalScene scene_result;
+    std::optional<Mesh *> sphereMesh =
+        AssetManager::loadMesh("assets/meshes/sphere.obj");
     if (sphereMesh.has_value()) {
         for (size_t i = 0; i < nbcarre; i++) {
             for (size_t j = 0; j < nbcarre; j++) {
 
                 SceneObject sphere("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
-                                   sphereMesh.value());
+                                   *sphereMesh.value());
 
                 sphere.setAlbedo({1., 0., 0.});
                 sphere.setMetallic((float)j / (nbcarre - 1));
@@ -45,19 +46,23 @@ Scene getPBRbenchmarkScene(size_t nbcarre) {
     return scene_result;
 }
 
-Scene getTexturedSphereScene() {
-    Scene scene_result;
+GlobalScene getTexturedSphereScene() {
+    GlobalScene scene_result;
 
-    std::optional<Mesh> sphereMesh =
-        FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
+    std::optional<Mesh *> sphereMesh =
+        AssetManager::loadMesh("assets/meshes/sphere.obj");
     if (sphereMesh.has_value()) {
-        Texture rustedAlbedoMap("assets/textures/rustediron2_albedo.png");
-        Texture rustedNormalMap("assets/textures/rustediron2_normal.png");
-        Texture rustedMetallicMap("assets/textures/rustediron2_metallic.png");
-        Texture rustedRoughnessMap("assets/textures/rustediron2_roughness.png");
+        Texture rustedAlbedoMap =
+            AssetManager::loadTexture("assets/textures/rustediron2_albedo.png");
+        Texture rustedNormalMap =
+            AssetManager::loadTexture("assets/textures/rustediron2_normal.png");
+        Texture rustedMetallicMap = AssetManager::loadTexture(
+            "assets/textures/rustediron2_metallic.png");
+        Texture rustedRoughnessMap = AssetManager::loadTexture(
+            "assets/textures/rustediron2_roughness.png");
 
         SceneObject sphere("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
-                           sphereMesh.value());
+                           *sphereMesh.value());
 
         sphere.addAlbedoMap(rustedAlbedoMap);
         sphere.addNormalMap(rustedNormalMap);
@@ -75,7 +80,7 @@ Scene getTexturedSphereScene() {
         Texture woodAoMap("assets/textures/fancy-carved-wood_ao.png");
 
         SceneObject sphere2("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
-                            sphereMesh.value());
+                            *sphereMesh.value());
 
         sphere2.addAlbedoMap(woodAlbedoMap);
         sphere2.addNormalMap(woodNormalMap);
