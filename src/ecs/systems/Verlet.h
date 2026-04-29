@@ -6,7 +6,6 @@
 
 #include "glm/detail/type_vec.hpp"
 
-#include "src/Terrain.cpp"
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/System.h"
 #include "src/ecs/components/VerletBody.h"
@@ -16,8 +15,6 @@ class Verlet : public System {
     const glm::vec3 GRAVITY = {0, -9.81, 0};
     const float GRAVITATIONAL_CONSTANT = 10.0f;
 
-    std::optional<Terrain> terrain;
-
     struct OrbitalBody {
         glm::vec3 position;
         float mass;
@@ -26,8 +23,6 @@ class Verlet : public System {
     OrbitalBody orbitalBody = {{0, 30, 0}, 100.0f, false};
 
   public:
-    void generateTerrain() { this->terrain = Terrain(); }
-
     void setOrbitalBody(glm::vec3 position, float mass) {
         orbitalBody.position = position;
         orbitalBody.mass = mass;
@@ -107,16 +102,6 @@ class Verlet : public System {
                 if (pos.pos.z < -radius) {
                     pos.pos.z = -radius;
                 }
-
-                auto contact = this->terrain->getProjectedContact(pos.pos);
-                if (contact.has_value()) {
-                    auto &[height, normal] = contact.value();
-
-                    float y = height + verletBody.size;
-                    if (pos.pos.y < y) {
-                        pos.pos += normal * (y - pos.pos.y);
-                    }
-                }
             }
         }
     }
@@ -189,8 +174,6 @@ class Verlet : public System {
             }
         }
     }
-
-    Terrain &getTerrain() { return this->terrain.value(); }
 };
 
 #endif

@@ -6,11 +6,12 @@
 
 #include <glm/ext.hpp>
 
+#include "src/ecs/components/Noded.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/RigidBody.h"
 #include "src/ecs/components/VerletBody.h"
 
-using ComponentTypes = std::tuple<Positionable, RigidBody, VerletBody>;
+using ComponentTypes = std::tuple<Positionable, RigidBody, VerletBody, Noded>;
 
 template <typename Tuple> struct VariantFromTuple;
 

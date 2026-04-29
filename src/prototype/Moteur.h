@@ -1,16 +1,42 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <memory>
 
 #include "src/AssetManager.h"
 #include "src/Controls.h"
 #include "src/GameEngine.h"
+#include "src/ecs/ECSManager.h"
+#include "src/ecs/components/Noded.h"
+#include "src/ecs/components/Positionable.h"
+#include "src/ecs/systems/TransformPosition.h"
+#include "src/ecs/systems/Verlet.h"
+#include "src/ecs/utils.h"
 
 class Moteur : public GameEngine {
 
+    std::shared_ptr<Verlet> verletSystem;
+    std::shared_ptr<TransformPosition> transformPosition;
+
     void init() override {
-        this->initInputs();
+        this->initSystems();
         this->initScene();
+        this->initInputs();
         this->getCamera().changeMode();
+    }
+
+    void initSystems() {
+        SystemId verletId =
+            ECSManager::getManager().registerSystem(this->verletSystem);
+        ECSManager::getManager().registerComponentToSystem<Positionable>(
+            verletId);
+        ECSManager::getManager().registerComponentToSystem<VerletBody>(
+            verletId);
+
+        SystemId transPosId =
+            ECSManager::getManager().registerSystem(this->transformPosition);
+        ECSManager::getManager().registerComponentToSystem<Positionable>(
+            transPosId);
+        ECSManager::getManager().registerComponentToSystem<Noded>(transPosId);
     }
 
     void initScene() {
@@ -18,7 +44,7 @@ class Moteur : public GameEngine {
             Light(glm::vec3(0, 20, 0), glm::vec3(10000)));
 
         std::optional<Mesh *> ballMeshOpt =
-            AssetManager::loadMesh("assets/meshes/sphere.obj");
+            AssetManager::loadMesh("assets/meshes/big_sphere.obj");
 
         if (ballMeshOpt.has_value()) {
             SceneObject ballMesh =
@@ -29,7 +55,13 @@ class Moteur : public GameEngine {
             ballMesh.setMetallic(0.5);
             ballMesh.setRoughness(0.4);
 
-            this->getScene().addMesh(ballMesh);
+            EntityId ballEntityId = ECSManager::getManager().generateEntityId();
+            ECSManager::getManager().setComponentToEntity(
+                Noded(this->getScene().addMesh(ballMesh)), ballEntityId);
+            ECSManager::getManager().setComponentToEntity(
+                Positionable({0, 0, 0}), ballEntityId);
+            ECSManager::getManager().setComponentToEntity(
+                VerletBody({0, 0, 0}, {0, 0, 0}, 1, 0), ballEntityId);
         }
     }
 
@@ -95,11 +127,18 @@ class Moteur : public GameEngine {
 
     void update(float deltaTime) override {}
 
-    void render(float deltaTime) override {}
+    void render(float deltaTime) override {
+        this->verletSystem->update(deltaTime);
+        this->transformPosition->update(deltaTime);
+    }
 
     void cleanUp() override {}
 
   public:
     Moteur(GLFWwindow *window, uint width, uint height)
-        : GameEngine(window, width, height) {}
+        : GameEngine(window, width, height) {
+        this->verletSystem = std::make_shared<Verlet>();
+        this->transformPosition =
+            std::make_shared<TransformPosition>(this->getScene());
+    }
 };
