@@ -11,6 +11,9 @@ class System {
     void removeEntity(EntityId id);
     void setEntities(const std::set<EntityId> &ids);
     const std::set<EntityId> &getEntities() const;
+
+    virtual void update(float deltaTime) = 0;
+    virtual void registerComponents(SystemId id) = 0;
 };
 
 #endif // SYSTEM

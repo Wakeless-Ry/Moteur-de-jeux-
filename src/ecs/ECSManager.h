@@ -1,6 +1,7 @@
 #ifndef ECS_MANAGER
 #define ECS_MANAGER
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -11,6 +12,7 @@
 #include <vector>
 
 #include "System.h"
+#include "src/ecs/Signature.h"
 #include "utils.h"
 
 class ECSManager {

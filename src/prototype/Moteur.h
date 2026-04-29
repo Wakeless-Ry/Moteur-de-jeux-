@@ -8,14 +8,14 @@
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/Noded.h"
 #include "src/ecs/components/Positionable.h"
+#include "src/ecs/systems/SystemUpdater.h"
 #include "src/ecs/systems/TransformPosition.h"
 #include "src/ecs/systems/Verlet.h"
 #include "src/ecs/utils.h"
 
 class Moteur : public GameEngine {
 
-    std::shared_ptr<Verlet> verletSystem;
-    std::shared_ptr<TransformPosition> transformPosition;
+    std::shared_ptr<SystemUpdater> systemUpdater;
 
     void init() override {
         this->initSystems();
@@ -25,18 +25,15 @@ class Moteur : public GameEngine {
     }
 
     void initSystems() {
-        SystemId verletId =
-            ECSManager::getManager().registerSystem(this->verletSystem);
-        ECSManager::getManager().registerComponentToSystem<Positionable>(
-            verletId);
-        ECSManager::getManager().registerComponentToSystem<VerletBody>(
-            verletId);
+        this->systemUpdater = std::make_shared<SystemUpdater>();
+        SystemId id =
+            ECSManager::getManager().registerSystem(this->systemUpdater);
+        this->systemUpdater->registerComponents(id);
 
-        SystemId transPosId =
-            ECSManager::getManager().registerSystem(this->transformPosition);
-        ECSManager::getManager().registerComponentToSystem<Positionable>(
-            transPosId);
-        ECSManager::getManager().registerComponentToSystem<Noded>(transPosId);
+        this->systemUpdater->addSystem(std::make_shared<Verlet>());
+
+        this->systemUpdater->addSystem(
+            std::make_shared<TransformPosition>(this->getScene()));
     }
 
     void initScene() {
@@ -125,20 +122,15 @@ class Moteur : public GameEngine {
 
     void processInput(float deltaTime) override {}
 
-    void update(float deltaTime) override {}
-
-    void render(float deltaTime) override {
-        this->verletSystem->update(deltaTime);
-        this->transformPosition->update(deltaTime);
+    void update(float deltaTime) override {
+        this->systemUpdater->update(deltaTime);
     }
+
+    void render(float deltaTime) override {}
 
     void cleanUp() override {}
 
   public:
     Moteur(GLFWwindow *window, uint width, uint height)
-        : GameEngine(window, width, height) {
-        this->verletSystem = std::make_shared<Verlet>();
-        this->transformPosition =
-            std::make_shared<TransformPosition>(this->getScene());
-    }
+        : GameEngine(window, width, height) {}
 };

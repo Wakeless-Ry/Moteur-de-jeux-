@@ -41,13 +41,18 @@ class Verlet : public System {
         return glm::normalize(tangentDir) * orbitalSpeed;
     }
 
-    void update(float deltaTime) {
+    void update(float deltaTime) override {
         float radius = 42;
 
         this->applyGravity();
         this->applyFloorConstraint(radius);
         this->solveCollisions();
         this->updateBallPositions(deltaTime);
+    }
+
+    void registerComponents(SystemId id) override {
+        ECSManager::getManager().registerComponentToSystem<Positionable>(id);
+        ECSManager::getManager().registerComponentToSystem<VerletBody>(id);
     }
 
     void applyGravity() {

@@ -1,10 +1,7 @@
 #ifndef ECS_IDS
 #define ECS_IDS
 
-#include <bitset>
 #include <functional>
-
-#include "Component.h"
 
 struct EntityId {
     unsigned long value;
@@ -34,10 +31,5 @@ template <> struct hash<SystemId> {
     }
 };
 } // namespace std
-
-namespace ECS {
-const unsigned long MAX_ENTITIES = 8192;
-using Signature = std::bitset<std::tuple_size_v<ComponentTypes>>;
-} // namespace ECS
 
 #endif // ECS_IDS

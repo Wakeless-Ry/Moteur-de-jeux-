@@ -19,7 +19,7 @@ class Write_CSV : public System {
   public:
     Write_CSV() : csv("./assets/csv/out.csv") {}
 
-    void update(float deltaTime) {
+    void update(float deltaTime) override {
 
         ECSManager &ecs = ECSManager::getManager();
         for (EntityId entity : this->getEntities()) {
@@ -36,6 +36,12 @@ class Write_CSV : public System {
             this->csv << tmp;
         }
     }
+
+    void registerComponents(SystemId id) override {
+        ECSManager::getManager().registerComponentToSystem<Positionable>(id);
+        ECSManager::getManager().registerComponentToSystem<RigidBody>(id);
+    }
+
     ~Write_CSV() { csv.close(); };
 };
 

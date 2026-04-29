@@ -25,7 +25,7 @@ class Physics : public System {
 
   public:
     void generateTerrain() { this->terrain = Terrain(); }
-    void update(float deltaTime) {
+    void update(float deltaTime) override {
         ECSManager &ecs = ECSManager::getManager();
         for (EntityId entity : this->getEntities()) {
 
@@ -82,6 +82,11 @@ class Physics : public System {
                 }
             }
         }
+    }
+
+    void registerComponents(SystemId id) override {
+        ECSManager::getManager().registerComponentToSystem<Positionable>(id);
+        ECSManager::getManager().registerComponentToSystem<RigidBody>(id);
     }
 
     Terrain &getTerrain() { return this->terrain.value(); }

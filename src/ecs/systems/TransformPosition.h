@@ -16,7 +16,7 @@ class TransformPosition : public System {
   public:
     TransformPosition(GlobalScene &scene) : scene(scene) {}
 
-    void update(float deltaTime) {
+    void update(float deltaTime) override {
         ECSManager &ecs = ECSManager::getManager();
 
         for (EntityId entity : this->getEntities()) {
@@ -29,6 +29,11 @@ class TransformPosition : public System {
 
             this->scene.setTransform(nodeId, translate(position));
         }
+    }
+
+    void registerComponents(SystemId id) override {
+        ECSManager::getManager().registerComponentToSystem<Positionable>(id);
+        ECSManager::getManager().registerComponentToSystem<Noded>(id);
     }
 };
 
