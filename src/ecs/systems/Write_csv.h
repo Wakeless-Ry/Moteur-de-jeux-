@@ -2,9 +2,9 @@
 #define WRITE_CSV
 
 #include "src/ecs/ECSManager.h"
-#include "src/ecs/System.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/RigidBody.h"
+#include "src/ecs/systems/SystemUpdater.h"
 #include "src/ecs/utils.h"
 #include <fstream>
 #include <optional>
@@ -12,7 +12,7 @@
 
 using namespace std;
 
-class Write_CSV : public System {
+class Write_CSV : public UpdatableSystem {
   private:
     ofstream csv;
 

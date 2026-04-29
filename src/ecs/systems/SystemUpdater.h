@@ -8,8 +8,13 @@
 #include <memory>
 #include <unordered_map>
 
-class SystemUpdater : public System {
-    std::unordered_map<SystemId, std::shared_ptr<System>> systems;
+class UpdatableSystem : public System {
+  public:
+    virtual void update(float deltaTime) = 0;
+};
+
+class SystemUpdater : public UpdatableSystem {
+    std::unordered_map<SystemId, std::shared_ptr<UpdatableSystem>> systems;
     std::unordered_map<SystemId, bool> enabled;
     std::unordered_map<SystemId, EntityId> entityIds;
 
@@ -34,7 +39,7 @@ class SystemUpdater : public System {
         ECSManager::getManager().registerComponentToSystem<Systemized>(id);
     }
 
-    SystemId addSystem(std::shared_ptr<System> system) {
+    SystemId addSystem(std::shared_ptr<UpdatableSystem> system) {
         SystemId systemId = ECSManager::getManager().registerSystem(system);
 
         system->registerComponents(systemId);

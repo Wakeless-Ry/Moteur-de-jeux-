@@ -7,40 +7,14 @@
 #include "glm/detail/type_vec.hpp"
 
 #include "src/ecs/ECSManager.h"
-#include "src/ecs/System.h"
 #include "src/ecs/components/VerletBody.h"
+#include "src/ecs/systems/SystemUpdater.h"
 #include "src/ecs/utils.h"
 
-class Verlet : public System {
-    const glm::vec3 GRAVITY = {0, -9.81, 0};
-    const float GRAVITATIONAL_CONSTANT = 10.0f;
-
-    struct OrbitalBody {
-        glm::vec3 position;
-        float mass;
-        bool enabled;
-    };
-    OrbitalBody orbitalBody = {{0, 30, 0}, 100.0f, false};
+class Verlet : public UpdatableSystem {
+    const double GRAVITATIONAL_CONSTANT = 6.674 / 100000000000.0;
 
   public:
-    void setOrbitalBody(glm::vec3 position, float mass) {
-        orbitalBody.position = position;
-        orbitalBody.mass = mass;
-        orbitalBody.enabled = true;
-    }
-    glm::vec3 calculateOrbitalVelocity(glm::vec3 objectPos,
-                                       glm::vec3 tangentDir) {
-        glm::vec3 toCenter = orbitalBody.position - objectPos;
-        float distance = glm::length(toCenter);
-
-        if (distance < 0.001f)
-            return glm::vec3(0);
-
-        float orbitalSpeed =
-            glm::sqrt(GRAVITATIONAL_CONSTANT * orbitalBody.mass / distance);
-        return glm::normalize(tangentDir) * orbitalSpeed;
-    }
-
     void update(float deltaTime) override {
         float radius = 42;
 
@@ -55,34 +29,7 @@ class Verlet : public System {
         ECSManager::getManager().registerComponentToSystem<VerletBody>(id);
     }
 
-    void applyGravity() {
-        ECSManager &ecs = ECSManager::getManager();
-        for (EntityId entity : this->getEntities()) {
-            auto posOpt = ecs.getComponentOfEntity<Positionable>(entity);
-            auto verletBodyOpt = ecs.getComponentOfEntity<VerletBody>(entity);
-
-            if (posOpt.has_value() && verletBodyOpt.has_value()) {
-                Positionable &pos = posOpt.value();
-                VerletBody &verletBody = verletBodyOpt.value();
-
-                if (orbitalBody.enabled) {
-                    glm::vec3 toCenter = orbitalBody.position - pos.pos;
-                    float distanceSq = glm::length2(toCenter);
-
-                    if (distanceSq > 0.001f) {
-                        float distance = glm::sqrt(distanceSq);
-                        glm::vec3 direction = toCenter / distance;
-                        float acceleration = GRAVITATIONAL_CONSTANT *
-                                             orbitalBody.mass / distanceSq;
-
-                        verletBody.acceleration += direction * acceleration;
-                    }
-                } else {
-                    verletBody.acceleration += GRAVITY;
-                }
-            }
-        }
-    }
+    void applyGravity() { ECSManager &ecs = ECSManager::getManager(); }
 
     void applyFloorConstraint(float radius) {
         ECSManager &ecs = ECSManager::getManager();

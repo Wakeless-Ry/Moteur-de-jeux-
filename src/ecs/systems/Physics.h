@@ -7,9 +7,9 @@
 #include "glm/detail/func_geometric.hpp"
 #include "glm/detail/type_vec.hpp"
 #include "src/ecs/ECSManager.h"
-#include "src/ecs/System.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/RigidBody.h"
+#include "src/ecs/systems/SystemUpdater.h"
 #include "src/ecs/utils.h"
 
 #include "src/Terrain.cpp"
@@ -19,7 +19,7 @@ const float GRAVITY = 9.81;
 const float STATIC_FRICTION = 0.74;
 const float KINETIC_FRICTION = 0.57;
 
-class Physics : public System {
+class Physics : public UpdatableSystem {
   private:
     std::optional<Terrain> terrain;
 

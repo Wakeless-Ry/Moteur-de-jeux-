@@ -6,11 +6,11 @@
 #include "glm/detail/type_vec.hpp"
 #include "src/GlobalScene.h"
 #include "src/ecs/ECSManager.h"
-#include "src/ecs/System.h"
 #include "src/ecs/components/Noded.h"
 #include "src/ecs/components/Positionable.h"
+#include "src/ecs/systems/SystemUpdater.h"
 
-class TransformPosition : public System {
+class TransformPosition : public UpdatableSystem {
     GlobalScene &scene;
 
   public:

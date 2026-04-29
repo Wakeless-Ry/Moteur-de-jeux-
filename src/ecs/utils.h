@@ -9,6 +9,9 @@ struct EntityId {
     bool operator==(const EntityId &other) const {
         return value == other.value;
     }
+    bool operator!=(const EntityId &other) const {
+        return value != other.value;
+    }
 };
 
 struct SystemId {
@@ -16,6 +19,9 @@ struct SystemId {
     bool operator<(const SystemId &other) const { return value < other.value; }
     bool operator==(const SystemId &other) const {
         return value == other.value;
+    }
+    bool operator!=(const SystemId &other) const {
+        return value != other.value;
     }
 };
 
