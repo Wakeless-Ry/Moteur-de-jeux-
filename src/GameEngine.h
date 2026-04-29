@@ -8,6 +8,7 @@
 #include "Controls.h"
 #include "GlobalScene.h"
 #include "PVS.h"
+#include "src/ecs/systems/SystemUpdater.h"
 
 using namespace std;
 using namespace glm;
@@ -17,13 +18,18 @@ using uint = unsigned int;
 
 class GameEngine {
     GLFWwindow *window;
+
     float deltaTime = 0;
     float lastFrame = 0;
+
     Camera camera;
     Controls controls;
     GlobalScene scene;
     PVS pvs;
+    std::shared_ptr<SystemUpdater> systemUpdater;
+
     GLuint vertexArrayId;
+
     bool stop = false;
 
     void initInternal();
@@ -44,6 +50,8 @@ class GameEngine {
     Controls &getControls();
     GlobalScene &getScene();
     PVS &getPVS();
+    std::shared_ptr<SystemUpdater> getSystemUpdater();
+
     void setScene(const GlobalScene &other);
 
     virtual void init() {};

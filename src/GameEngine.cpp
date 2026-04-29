@@ -9,11 +9,17 @@ void GameEngine::initInternal() {
     GLuint VertexArrayID;
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
+
+    this->systemUpdater = std::make_shared<SystemUpdater>();
+    SystemId id = ECSManager::getManager().registerSystem(this->systemUpdater);
+    this->systemUpdater->registerComponents(id);
+
     this->init();
 }
 
 void GameEngine::processInputInternal() {
     controls.processInput(this->window, this->camera, this->deltaTime);
+
     this->processInput(this->deltaTime);
 }
 
@@ -22,6 +28,9 @@ void GameEngine::updateInternal() {
     glfwGetFramebufferSize(window, &width, &height);
     camera.setScreenWidth(width);
     camera.setScreenHeight(height);
+
+    this->systemUpdater->update(deltaTime);
+
     this->update(this->deltaTime);
 }
 
@@ -29,6 +38,7 @@ void GameEngine::renderInternal() {
     this->camera.update(this->deltaTime);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     this->scene.draw(this->camera);
+
     this->render(this->deltaTime);
 }
 
@@ -37,11 +47,13 @@ void GameEngine::cleanUpInternal() {
     glDeleteVertexArrays(1, &this->vertexArrayId);
     glfwSetWindowShouldClose(window, true);
     glfwTerminate();
+
     this->cleanUp();
 }
 
 int GameEngine::run() {
     this->initInternal();
+
     while (!this->stop) {
         float currentFrame = glfwGetTime();
         this->deltaTime = currentFrame - this->lastFrame;
@@ -52,6 +64,7 @@ int GameEngine::run() {
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
     this->cleanUpInternal();
     return 0;
 }
@@ -63,4 +76,8 @@ Camera &GameEngine::getCamera() { return this->camera; }
 Controls &GameEngine::getControls() { return this->controls; }
 GlobalScene &GameEngine::getScene() { return this->scene; }
 PVS &GameEngine::getPVS() { return this->pvs; }
+std::shared_ptr<SystemUpdater> GameEngine::getSystemUpdater() {
+    return this->systemUpdater;
+}
+
 void GameEngine::setScene(const GlobalScene &other) { this->scene = other; }

@@ -8,14 +8,11 @@
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/Noded.h"
 #include "src/ecs/components/Positionable.h"
-#include "src/ecs/systems/SystemUpdater.h"
 #include "src/ecs/systems/TransformPosition.h"
 #include "src/ecs/systems/Verlet.h"
 #include "src/ecs/utils.h"
 
 class Moteur : public GameEngine {
-
-    std::shared_ptr<SystemUpdater> systemUpdater;
 
     void init() override {
         this->initSystems();
@@ -25,14 +22,9 @@ class Moteur : public GameEngine {
     }
 
     void initSystems() {
-        this->systemUpdater = std::make_shared<SystemUpdater>();
-        SystemId id =
-            ECSManager::getManager().registerSystem(this->systemUpdater);
-        this->systemUpdater->registerComponents(id);
+        this->getSystemUpdater()->addSystem(std::make_shared<Verlet>());
 
-        this->systemUpdater->addSystem(std::make_shared<Verlet>());
-
-        this->systemUpdater->addSystem(
+        this->getSystemUpdater()->addSystem(
             std::make_shared<TransformPosition>(this->getScene()));
     }
 
@@ -122,9 +114,7 @@ class Moteur : public GameEngine {
 
     void processInput(float deltaTime) override {}
 
-    void update(float deltaTime) override {
-        this->systemUpdater->update(deltaTime);
-    }
+    void update(float deltaTime) override {}
 
     void render(float deltaTime) override {}
 
