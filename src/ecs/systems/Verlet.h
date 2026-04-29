@@ -5,7 +5,9 @@
 #include <optional>
 
 #include "glm/detail/type_vec.hpp"
-#include "src/Physics.h"
+
+#include "src/Terrain.cpp"
+#include "src/ecs/ECSManager.h"
 #include "src/ecs/System.h"
 #include "src/ecs/components/VerletBody.h"
 #include "src/ecs/utils.h"

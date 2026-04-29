@@ -7,7 +7,6 @@
 #include "src/ecs/components/RigidBody.h"
 #include "src/ecs/utils.h"
 #include <fstream>
-#include <iostream>
 #include <optional>
 #include <string>
 

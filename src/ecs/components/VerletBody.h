@@ -7,11 +7,13 @@ struct VerletBody {
     glm::vec3 last_position;
     glm::vec3 acceleration;
     float size;
+    float mass;
 
     VerletBody() {}
-    VerletBody(glm::vec3 last_position, glm::vec3 acceleration, float size)
-        : last_position(last_position), acceleration(acceleration), size(size) {
-    }
+    VerletBody(glm::vec3 last_position, glm::vec3 acceleration, float size,
+               float mass)
+        : last_position(last_position), acceleration(acceleration), size(size),
+          mass(mass) {}
 };
 
 #endif // VERLET_BODY

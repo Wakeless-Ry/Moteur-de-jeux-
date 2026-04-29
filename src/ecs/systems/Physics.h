@@ -2,7 +2,6 @@
 #ifndef PHYSICS
 #define PHYSICS
 
-#include <iostream>
 #include <optional>
 
 #include "glm/detail/func_geometric.hpp"
