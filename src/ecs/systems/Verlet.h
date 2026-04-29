@@ -4,6 +4,7 @@
 
 #include <optional>
 
+#include "glm/detail/func_geometric.hpp"
 #include "glm/detail/type_vec.hpp"
 
 #include "src/ecs/ECSManager.h"
@@ -12,14 +13,11 @@
 #include "src/ecs/utils.h"
 
 class Verlet : public UpdatableSystem {
-    const double GRAVITATIONAL_CONSTANT = 6.674 / 100000000000.0;
+    const double GRAVITATIONAL_CONSTANT = .001;
 
   public:
     void update(float deltaTime) override {
-        float radius = 42;
-
         this->applyGravity();
-        this->applyFloorConstraint(radius);
         this->solveCollisions();
         this->updateBallPositions(deltaTime);
     }
@@ -29,30 +27,36 @@ class Verlet : public UpdatableSystem {
         ECSManager::getManager().registerComponentToSystem<VerletBody>(id);
     }
 
-    void applyGravity() { ECSManager &ecs = ECSManager::getManager(); }
-
-    void applyFloorConstraint(float radius) {
+    void applyGravity() {
         ECSManager &ecs = ECSManager::getManager();
-        for (EntityId entity : this->getEntities()) {
-            auto posOpt = ecs.getComponentOfEntity<Positionable>(entity);
-            auto verletBodyOpt = ecs.getComponentOfEntity<VerletBody>(entity);
+        const std::set<EntityId> entities = this->getEntities();
 
-            if (posOpt.has_value() && verletBodyOpt.has_value()) {
-                Positionable &pos = posOpt.value();
-                VerletBody &verletBody = verletBodyOpt.value();
+        for (EntityId first : entities) {
+            glm::vec3 pos1 =
+                ecs.getComponentOfEntity<Positionable>(first).value().get().pos;
+            VerletBody &verletBody1 =
+                ecs.getComponentOfEntity<VerletBody>(first).value();
 
-                if (pos.pos.x > radius) {
-                    pos.pos.x = radius;
-                }
-                if (pos.pos.x < -radius) {
-                    pos.pos.x = -radius;
-                }
+            for (EntityId second : entities) {
+                if (first != second) {
+                    glm::vec3 pos2 =
+                        ecs.getComponentOfEntity<Positionable>(second)
+                            .value()
+                            .get()
+                            .pos;
+                    VerletBody &verletBody2 =
+                        ecs.getComponentOfEntity<VerletBody>(second).value();
 
-                if (pos.pos.z > radius) {
-                    pos.pos.z = radius;
-                }
-                if (pos.pos.z < -radius) {
-                    pos.pos.z = -radius;
+                    if (verletBody2.mass != 0) {
+                        float distance = glm::distance(pos1, pos2);
+                        glm::vec3 direction = glm::normalize(pos2 - pos1);
+
+                        glm::vec3 acceleration =
+                            direction * GRAVITATIONAL_CONSTANT *
+                            (verletBody2.mass / (distance * distance));
+
+                        verletBody1.acceleration += acceleration;
+                    }
                 }
             }
         }

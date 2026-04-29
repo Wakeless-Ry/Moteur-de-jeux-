@@ -14,6 +14,8 @@
 
 class Moteur : public GameEngine {
 
+    SystemId verlet;
+
     void init() override {
         this->initSystems();
         this->initScene();
@@ -22,7 +24,9 @@ class Moteur : public GameEngine {
     }
 
     void initSystems() {
-        this->getSystemUpdater()->addSystem(std::make_shared<Verlet>());
+        this->verlet =
+            this->getSystemUpdater()->addSystem(std::make_shared<Verlet>());
+        this->getSystemUpdater()->disable(this->verlet);
 
         this->getSystemUpdater()->addSystem(
             std::make_shared<TransformPosition>(this->getScene()));
@@ -44,13 +48,25 @@ class Moteur : public GameEngine {
             ballMesh.setMetallic(0.5);
             ballMesh.setRoughness(0.4);
 
+            float speed = 150;
+
             EntityId ballEntityId = ECSManager::getManager().generateEntityId();
             ECSManager::getManager().setComponentToEntity(
                 Noded(this->getScene().addMesh(ballMesh)), ballEntityId);
             ECSManager::getManager().setComponentToEntity(
-                Positionable({0, 0, 0}), ballEntityId);
+                Positionable({4, 0, 10}), ballEntityId);
             ECSManager::getManager().setComponentToEntity(
-                VerletBody({0, 0, 0}, {0, 0, 0}, 1, 0), ballEntityId);
+                VerletBody({4, 0, 10}, {0, -speed, 0}, 1, 100000),
+                ballEntityId);
+
+            ballEntityId = ECSManager::getManager().generateEntityId();
+            ECSManager::getManager().setComponentToEntity(
+                Noded(this->getScene().addMesh(ballMesh)), ballEntityId);
+            ECSManager::getManager().setComponentToEntity(
+                Positionable({-4, 0, 10}), ballEntityId);
+            ECSManager::getManager().setComponentToEntity(
+                VerletBody({-4, 0, 10}, {0, speed, 0}, 1, 100000),
+                ballEntityId);
         }
     }
 
@@ -109,6 +125,11 @@ class Moteur : public GameEngine {
         controls.addKeyReleasedCallback(
             GLFW_KEY_LEFT_SHIFT, new KeyCallback([this](float deltaTime) {
                 this->getCamera().setTranslationSpeed(5);
+            }));
+
+        controls.addKeyPressedCallback(
+            GLFW_KEY_SPACE, new KeyCallback([this](float deltaTime) {
+                this->getSystemUpdater()->toggle(this->verlet);
             }));
     }
 

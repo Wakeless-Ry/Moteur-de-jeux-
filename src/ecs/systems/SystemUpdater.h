@@ -76,6 +76,12 @@ class SystemUpdater : public UpdatableSystem {
             this->enabled[system] = false;
         }
     }
+
+    void toggle(SystemId system) {
+        if (this->systems.count(system) != 0) {
+            this->enabled[system] = !this->enabled[system];
+        }
+    }
 };
 
 #endif // SYSTEM_UPDATER
