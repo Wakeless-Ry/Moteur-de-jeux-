@@ -31,7 +31,7 @@ class Camera : public Observer<vec3> {
 
     float fov = 45;
     float zNear = .1;
-    float zFar = 100;
+    float zFar = 1000;
 
     vec3 position = vec3(0, 0, 0);
     // vec3 eulerAngle = vec3(45, 45, 0);

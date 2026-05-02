@@ -2,25 +2,27 @@
 #include <GLFW/glfw3.h>
 #include <memory>
 
-#include "src/AssetManager.h"
 #include "src/Controls.h"
 #include "src/GameEngine.h"
-#include "src/ecs/ECSManager.h"
-#include "src/ecs/components/Noded.h"
-#include "src/ecs/components/Positionable.h"
 #include "src/ecs/systems/TransformPosition.h"
 #include "src/ecs/systems/Verlet.h"
 #include "src/ecs/utils.h"
+#include "src/prototype/StellarSystem.h"
 
 class Moteur : public GameEngine {
 
     SystemId verlet;
 
+    std::optional<StellarSystem *> stellarSystem;
+
+    float speed = 1.;
+
     void init() override {
         this->initSystems();
         this->initScene();
         this->initInputs();
-        this->getCamera().changeMode();
+        this->getCamera().setTargetDistance(10);
+        this->stellarSystem = new StellarSystem(this->getScene());
     }
 
     void initSystems() {
@@ -34,40 +36,7 @@ class Moteur : public GameEngine {
 
     void initScene() {
         this->getScene().addLightToScene(
-            Light(glm::vec3(0, 20, 0), glm::vec3(10000)));
-
-        std::optional<Mesh *> ballMeshOpt =
-            AssetManager::loadMesh("assets/meshes/big_sphere.obj");
-
-        if (ballMeshOpt.has_value()) {
-            SceneObject ballMesh =
-                SceneObject("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
-                            *ballMeshOpt.value());
-
-            ballMesh.setAlbedo({0.5, 0.5, 0.5});
-            ballMesh.setMetallic(0.5);
-            ballMesh.setRoughness(0.4);
-
-            float speed = 150;
-
-            EntityId ballEntityId = ECSManager::getManager().generateEntityId();
-            ECSManager::getManager().setComponentToEntity(
-                Noded(this->getScene().addMesh(ballMesh)), ballEntityId);
-            ECSManager::getManager().setComponentToEntity(
-                Positionable({4, 0, 10}), ballEntityId);
-            ECSManager::getManager().setComponentToEntity(
-                VerletBody({4, 0, 10}, {0, -speed, 0}, 1, 100000),
-                ballEntityId);
-
-            ballEntityId = ECSManager::getManager().generateEntityId();
-            ECSManager::getManager().setComponentToEntity(
-                Noded(this->getScene().addMesh(ballMesh)), ballEntityId);
-            ECSManager::getManager().setComponentToEntity(
-                Positionable({-4, 0, 10}), ballEntityId);
-            ECSManager::getManager().setComponentToEntity(
-                VerletBody({-4, 0, 10}, {0, speed, 0}, 1, 100000),
-                ballEntityId);
-        }
+            Light(glm::vec3(0, 50, 0), glm::vec3(10000)));
     }
 
     void initInputs() {
@@ -135,7 +104,11 @@ class Moteur : public GameEngine {
 
     void processInput(float deltaTime) override {}
 
-    void update(float deltaTime) override {}
+    void update(float deltaTime) override {
+        if (this->stellarSystem.has_value()) {
+            this->stellarSystem.value()->update(deltaTime);
+        }
+    }
 
     void render(float deltaTime) override {}
 

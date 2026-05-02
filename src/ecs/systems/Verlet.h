@@ -17,9 +17,13 @@ class Verlet : public UpdatableSystem {
 
   public:
     void update(float deltaTime) override {
-        this->applyGravity();
-        this->solveCollisions();
-        this->updateBallPositions(deltaTime);
+        static const size_t STEPS = 10;
+        deltaTime /= STEPS;
+        for (size_t i = 0; i < STEPS; i++) {
+            this->applyGravity(STEPS);
+            this->solveCollisions();
+            this->updateBallPositions(deltaTime);
+        }
     }
 
     void registerComponents(SystemId id) override {
@@ -27,40 +31,7 @@ class Verlet : public UpdatableSystem {
         ECSManager::getManager().registerComponentToSystem<VerletBody>(id);
     }
 
-    void applyGravity() {
-        ECSManager &ecs = ECSManager::getManager();
-        const std::set<EntityId> entities = this->getEntities();
-
-        for (EntityId first : entities) {
-            glm::vec3 pos1 =
-                ecs.getComponentOfEntity<Positionable>(first).value().get().pos;
-            VerletBody &verletBody1 =
-                ecs.getComponentOfEntity<VerletBody>(first).value();
-
-            for (EntityId second : entities) {
-                if (first != second) {
-                    glm::vec3 pos2 =
-                        ecs.getComponentOfEntity<Positionable>(second)
-                            .value()
-                            .get()
-                            .pos;
-                    VerletBody &verletBody2 =
-                        ecs.getComponentOfEntity<VerletBody>(second).value();
-
-                    if (verletBody2.mass != 0) {
-                        float distance = glm::distance(pos1, pos2);
-                        glm::vec3 direction = glm::normalize(pos2 - pos1);
-
-                        glm::vec3 acceleration =
-                            direction * GRAVITATIONAL_CONSTANT *
-                            (verletBody2.mass / (distance * distance));
-
-                        verletBody1.acceleration += acceleration;
-                    }
-                }
-            }
-        }
-    }
+    void applyGravity(float steps) {}
 
     void solveCollisions() {
         ECSManager &ecs = ECSManager::getManager();
@@ -96,14 +67,24 @@ class Verlet : public UpdatableSystem {
                             float diff =
                                 verletBody1.size + verletBody2.size - dist;
 
-                            pos1.pos +=
-                                (verletBody1.size /
-                                 (verletBody1.size + verletBody2.size)) *
-                                diff * n;
-                            pos2.pos -=
-                                (verletBody2.size /
-                                 (verletBody1.size + verletBody2.size)) *
-                                diff * n;
+                            if (verletBody1.unmovable) {
+                                if (!verletBody2.unmovable) {
+                                    pos2.pos -= diff * n;
+                                }
+                            } else {
+                                if (verletBody2.unmovable) {
+                                    pos1.pos += diff * n;
+                                } else {
+                                    pos1.pos += (verletBody1.size /
+                                                 (verletBody1.size +
+                                                  verletBody2.size)) *
+                                                diff * n;
+                                    pos2.pos -= (verletBody2.size /
+                                                 (verletBody1.size +
+                                                  verletBody2.size)) *
+                                                diff * n;
+                                }
+                            }
                         }
                     }
                 }
