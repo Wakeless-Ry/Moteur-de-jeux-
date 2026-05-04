@@ -11,14 +11,6 @@ using namespace glm;
 
 using uint = unsigned int;
 
-enum CameraMode { LOOK_AT, FRONT, HOVER, ROTATE, Count };
-
-inline CameraMode &operator++(CameraMode &dir) {
-    dir = static_cast<CameraMode>((static_cast<int>(dir) + 1) %
-                                  static_cast<int>(CameraMode::Count));
-    return dir;
-}
-
 const static vec3 VEC_UP(0.f, 1.f, 0.f);
 const static vec3 VEC_FRONT(0.f, 0.f, 1.f);
 const static vec3 VEC_RIGHT(1.f, 0.f, 0.f);
@@ -34,8 +26,6 @@ class Camera : public Observer<vec3> {
     float zFar = 1000;
 
     vec3 position = vec3(0, 0, 0);
-    // vec3 eulerAngle = vec3(45, 45, 0);
-    vec3 eulerAngle = vec3(0, 0, 0);
     quat rotation = quat();
 
     mat4 viewMatrix = mat4();
@@ -46,8 +36,6 @@ class Camera : public Observer<vec3> {
 
     float translationSpeed = 2.5;
     float rotationSpeed = 100;
-
-    CameraMode mode = LOOK_AT;
 
     vec3 projectVectorOnPlan(vec3 toProject, vec3 normal);
 
@@ -74,9 +62,6 @@ class Camera : public Observer<vec3> {
     vec3 getPosition() const;
     void setPosition(vec3 newPosition);
 
-    vec3 getEulerAngle() const;
-    void setEulerAngle(vec3 newEulerAngle);
-
     vec3 getTarget() const;
     void setTarget(vec3 newTarget);
 
@@ -90,9 +75,10 @@ class Camera : public Observer<vec3> {
     void setRotationSpeed(float newRotationSpeed);
 
     vec3 getFront() const;
+    vec3 getRight() const;
+    vec3 getUp() const;
 
     void update(float deltaTime);
-    void update(float deltaTime, vec3 newTarget);
 
     mat4 getView() const;
     mat4 getProjection() const;
@@ -101,14 +87,10 @@ class Camera : public Observer<vec3> {
 
     void forward(float deltaTime);
     void backward(float deltaTime);
-    void left(float deltaTime);
-    void right(float deltaTime);
     void increaseRotationSpeed(float deltaTime);
     void decreaseRotationSpeed(float deltaTime);
     void up(float deltaTime);
     void down(float deltaTime);
-
-    CameraMode changeMode();
 };
 
 #endif // CAMERA

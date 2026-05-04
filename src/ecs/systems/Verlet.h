@@ -4,26 +4,23 @@
 
 #include <optional>
 
+#include "glm/detail/func_common.hpp"
 #include "glm/detail/func_geometric.hpp"
 #include "glm/detail/type_vec.hpp"
 
+#include "glm/gtx/simd_vec4.hpp"
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/VerletBody.h"
 #include "src/ecs/systems/SystemUpdater.h"
 #include "src/ecs/utils.h"
 
 class Verlet : public UpdatableSystem {
-    const double GRAVITATIONAL_CONSTANT = .001;
 
   public:
     void update(float deltaTime) override {
-        static const size_t STEPS = 10;
-        deltaTime /= STEPS;
-        for (size_t i = 0; i < STEPS; i++) {
-            this->applyGravity(STEPS);
-            this->solveCollisions();
-            this->updateBallPositions(deltaTime);
-        }
+        this->applyGravity();
+        this->solveCollisions();
+        this->updateBallPositions(deltaTime);
     }
 
     void registerComponents(SystemId id) override {
@@ -31,7 +28,7 @@ class Verlet : public UpdatableSystem {
         ECSManager::getManager().registerComponentToSystem<VerletBody>(id);
     }
 
-    void applyGravity(float steps) {}
+    void applyGravity() {}
 
     void solveCollisions() {
         ECSManager &ecs = ECSManager::getManager();
@@ -102,6 +99,14 @@ class Verlet : public UpdatableSystem {
                 Positionable &pos = posOpt.value();
                 VerletBody &verletBody = verletBodyOpt.value();
                 glm::vec3 velocity = pos.pos - verletBody.last_position;
+
+                if (velocity != glm::vec3{0, 0, 0}) {
+
+                    std::cout << velocity.x << " " << velocity.y << " "
+                              << velocity.z << std::endl;
+                    float amount = glm::length(velocity);
+                    velocity = normalize(velocity) * std::min(amount, 1.f);
+                }
                 verletBody.last_position = pos.pos;
 
                 pos.pos +=

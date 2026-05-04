@@ -19,7 +19,7 @@ class StellarSystem {
     NodeId moonParent;
     NodeId moon;
 
-    const float speed = 30;
+    const float speed = 1;
 
     const float earthRevolutionRatio = 1;
     const float moonRevolutionRatio = 12.37;
@@ -97,22 +97,23 @@ class StellarSystem {
 
         this->sunAngle += 0.2 * deltaSpeed;
         this->scene.setTransform(this->star,
-                                 rotationY(this->sunAngle).scale(1.5));
+                                 rotationY(this->sunAngle).scale(10 * 1.5));
 
         this->planetRevolutionAngle += earthRevolutionRatio * deltaSpeed;
         this->scene.setTransform(
             this->planetParent,
-            rotationY(this->planetRevolutionAngle).translate(4, 0, 0));
+            rotationY(this->planetRevolutionAngle).translate(100, 0, 0));
         this->planetRotationAngle += earthRotationRatio * deltaSpeed;
         this->scene.setTransform(
             this->planet,
-            rotationX(23).rotationY(this->planetRotationAngle).scale(0.6));
+            rotationX(23).rotationY(this->planetRotationAngle).scale(10 * 0.6));
 
         this->moonRevolutionAngle += moonRevolutionRatio * deltaSpeed;
         this->scene.setTransform(
             this->moonParent,
-            rotationY(this->moonRevolutionAngle).translate(1.5, 0, 0));
+            rotationY(this->moonRevolutionAngle).translate(20, 0, 0));
         this->moonRotationAngle += moonRotationRatio * deltaSpeed;
-        this->scene.setTransform(this->moon, scale(0.25));
+        this->scene.setTransform(
+            this->moon, rotationY(this->planetRotationAngle).scale(10 * 0.25));
     }
 };
