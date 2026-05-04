@@ -306,6 +306,10 @@ class GlobalScene {
         this->tree.setLocalTransform(id, transform);
     }
 
+    std::optional<Transform> getTransform(NodeId id) {
+        return this->tree.getCumulativeTransform(id);
+    }
+
     void draw(const Camera &camera) {
         for (size_t i = 0; i < this->meshList.flags.size(); i++) {
             if (this->meshList.flags[i] && !this->meshList.hidden[i]) {

@@ -113,4 +113,4 @@ class Verlet : public UpdatableSystem {
     }
 };
 
-#endif
+#endif // VERLET

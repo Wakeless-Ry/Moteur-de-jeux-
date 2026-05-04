@@ -9,6 +9,7 @@
 #include "src/ecs/components/Noded.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/systems/SystemUpdater.h"
+#include "src/ecs/utils.h"
 
 class TransformPosition : public UpdatableSystem {
     GlobalScene &scene;
@@ -34,6 +35,16 @@ class TransformPosition : public UpdatableSystem {
     void registerComponents(SystemId id) override {
         ECSManager::getManager().registerComponentToSystem<Positionable>(id);
         ECSManager::getManager().registerComponentToSystem<Noded>(id);
+    }
+
+    std::optional<glm::vec3> getPosition(EntityId entityId) {
+        NodeId nodeId = ECSManager::getManager()
+                            .getComponentOfEntity<Noded>(entityId)
+                            .value()
+                            .get()
+                            .id;
+
+        return this->scene.getTransform(nodeId).value().getPosition();
     }
 };
 

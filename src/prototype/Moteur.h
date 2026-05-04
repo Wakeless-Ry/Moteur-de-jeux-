@@ -10,6 +10,7 @@
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/VerletBody.h"
+#include "src/ecs/systems/Gravity.h"
 #include "src/ecs/systems/TransformPosition.h"
 #include "src/ecs/systems/Verlet.h"
 #include "src/ecs/utils.h"
@@ -30,15 +31,20 @@ class Moteur : public GameEngine {
         this->initScene();
         this->initInputs();
         this->getCamera().setTargetDistance(10);
-        this->stellarSystem = new StellarSystem(this->getScene());
     }
 
     void initSystems() {
         this->verlet =
             this->getSystemUpdater()->addSystem(std::make_shared<Verlet>());
 
+        auto transformPosition =
+            std::make_shared<TransformPosition>(this->getScene());
+        this->getSystemUpdater()->addSystem(transformPosition);
+
         this->getSystemUpdater()->addSystem(
-            std::make_shared<TransformPosition>(this->getScene()));
+            std::make_shared<Gravity>(transformPosition));
+
+        this->stellarSystem = new StellarSystem(this->getScene());
     }
 
     void initScene() {
@@ -64,6 +70,8 @@ class Moteur : public GameEngine {
                                                       characterEntityId);
         ECSManager::getManager().setComponentToEntity(
             VerletBody(pos, {0, 0, 0}, 1, 0), characterEntityId);
+        this->stellarSystem.value()->setSystemAttraction(
+            this->characterEntityId);
     }
 
     void initInputs() {
@@ -106,6 +114,23 @@ class Moteur : public GameEngine {
                                        .value();
 
                 body.acceleration += this->getCamera().getUp() * 10;
+            }));
+
+        controls.addKeyDownCallback(
+            GLFW_KEY_Q, new KeyCallback([this](float deltaTime) {
+                glm::vec3 &pos = ECSManager::getManager()
+                                     .getComponentOfEntity<Positionable>(
+                                         this->characterEntityId)
+                                     .value()
+                                     .get()
+                                     .pos;
+                VerletBody &body = ECSManager::getManager()
+                                       .getComponentOfEntity<VerletBody>(
+                                           this->characterEntityId)
+                                       .value();
+
+                body.last_position = pos;
+                body.acceleration = {};
             }));
     }
 

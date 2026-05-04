@@ -1,6 +1,7 @@
 #ifndef TRANSFORM
 #define TRANSFORM
 
+#include "glm/detail/type_vec.hpp"
 #include <iostream>
 
 #include <glm/ext.hpp>
@@ -111,6 +112,11 @@ class Transform {
 
     inline glm::mat4 computeMat4(const glm::mat4 &in) const {
         return this->m_matrix * in;
+    }
+
+    inline glm::vec3 getPosition() const {
+        return {this->m_matrix[3][0], this->m_matrix[3][1],
+                this->m_matrix[3][2]};
     }
 
     inline void print() const {
