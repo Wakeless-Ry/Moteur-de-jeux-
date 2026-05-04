@@ -11,6 +11,10 @@
 using uint = unsigned int;
 
 class ContinuousLOD : public System {
+  private:
+    static constexpr int maxCollapsePerFrame = 50;
+    static constexpr float collapseCostThreshold = 5.0f;
+
   public:
     void update(float deltaTime, const glm::vec3 &cameraPos) {
         ECSManager &ecs = ECSManager::getManager();
@@ -25,9 +29,16 @@ class ContinuousLOD : public System {
 
                 float distance = glm::distance(cameraPos, pos.pos);
 
-                float maxDistance = 100.0f;
-                float targetLOD =
-                    std::max(0.0f, 1.0f - (distance / maxDistance));
+                float targetLOD;
+                if (distance < 25.0f) {
+                    targetLOD = 1.0f;
+                } else if (distance < 50.0f) {
+                    targetLOD = 0.67f;
+                } else if (distance < 75.0f) {
+                    targetLOD = 0.33f;
+                } else {
+                    targetLOD = 0.15f;
+                }
 
                 lod.target_lod_level = targetLOD;
 
@@ -46,76 +57,100 @@ class ContinuousLOD : public System {
             static_cast<uint>(original_triangle_count * targetLODLevel);
         uint currentTriCount = lod.current_indices.size() / 3;
 
+        if (currentTriCount < target_triangle_count) {
+            lod.current_vertices = lod.original_vertices;
+            lod.current_indices = lod.original_indices;
+            lod.current_normals = lod.original_normals;
+            lod.current_uvs = lod.original_uvs;
+            currentTriCount = lod.current_indices.size() / 3;
+        }
+
         if (currentTriCount > target_triangle_count) {
             int edgesCollapsed = 0;
 
-            while (currentTriCount > target_triangle_count &&
-                   lod.current_indices.size() >= 6) {
-                bool collapsedOne = false;
+            std::vector<std::pair<uint, uint>> edges;
+            for (size_t i = 0; i + 2 < lod.current_indices.size(); i += 3) {
+                uint i0 = lod.current_indices[i];
+                uint i1 = lod.current_indices[i + 1];
+                uint i2 = lod.current_indices[i + 2];
+                edges.push_back({i0, i1});
+                edges.push_back({i1, i2});
+                edges.push_back({i0, i2});
+            }
 
-                for (size_t i = 0;
-                     i < lod.current_indices.size() && !collapsedOne; i += 3) {
-                    if (i + 2 >= lod.current_indices.size())
-                        break;
+            std::sort(edges.begin(), edges.end(), [&](auto &a, auto &b) {
+                if (a.first >= lod.current_vertices.size() ||
+                    a.second >= lod.current_vertices.size())
+                    return false;
+                if (b.first >= lod.current_vertices.size() ||
+                    b.second >= lod.current_vertices.size())
+                    return true;
+                return glm::distance(lod.current_vertices[a.first],
+                                     lod.current_vertices[a.second]) <
+                       glm::distance(lod.current_vertices[b.first],
+                                     lod.current_vertices[b.second]);
+            });
 
-                    uint i0 = lod.current_indices[i];
-                    uint i1 = lod.current_indices[i + 1];
-                    uint i2 = lod.current_indices[i + 2];
-
-                    if (tryCollapseEdge(lod, i0, i1)) {
-                        collapsedOne = true;
-                        edgesCollapsed++;
-                    }
-                }
-
-                if (!collapsedOne)
+            for (auto &[v0, v1] : edges) {
+                if (lod.current_indices.size() / 3 <= target_triangle_count)
                     break;
-                currentTriCount = lod.current_indices.size() / 3;
+                if (edgesCollapsed >= maxCollapsePerFrame)
+                    break;
+                if (v0 >= lod.current_vertices.size() ||
+                    v1 >= lod.current_vertices.size())
+                    continue;
+
+                if (tryCollapseEdge(lod, v0, v1))
+                    edgesCollapsed++;
             }
 
             updateNormals(lod.current_vertices, lod.current_indices,
                           lod.current_normals);
-            lod.current_lod_level = targetLODLevel;
         }
+
+        lod.current_lod_level = targetLODLevel;
     }
 
     bool tryCollapseEdge(LOD &lod, uint v0, uint v1) {
         if (v0 >= lod.current_vertices.size() ||
-            v1 >= lod.current_vertices.size()) {
+            v1 >= lod.current_vertices.size() || v0 == v1) {
             return false;
         }
+
         float cost =
             glm::distance(lod.current_vertices[v0], lod.current_vertices[v1]);
-
-        if (cost > 2.0f)
+        if (cost > collapseCostThreshold)
             return false;
 
         lod.current_vertices[v0] =
             (lod.current_vertices[v0] + lod.current_vertices[v1]) * 0.5f;
+        if (!lod.current_uvs.empty() && v0 < lod.current_uvs.size() &&
+            v1 < lod.current_uvs.size()) {
+            lod.current_uvs[v0] =
+                (lod.current_uvs[v0] + lod.current_uvs[v1]) * 0.5f;
+        }
 
         for (uint &idx : lod.current_indices) {
-            if (idx == v1) {
+            if (idx == v1)
                 idx = v0;
-            } else if (idx > v1) {
+            else if (idx > v1)
                 idx--;
-            }
         }
 
         auto i = lod.current_indices.begin();
         while (i != lod.current_indices.end()) {
             if (i + 2 >= lod.current_indices.end())
                 break;
-
-            uint i0 = *i;
-            uint i1 = *(i + 1);
-            uint i2 = *(i + 2);
-
-            if (i0 == i1 || i1 == i2 || i0 == i2) {
+            uint i0 = *i, i1 = *(i + 1), i2 = *(i + 2);
+            if (i0 == i1 || i1 == i2 || i0 == i2)
                 i = lod.current_indices.erase(i, i + 3);
-            } else {
+            else
                 i += 3;
-            }
         }
+
+        lod.current_vertices.erase(lod.current_vertices.begin() + v1);
+        if (!lod.current_uvs.empty() && v1 < lod.current_uvs.size())
+            lod.current_uvs.erase(lod.current_uvs.begin() + v1);
 
         return true;
     }

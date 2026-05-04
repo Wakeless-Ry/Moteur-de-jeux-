@@ -65,6 +65,11 @@ class SceneObject : public Subject<glm::vec3> {
 
     Transform getTransform() const;
     void setTransform(const Transform &transform);
+    
+    void updateMeshData(const std::vector<glm::vec3> &vertices,
+                       const std::vector<uint> &indices,
+                       const std::vector<glm::vec3> &normals,
+                       const std::vector<glm::vec2> &uvs);
 };
 
 #endif // SCENE_OBJECT

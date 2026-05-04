@@ -154,3 +154,10 @@ Transform SceneObject::getTransform() const { return this->transform; }
 void SceneObject::setTransform(const Transform &transform) {
     this->transform = transform;
 }
+
+void SceneObject::updateMeshData(const std::vector<glm::vec3> &vertices,
+                                const std::vector<uint> &indices,
+                                const std::vector<glm::vec3> &normals,
+                                const std::vector<glm::vec2> &uvs) {
+    this->mesh.updateMeshData(vertices, indices, normals, uvs);
+}

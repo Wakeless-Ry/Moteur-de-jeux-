@@ -156,7 +156,7 @@ class Moteur : public GameEngine {
         }
 
         std::optional<Mesh> lodMeshOpt =
-            FileLoader::buildMeshFromOFF("assets/meshes/suzanne.off");
+            FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
 
         if (lodMeshOpt.has_value()) {
             this->lodTestMesh =
@@ -201,6 +201,16 @@ class Moteur : public GameEngine {
         }
 
         continuousLOD.get()->update(deltaTime, this->getCamera().getPosition());
+
+        auto lodOpt = ECSManager::getManager().getComponentOfEntity<LOD>(
+            this->lodTestMeshEntityId);
+
+        if (lodOpt.has_value()) {
+            LOD &lod = lodOpt.value();
+            this->lodTestMesh.value().updateMeshData(
+                lod.current_vertices, lod.current_indices, lod.current_normals,
+                lod.current_uvs);
+        }
 
         this->getScene().setTransform(this->lodTestMeshId,
                                       translate(glm::vec3(0, 5, 0)));

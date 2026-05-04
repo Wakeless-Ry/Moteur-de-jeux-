@@ -74,6 +74,10 @@ class Mesh {
     std::vector<uint> getIndices() const;
     std::vector<glm::vec3> getNormals() const;
     std::vector<glm::vec2> getUvs() const;
+    void updateMeshData(const std::vector<glm::vec3> &vertices,
+                        const std::vector<uint> &indices,
+                        const std::vector<glm::vec3> &normals,
+                        const std::vector<glm::vec2> &uvs);
 };
 
 #endif // MESH
