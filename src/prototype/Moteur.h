@@ -59,7 +59,7 @@ class Moteur : public GameEngine {
         this->characterEntityId = ECSManager::getManager().generateEntityId();
         ECSManager::getManager().setComponentToEntity(
             Noded(this->getScene().addMesh(character)), characterEntityId);
-        glm::vec3 pos = {0, 0, 0};
+        glm::vec3 pos = {15, 15, 15};
         ECSManager::getManager().setComponentToEntity(Positionable(pos),
                                                       characterEntityId);
         ECSManager::getManager().setComponentToEntity(

@@ -4,11 +4,9 @@
 
 #include <optional>
 
-#include "glm/detail/func_common.hpp"
 #include "glm/detail/func_geometric.hpp"
 #include "glm/detail/type_vec.hpp"
 
-#include "glm/gtx/simd_vec4.hpp"
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/VerletBody.h"
 #include "src/ecs/systems/SystemUpdater.h"
@@ -101,9 +99,6 @@ class Verlet : public UpdatableSystem {
                 glm::vec3 velocity = pos.pos - verletBody.last_position;
 
                 if (velocity != glm::vec3{0, 0, 0}) {
-
-                    std::cout << velocity.x << " " << velocity.y << " "
-                              << velocity.z << std::endl;
                     float amount = glm::length(velocity);
                     velocity = normalize(velocity) * std::min(amount, 1.f);
                 }

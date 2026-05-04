@@ -1,8 +1,6 @@
 #include "Camera.h"
 
 #include <algorithm>
-#include <cmath>
-#include <cstdlib>
 
 #include "glm/detail/type_vec.hpp"
 #include "glm/gtc/matrix_transform.hpp"
