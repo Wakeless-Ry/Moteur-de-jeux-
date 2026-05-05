@@ -1,7 +1,6 @@
 #ifndef POSITIONABLE
 #define POSITIONABLE
 
-#include "glm/detail/type_vec.hpp"
 #include <glm/ext.hpp>
 
 struct Positionable {

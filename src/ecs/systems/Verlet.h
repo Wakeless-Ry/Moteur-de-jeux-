@@ -5,7 +5,7 @@
 #include <optional>
 
 #include "glm/detail/func_geometric.hpp"
-#include "glm/detail/type_vec.hpp"
+#include <glm/ext.hpp>
 
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/VerletBody.h"
@@ -93,15 +93,20 @@ class Verlet : public UpdatableSystem {
             auto posOpt = ecs.getComponentOfEntity<Positionable>(entity);
             auto verletBodyOpt = ecs.getComponentOfEntity<VerletBody>(entity);
 
-            if (posOpt.has_value() && verletBodyOpt.has_value()) {
+            if (posOpt.has_value() && verletBodyOpt.has_value() &&
+                !verletBodyOpt.value().get().unmovable) {
                 Positionable &pos = posOpt.value();
                 VerletBody &verletBody = verletBodyOpt.value();
                 glm::vec3 velocity = pos.pos - verletBody.last_position;
 
-                if (velocity != glm::vec3{0, 0, 0}) {
+                if (glm::length(velocity) >= 0.02) {
                     float amount = glm::length(velocity);
-                    velocity = normalize(velocity) * std::min(amount, 1.f);
+                    velocity =
+                        normalize(velocity) * amount * (1. - (0.3 * deltaTime));
+                } else {
+                    velocity = {0, 0, 0};
                 }
+
                 verletBody.last_position = pos.pos;
 
                 pos.pos +=

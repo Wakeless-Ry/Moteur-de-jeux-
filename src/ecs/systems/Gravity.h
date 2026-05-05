@@ -1,13 +1,14 @@
-
 #ifndef GRAVITY
 #define GRAVITY
 
-#include "glm/detail/type_vec.hpp"
+#include <memory>
+
+#include <glm/ext.hpp>
+
 #include "src/ecs/components/Attracted.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/systems/SystemUpdater.h"
 #include "src/ecs/systems/TransformPosition.h"
-#include <memory>
 
 class Gravity : public UpdatableSystem {
     std::shared_ptr<TransformPosition> transformPosition;

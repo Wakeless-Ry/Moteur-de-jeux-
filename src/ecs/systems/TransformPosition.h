@@ -3,7 +3,6 @@
 
 #include <glm/ext.hpp>
 
-#include "glm/detail/type_vec.hpp"
 #include "src/GlobalScene.h"
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/Noded.h"

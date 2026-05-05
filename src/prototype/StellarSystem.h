@@ -1,4 +1,7 @@
-#include "glm/detail/type_vec.hpp"
+#include <optional>
+
+#include <glm/ext.hpp>
+
 #include "src/AssetManager.h"
 #include "src/GlobalScene.h"
 #include "src/Transform.h"
@@ -8,7 +11,6 @@
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/VerletBody.h"
 #include "src/ecs/utils.h"
-#include <optional>
 
 class StellarSystem {
     GlobalScene &scene;

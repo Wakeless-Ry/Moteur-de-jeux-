@@ -2,9 +2,9 @@
 
 #include <algorithm>
 
-#include "glm/detail/type_vec.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/quaternion.hpp"
+#include <glm/ext.hpp>
 
 static float clipAngle180(float _angle) {
     while (_angle >= 180.f || _angle < -180.f) {
