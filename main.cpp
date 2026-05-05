@@ -27,8 +27,15 @@ class Moteur : public GameEngine {
     std::vector<EntityId> ballEntityIds;
 
     std::optional<SceneObject> lodTestMesh;
+    std::optional<SceneObject> lodTestMeshSphere;
+
     NodeId lodTestMeshId;
+    NodeId lodTestMeshSphereId;
+
     EntityId lodTestMeshEntityId;
+    EntityId lodTestMeshEntitySphereId;
+
+    float distance = 0;
 
     void spawnBall(glm::vec3 pos, glm::vec3 direction, float speed,
                    float deltaTime) {
@@ -140,41 +147,96 @@ class Moteur : public GameEngine {
                                 this->getCamera().getFront(), 30, deltaTime);
             }));
 
-        std::optional<Mesh> ballMeshOpt =
-            FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
+        controls.addKeyDownCallback(GLFW_KEY_KP_ADD,
+                                    new KeyCallback([this](float deltaTime) {
+                                        this->distance += 25 * deltaTime;
+                                    }));
 
-        if (ballMeshOpt.has_value()) {
-            this->ballMesh =
-                SceneObject("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
-                            ballMeshOpt.value());
+        controls.addKeyDownCallback(GLFW_KEY_KP_SUBTRACT,
+                                    new KeyCallback([this](float deltaTime) {
+                                        this->distance -= 25 * deltaTime;
+                                    }));
 
-            this->ballMesh.value().setAlbedo({0.5, 0.5, 0.5});
-            this->ballMesh.value().setMetallic(0.5);
-            this->ballMesh.value().setRoughness(0.4);
-        } else {
-            std::cout << "Mesh pas chargé correctement" << std::endl;
-        }
+        // std::optional<Mesh> ballMeshOpt =
+        //     FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
+
+        // if (ballMeshOpt.has_value()) {
+        //     this->ballMesh =
+        //         SceneObject("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
+        //                     ballMeshOpt.value());
+
+        //     this->ballMesh.value().setAlbedo({0.5, 0.5, 0.5});
+        //     this->ballMesh.value().setMetallic(0.5);
+        //     this->ballMesh.value().setRoughness(0.4);
+        // } else {
+        //     std::cout << "Mesh pas chargé correctement" << std::endl;
+        // }
 
         std::optional<Mesh> lodMeshOpt =
+            // FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
+            FileLoader::buildMeshFromOFF("assets/meshes/avion_n.off");
+
+        std::optional<Mesh> lodMeshOptSphere =
             FileLoader::buildMeshFromOBJ("assets/meshes/sphere.obj");
 
-        if (lodMeshOpt.has_value()) {
+        if (lodMeshOpt.has_value() && lodMeshOptSphere.has_value()) {
             this->lodTestMesh =
                 SceneObject("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
                             lodMeshOpt.value());
 
+            this->lodTestMeshSphere =
+                SceneObject("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
+                            lodMeshOptSphere.value());
+
             this->lodTestMesh.value().setAlbedo({0.5, 0.5, 0.5});
             this->lodTestMesh.value().setMetallic(0.5);
             this->lodTestMesh.value().setRoughness(0.4);
+
+            this->lodTestMeshSphere.value().setAlbedo({0.5, 0.5, 0.5});
+            this->lodTestMeshSphere.value().setMetallic(0.5);
+            this->lodTestMeshSphere.value().setRoughness(0.4);
+
+            // std::cout << "nombre de normales du mesh :"
+            //           << lodMeshOpt.value().getNormals().size() << std::endl;
+            // std::cout << "nombre de triangles du mesh :"
+            //           << lodMeshOpt.value().getVertices().size() <<
+            //           std::endl;
+
             this->lodTestMeshId =
                 this->getScene().addMesh(this->lodTestMesh.value());
+
+            this->lodTestMeshSphereId =
+                this->getScene().addMesh(this->lodTestMeshSphere.value());
 
             this->lodTestMeshEntityId =
                 ECSManager::getManager().generateEntityId();
             ECSManager::getManager().setComponentToEntity(
                 Positionable(glm::vec3(0, 0, 0)), this->lodTestMeshEntityId);
+
+            this->lodTestMeshEntitySphereId =
+                ECSManager::getManager().generateEntityId();
+            ECSManager::getManager().setComponentToEntity(
+                Positionable(glm::vec3(1, 0, 0)),
+                this->lodTestMeshEntitySphereId);
+
             ECSManager::getManager().setComponentToEntity(
                 LOD(lodMeshOpt.value()), this->lodTestMeshEntityId);
+
+            ECSManager::getManager().setComponentToEntity(
+                LOD(lodMeshOptSphere.value()), this->lodTestMeshEntitySphereId);
+
+            controls.addKeyPressedCallback(
+                GLFW_KEY_V, new KeyCallback([this](float deltaTime) {
+                    this->getScene()
+                        .getMesh(this->lodTestMeshSphereId)
+                        .value()
+                        ->updateMeshData(
+                            lodTestMesh.value().getMesh().getVertices(),
+                            lodTestMesh.value().getMesh().getIndices(),
+                            lodTestMesh.value().getMesh().getNormals(),
+                            lodTestMesh.value().getMesh().getUvs());
+                }));
+
         } else {
             std::cout << "LOD mesh pas chargé correctement" << std::endl;
         }
@@ -200,20 +262,24 @@ class Moteur : public GameEngine {
                     .scale(BALL_RADIUS));
         }
 
-        continuousLOD.get()->update(deltaTime, this->getCamera().getPosition());
+        continuousLOD.get()->update(deltaTime, this->getCamera().getPosition(),
+                                    distance);
 
         auto lodOpt = ECSManager::getManager().getComponentOfEntity<LOD>(
             this->lodTestMeshEntityId);
 
         if (lodOpt.has_value()) {
-            LOD &lod = lodOpt.value();
-            this->lodTestMesh.value().updateMeshData(
-                lod.current_vertices, lod.current_indices, lod.current_normals,
-                lod.current_uvs);
+            // LOD &lod = lodOpt.value();
+            // this->lodTestMesh.value().updateMeshData(
+            //     lod.current_vertices, lod.current_indices,
+            //     lod.current_normals, lod.current_uvs);
         }
 
         this->getScene().setTransform(this->lodTestMeshId,
                                       translate(glm::vec3(0, 5, 0)));
+
+        this->getScene().setTransform(this->lodTestMeshSphereId,
+                                      translate(glm::vec3(0, 10, 0)));
     }
 
     void render(float deltaTime) override {}

@@ -1,4 +1,6 @@
 #include "Mesh.h"
+#include <iostream>
+#include <ostream>
 
 Mesh::MeshData::MeshData(const std::vector<glm::vec3> &vertices,
                          const std::vector<uint> &indices,
@@ -120,41 +122,13 @@ void Mesh::updateMeshData(const std::vector<glm::vec3> &vertices,
                           const std::vector<uint> &indices,
                           const std::vector<glm::vec3> &normals,
                           const std::vector<glm::vec2> &uvs) {
-    this->data->vertices = vertices;
-    this->data->indices = indices;
-    this->data->normals = normals;
-    this->data->uvs = uvs;
+    this->data = std::make_shared<MeshData>(vertices, indices, normals, uvs);
 
-    glDeleteBuffers(1, &this->data->vbo);
-    glDeleteBuffers(1, &this->data->ebo);
-    if (this->data->hasNormals())
-        glDeleteBuffers(1, &this->data->nbo);
-    if (this->data->hasUVs())
-        glDeleteBuffers(1, &this->data->ubo);
-
-    glGenBuffers(1, &this->data->vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, this->data->vbo);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3),
-                 vertices.data(), GL_DYNAMIC_DRAW);
-
-    if (normals.size() > 0) {
-        glGenBuffers(1, &this->data->nbo);
-        glBindBuffer(GL_ARRAY_BUFFER, this->data->nbo);
-        glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3),
-                     normals.data(), GL_DYNAMIC_DRAW);
-    }
-
-    if (uvs.size() > 0) {
-        glGenBuffers(1, &this->data->ubo);
-        glBindBuffer(GL_ARRAY_BUFFER, this->data->ubo);
-        glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2),
-                     uvs.data(), GL_DYNAMIC_DRAW);
-    }
-
-    glGenBuffers(1, &this->data->ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->data->ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint),
-                 indices.data(), GL_DYNAMIC_DRAW);
+    glDeleteVertexArrays(1, &this->vao);
+    glGenVertexArrays(1, &this->vao);
+    glBindVertexArray(this->vao);
+    this->data->bindToVAO();
+    glBindVertexArray(0);
 }
 
 Mesh::Mesh(const Mesh &other) : vao(0), data(other.data) {

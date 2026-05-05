@@ -9,6 +9,8 @@ SceneObject::SceneObject(const char *vertexShaderPath,
 
 GLuint SceneObject::getId() const { return this->programId; }
 
+Mesh &SceneObject::getMesh() { return this->mesh; }
+
 const glm::vec3 &SceneObject::getAlbedo() const { return albedo; }
 float SceneObject::getMetallic() const { return metallic; }
 float SceneObject::getRoughness() const { return roughness; }
@@ -156,8 +158,8 @@ void SceneObject::setTransform(const Transform &transform) {
 }
 
 void SceneObject::updateMeshData(const std::vector<glm::vec3> &vertices,
-                                const std::vector<uint> &indices,
-                                const std::vector<glm::vec3> &normals,
-                                const std::vector<glm::vec2> &uvs) {
+                                 const std::vector<uint> &indices,
+                                 const std::vector<glm::vec3> &normals,
+                                 const std::vector<glm::vec2> &uvs) {
     this->mesh.updateMeshData(vertices, indices, normals, uvs);
 }
