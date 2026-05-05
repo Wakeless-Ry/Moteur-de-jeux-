@@ -34,8 +34,10 @@ class Gravity : public UpdatableSystem {
             for (Attraction const &attraction : attracted.getAttractions()) {
 
                 glm::vec3 bodyPos =
-                    this->transformPosition->getPosition(attraction.body)
-                        .value();
+                    ecs.getComponentOfEntity<Positionable>(attraction.body)
+                        .value()
+                        .get()
+                        .pos;
 
                 float distance = glm::distance(pos, bodyPos);
                 glm::vec3 direction = glm::normalize(bodyPos - pos);

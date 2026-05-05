@@ -49,11 +49,6 @@ void Camera::setTranslationSpeed(float newTranslationSpeed) {
     this->translationSpeed = newTranslationSpeed;
 }
 
-float Camera::getRotationSpeed() const { return this->rotationSpeed; }
-void Camera::setRotationSpeed(float newRotationSpeed) {
-    this->rotationSpeed = newRotationSpeed;
-}
-
 vec3 Camera::projectVectorOnPlan(vec3 toProject, vec3 normal) {
     normal = normalize(normal);
     return cross(normal, cross(toProject, normal));
@@ -108,6 +103,19 @@ void Camera::rotateWithMouse(float deltaX, float deltaY) {
     }
 }
 
+void Camera::tilt(float deltaTime, bool clockwise) {
+    const float rotationSpeed = 1;
+
+    if (deltaTime != 0) {
+        glm::vec3 axis = glm::normalize(this->getFront());
+
+        this->rotation = glm::normalize(
+            glm::angleAxis(rotationSpeed * deltaTime * (clockwise ? -1 : 1),
+                           axis) *
+            this->rotation);
+    }
+}
+
 void Camera::forward(float deltaTime) {
     vec3 direction = this->rotation * vec3(0.0f, 0.0f, 1.0f);
     this->targetDistance -= deltaTime * this->translationSpeed;
@@ -116,14 +124,6 @@ void Camera::forward(float deltaTime) {
 void Camera::backward(float deltaTime) {
     vec3 direction = this->rotation * vec3(0.0f, 0.0f, -1.0f);
     this->targetDistance += deltaTime * this->translationSpeed;
-}
-
-void Camera::increaseRotationSpeed(float deltaTime) {
-    this->rotationSpeed += this->rotationSpeed * deltaTime;
-}
-
-void Camera::decreaseRotationSpeed(float deltaTime) {
-    this->rotationSpeed -= this->rotationSpeed * deltaTime;
 }
 
 void Camera::up(float deltaTime) {

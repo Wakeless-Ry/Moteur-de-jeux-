@@ -21,14 +21,17 @@ class TransformPosition : public UpdatableSystem {
         ECSManager &ecs = ECSManager::getManager();
 
         for (EntityId entity : this->getEntities()) {
-            glm::vec3 position = ecs.getComponentOfEntity<Positionable>(entity)
-                                     .value()
-                                     .get()
-                                     .pos;
+            Positionable &position =
+                ecs.getComponentOfEntity<Positionable>(entity).value();
+
             NodeId nodeId =
                 ecs.getComponentOfEntity<Noded>(entity).value().get().id;
 
-            this->scene.setTransform(nodeId, translate(position));
+            if (position.shouldTransform) {
+                this->scene.setTransform(nodeId, translate(position.pos));
+            } else {
+                position.pos = this->getPosition(entity).value();
+            }
         }
     }
 

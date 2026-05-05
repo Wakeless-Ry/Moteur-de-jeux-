@@ -5,10 +5,14 @@
 #include <glm/ext.hpp>
 
 struct Positionable {
-    glm::vec3 pos = {0.7, 10, -1.5};
+    glm::vec3 pos;
+    bool shouldTransform;
 
-    Positionable() {}
-    Positionable(glm::vec3 pos) : pos(pos) {}
+    Positionable(glm::vec3 pos, bool shouldTransform)
+        : pos(pos), shouldTransform(shouldTransform) {}
+    Positionable(glm::vec3 pos) : Positionable(pos, true) {}
+    Positionable(bool shouldTransform) : Positionable({}, shouldTransform) {}
+    Positionable() : Positionable({}, true) {}
 };
 
 #endif // POSITIONABLE

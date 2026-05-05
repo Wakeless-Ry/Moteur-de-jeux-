@@ -35,7 +35,6 @@ class Camera : public Observer<vec3> {
     float targetDistance = 3.;
 
     float translationSpeed = 2.5;
-    float rotationSpeed = 100;
 
     vec3 projectVectorOnPlan(vec3 toProject, vec3 normal);
 
@@ -71,9 +70,6 @@ class Camera : public Observer<vec3> {
     float getTranslationSpeed() const;
     void setTranslationSpeed(float newTranslationSpeed);
 
-    float getRotationSpeed() const;
-    void setRotationSpeed(float newRotationSpeed);
-
     vec3 getFront() const;
     vec3 getRight() const;
     vec3 getUp() const;
@@ -85,10 +81,9 @@ class Camera : public Observer<vec3> {
 
     void rotateWithMouse(float deltaX, float deltaY);
 
+    void tilt(float deltaTime, bool clockwise);
     void forward(float deltaTime);
     void backward(float deltaTime);
-    void increaseRotationSpeed(float deltaTime);
-    void decreaseRotationSpeed(float deltaTime);
     void up(float deltaTime);
     void down(float deltaTime);
 };

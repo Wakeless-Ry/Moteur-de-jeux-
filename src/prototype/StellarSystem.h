@@ -69,7 +69,7 @@ class StellarSystem {
 
         glm::vec3 pos = {0, 0, 0};
 
-        ECSManager::getManager().setComponentToEntity(Positionable(pos),
+        ECSManager::getManager().setComponentToEntity(Positionable(pos, false),
                                                       entity);
         ECSManager::getManager().setComponentToEntity(
             VerletBody(pos, {}, size, true), entity);
