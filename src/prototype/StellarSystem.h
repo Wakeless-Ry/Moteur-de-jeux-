@@ -29,24 +29,26 @@ class StellarSystem {
     NodeId moon;
     EntityId moonEntityId;
 
-    const float starMass = 1000;
-    const float starSize = 15;
+    const float starMass = 500000;
+    const float starSize = 150;
 
-    const float planetMass = 100;
-    const float planetSize = 6;
+    const float planetMass = 100000;
+    const float planetSize = 60;
 
-    const float moonMass = 10;
-    const float moonSize = 2.5;
+    const float moonMass = 50000;
+    const float moonSize = 25;
 
-    const float speed = 1;
+    const float speed = 0.1;
 
-    const float earthRevolutionRatio = 1;
+    const float starRotationRatio = 0.2;
+
+    const float planetRevolutionRatio = 1;
     const float moonRevolutionRatio = 12.37;
 
-    const float earthRotationRatio = 365;
+    const float planetRotationRatio = 365;
     const float moonRotationRatio = 12.37;
 
-    float starAngle = 0;
+    float starRotationAngle = 0;
 
     float planetRevolutionAngle = 0;
     float planetRotationAngle = 0;
@@ -60,7 +62,9 @@ class StellarSystem {
         SceneObject celestialObject =
             SceneObject("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl", ballMesh);
 
-        celestialObject.setAlbedo({1, 1, 1});
+        // celestialObject.setAlbedo({1, 1, 1});
+        celestialObject.addAlbedoMap(
+            AssetManager::loadTexture("assets/textures/sun.png"));
         celestialObject.setMetallic(0.5);
         celestialObject.setRoughness(0.4);
 
@@ -100,15 +104,15 @@ class StellarSystem {
     void update(float deltaTime) {
         float deltaSpeed = deltaTime * speed;
 
-        this->starAngle += 0.2 * deltaSpeed;
-        this->scene.setTransform(this->star,
-                                 rotationY(this->starAngle).scale(starSize));
+        this->starRotationAngle += starRotationRatio * deltaSpeed;
+        this->scene.setTransform(
+            this->star, rotationY(this->starRotationAngle).scale(starSize));
 
-        this->planetRevolutionAngle += earthRevolutionRatio * deltaSpeed;
+        this->planetRevolutionAngle += planetRevolutionRatio * deltaSpeed;
         this->scene.setTransform(
             this->planetParent,
-            rotationY(this->planetRevolutionAngle).translate(100, 0, 0));
-        this->planetRotationAngle += earthRotationRatio * deltaSpeed;
+            rotationY(this->planetRevolutionAngle).translate(1000, 0, 0));
+        this->planetRotationAngle += planetRotationRatio * deltaSpeed;
         this->scene.setTransform(this->planet,
                                  rotationX(23)
                                      .rotationY(this->planetRotationAngle)
@@ -117,7 +121,7 @@ class StellarSystem {
         this->moonRevolutionAngle += moonRevolutionRatio * deltaSpeed;
         this->scene.setTransform(
             this->moonParent,
-            rotationY(this->moonRevolutionAngle).translate(20, 0, 0));
+            rotationY(this->moonRevolutionAngle).translate(200, 0, 0));
         this->moonRotationAngle += moonRotationRatio * deltaSpeed;
         this->scene.setTransform(
             this->moon, rotationY(this->planetRotationAngle).scale(moonSize));

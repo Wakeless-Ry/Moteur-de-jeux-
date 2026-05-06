@@ -2,6 +2,7 @@
 #ifndef VERLET
 #define VERLET
 
+#include <cstdlib>
 #include <optional>
 
 #include "glm/detail/func_geometric.hpp"
@@ -57,10 +58,23 @@ class Verlet : public UpdatableSystem {
                         float dist = glm::length(collisionAxis);
 
                         if (dist > 0.0001 &&
-                            dist < verletBody1.size + verletBody2.size) {
+                            dist < verletBody1.size + verletBody2.size &&
+                            dist > abs(verletBody2.size - verletBody1.size)) {
+
+                            bool firstBiggest = true;
+                            if (verletBody1.size < verletBody2.size) {
+                                firstBiggest = false;
+                            }
+
                             glm::vec3 n = collisionAxis / dist;
                             float diff =
                                 verletBody1.size + verletBody2.size - dist;
+
+                            if ((dist < verletBody1.size && firstBiggest) ||
+                                (dist < verletBody2.size && !firstBiggest)) {
+                                diff -= 2 * (firstBiggest ? verletBody2.size
+                                                          : verletBody1.size);
+                            }
 
                             if (verletBody1.unmovable) {
                                 if (!verletBody2.unmovable) {
@@ -101,7 +115,7 @@ class Verlet : public UpdatableSystem {
                 VerletBody &verletBody = verletBodyOpt.value();
                 glm::vec3 velocity = pos.pos - verletBody.last_position;
 
-                if (glm::length(velocity) >= 0.02) {
+                if (glm::length(velocity) >= 0.02 * deltaTime) {
                     velocity *= (1. - (AIR_FRICTION * deltaTime));
                 } else {
                     velocity = {0, 0, 0};

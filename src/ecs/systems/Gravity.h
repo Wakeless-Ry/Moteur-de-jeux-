@@ -46,8 +46,8 @@ class Gravity : public UpdatableSystem {
                     direction * GRAVITATIONAL_CONSTANT *
                     (attraction.force / (distance * distance));
 
-                verletBody.acceleration +=
-                    acceleration * (attraction.mode == INWARD ? 1 : -1);
+                // verletBody.acceleration +=
+                //     acceleration * (attraction.mode == INWARD ? 1 : -1);
             }
         }
     }

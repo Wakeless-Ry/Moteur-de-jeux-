@@ -65,7 +65,7 @@ class Moteur : public GameEngine {
         this->characterEntityId = ECSManager::getManager().generateEntityId();
         ECSManager::getManager().setComponentToEntity(
             Noded(this->getScene().addMesh(character)), characterEntityId);
-        glm::vec3 pos = {15, 15, 15};
+        glm::vec3 pos = {200, 200, 200};
         ECSManager::getManager().setComponentToEntity(Positionable(pos),
                                                       characterEntityId);
         ECSManager::getManager().setComponentToEntity(
@@ -116,14 +116,22 @@ class Moteur : public GameEngine {
                                         this->getCamera().tilt(deltaTime, true);
                                     }));
 
-        controls.addKeyDownCallback(
+        controls.addKeyPressedCallback(
             GLFW_KEY_SPACE, new KeyCallback([this](float deltaTime) {
+                glm::vec3 &pos = ECSManager::getManager()
+                                     .getComponentOfEntity<Positionable>(
+                                         this->characterEntityId)
+                                     .value()
+                                     .get()
+                                     .pos;
                 VerletBody &body = ECSManager::getManager()
                                        .getComponentOfEntity<VerletBody>(
                                            this->characterEntityId)
                                        .value();
 
-                body.acceleration += this->getCamera().getUp() * 10;
+                pos += this->getCamera().getFront() * 10 * body.size;
+                body.last_position = pos;
+                body.acceleration = {};
             }));
 
         controls.addKeyDownCallback(
