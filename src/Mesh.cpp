@@ -1,6 +1,10 @@
 #include "Mesh.h"
+#include "glm/detail/type_vec.hpp"
+#include <cstddef>
 #include <iostream>
 #include <ostream>
+#include <sys/types.h>
+#include <vector>
 
 Mesh::MeshData::MeshData(const std::vector<glm::vec3> &vertices,
                          const std::vector<uint> &indices,
@@ -167,3 +171,63 @@ std::vector<uint> Mesh::getIndices() const { return this->data->indices; }
 std::vector<glm::vec3> Mesh::getNormals() const { return this->data->normals; }
 
 std::vector<glm::vec2> Mesh::getUvs() const { return this->data->uvs; }
+
+void Mesh::applyLOD() {
+
+    auto cp_vertices = this->getVertices();
+    auto cp_indices = this->getIndices();
+    auto cp_normals = this->getNormals();
+    auto cp_uvs = this->getUvs();
+
+    std::cout << "Taille des uvs = " << cp_uvs.size() << std::endl;
+    std::cout << "Taille des normales = " << cp_normals.size() << std::endl;
+
+    auto indice1 = cp_indices[0];
+    auto indice2 = cp_indices[1];
+    auto lastindice = cp_vertices.size() - 1;
+
+    glm::vec3 u = cp_vertices[indice1];
+    glm::vec3 v = cp_vertices[indice2];
+    glm::vec3 uv = (u + v) / 2;
+    glm::vec3 last = cp_vertices[lastindice];
+
+    cp_vertices[indice1] = uv;
+    cp_vertices[indice2] = last;
+    cp_vertices.resize(lastindice);
+
+    for (size_t i = 0; i < cp_indices.size(); i++) {
+        if (cp_indices[i] == indice2) {
+            cp_indices[i] = indice1;
+        } else if (cp_indices[i] == lastindice) {
+            cp_indices[i] = indice2;
+        }
+    }
+
+    std::vector<uint> new_indices;
+    for (size_t j = 0; j < cp_indices.size(); j += 3) {
+        if (cp_indices[j] != cp_indices[j + 1] &&
+            cp_indices[j] != cp_indices[j + 2] &&
+            cp_indices[j + 1] != cp_indices[j + 2]) {
+
+            new_indices.push_back(cp_indices[j]);
+            new_indices.push_back(cp_indices[j + 1]);
+            new_indices.push_back(cp_indices[j + 2]);
+        }
+    }
+
+    if (this->hasNormals()) {
+        cp_normals[indice1] = (cp_normals[indice1] + cp_normals[indice2]) / 2;
+        cp_normals[indice2] = cp_normals[lastindice];
+        cp_normals.resize(lastindice);
+    }
+
+    if (this->hasUVs()) {
+        cp_uvs[indice1] = (cp_uvs[indice1] + cp_uvs[indice2]) / 2;
+        cp_uvs[indice2] = cp_uvs[lastindice];
+        cp_uvs.resize(lastindice);
+    }
+
+    std::cout << "Taille des indices = " << new_indices.size() << std::endl;
+
+    this->updateMeshData(cp_vertices, new_indices, cp_normals, cp_uvs);
+}

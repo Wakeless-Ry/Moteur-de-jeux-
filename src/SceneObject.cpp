@@ -163,3 +163,5 @@ void SceneObject::updateMeshData(const std::vector<glm::vec3> &vertices,
                                  const std::vector<glm::vec2> &uvs) {
     this->mesh.updateMeshData(vertices, indices, normals, uvs);
 }
+
+void SceneObject::applyLOD() { this->mesh.applyLOD(); }

@@ -52,7 +52,14 @@ class ContinuousLOD : public System {
     }
 
   private:
-    void simplifyMesh(LOD &lod, float targetLODLevel) {}
+    void simplifyMesh(LOD &lod, float targetLODLevel) {
+
+        // Recupérer les vertex, indices, normales? , coordonnées UV
+
+        // Créer
+
+        // faire une map pour connaitre les triangles
+    }
 
     void updateNormals(std::vector<glm::vec3> &vertices,
                        const std::vector<uint> &indices,

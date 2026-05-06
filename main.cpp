@@ -81,8 +81,7 @@ class Moteur : public GameEngine {
         Controls &controls = this->getControls();
         this->getCamera().setPosition({10, 10, 10});
         this->getCamera().setTranslationSpeed(5);
-        this->getCamera().changeMode();
-
+        this->getCamera().setTarget({0, 5, 0});
         glm::vec3 orbitalCenter = {0, 25, 0};
         float orbitalMass = 1000.0f;
         verlet->setOrbitalBody(orbitalCenter, orbitalMass);
@@ -237,6 +236,14 @@ class Moteur : public GameEngine {
                             lodTestMesh.value().getMesh().getUvs());
                 }));
 
+            controls.addKeyDownCallback(
+                GLFW_KEY_L, new KeyCallback([this](float deltaTime) {
+                    this->getScene()
+                        .getMesh(this->lodTestMeshId)
+                        .value()
+                        ->applyLOD();
+                }));
+
         } else {
             std::cout << "LOD mesh pas chargé correctement" << std::endl;
         }
@@ -342,6 +349,8 @@ int main(void) {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
@@ -359,12 +368,6 @@ int main(void) {
     ECSManager::getManager().registerComponentToSystem<Positionable>(lodId);
 
     Moteur engine(window, width, height);
-
-    verlet->generateTerrain();
-
-    for (auto &terrain : verlet->getTerrain().getSceneObjects()) {
-        engine.getScene().addMesh(terrain);
-    }
 
     engine.run();
 

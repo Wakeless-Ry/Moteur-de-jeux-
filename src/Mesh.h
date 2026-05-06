@@ -78,6 +78,8 @@ class Mesh {
                         const std::vector<uint> &indices,
                         const std::vector<glm::vec3> &normals,
                         const std::vector<glm::vec2> &uvs);
+
+    void applyLOD();
 };
 
 #endif // MESH
