@@ -88,6 +88,8 @@ class Verlet : public UpdatableSystem {
     }
 
     void updateBallPositions(float deltaTime) {
+        static const float AIR_FRICTION = 0.3f;
+
         ECSManager &ecs = ECSManager::getManager();
         for (EntityId entity : this->getEntities()) {
             auto posOpt = ecs.getComponentOfEntity<Positionable>(entity);
@@ -100,9 +102,7 @@ class Verlet : public UpdatableSystem {
                 glm::vec3 velocity = pos.pos - verletBody.last_position;
 
                 if (glm::length(velocity) >= 0.02) {
-                    float amount = glm::length(velocity);
-                    velocity =
-                        normalize(velocity) * amount * (1. - (0.3 * deltaTime));
+                    velocity *= (1. - (AIR_FRICTION * deltaTime));
                 } else {
                     velocity = {0, 0, 0};
                 }
