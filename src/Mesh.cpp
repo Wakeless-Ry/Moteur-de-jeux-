@@ -173,6 +173,15 @@ std::vector<glm::vec3> Mesh::getNormals() const { return this->data->normals; }
 std::vector<glm::vec2> Mesh::getUvs() const { return this->data->uvs; }
 
 void Mesh::applyLOD() {
+    /*
+    Faire une map indice -> nb voisins
+
+    Regarder l'erreur quadratique
+
+
+    Autre piste, zone ou il n'y a pas beaucoup de détails (ex: zone plate),
+    comparaison avec les normales
+    */
 
     auto cp_vertices = this->getVertices();
     auto cp_indices = this->getIndices();
