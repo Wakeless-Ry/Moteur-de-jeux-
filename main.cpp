@@ -19,7 +19,6 @@ const float BALL_RADIUS = 0.2;
 
 auto verlet = std::make_shared<Verlet>();
 auto write_csv = std::make_shared<Write_CSV>();
-auto continuousLOD = std::make_shared<ContinuousLOD>();
 
 class Moteur : public GameEngine {
     std::optional<SceneObject> ballMesh;
@@ -34,6 +33,9 @@ class Moteur : public GameEngine {
 
     EntityId lodTestMeshEntityId;
     EntityId lodTestMeshEntitySphereId;
+
+    shared_ptr<ContinuousLOD> continuousLOD =
+        std::make_shared<ContinuousLOD>(this->getScene());
 
     float distance = 0;
 
@@ -73,6 +75,11 @@ class Moteur : public GameEngine {
     }
 
     void init() override {
+
+        SystemId lodId = ECSManager::getManager().registerSystem(continuousLOD);
+        ECSManager::getManager().registerComponentToSystem<LOD>(lodId);
+        ECSManager::getManager().registerComponentToSystem<Positionable>(lodId);
+
         glfwPollEvents();
         glfwSetCursorPos(this->getWindow(),
                          this->getCamera().getScreenWidth() / 2.,
@@ -219,10 +226,12 @@ class Moteur : public GameEngine {
                 this->lodTestMeshEntitySphereId);
 
             ECSManager::getManager().setComponentToEntity(
-                LOD(lodMeshOpt.value()), this->lodTestMeshEntityId);
+                LOD(lodMeshOpt.value(), this->lodTestMeshId),
+                this->lodTestMeshEntityId);
 
             ECSManager::getManager().setComponentToEntity(
-                LOD(lodMeshOptSphere.value()), this->lodTestMeshEntitySphereId);
+                LOD(lodMeshOptSphere.value(), this->lodTestMeshSphereId),
+                this->lodTestMeshEntitySphereId);
 
             controls.addKeyPressedCallback(
                 GLFW_KEY_V, new KeyCallback([this](float deltaTime) {
@@ -234,14 +243,6 @@ class Moteur : public GameEngine {
                             lodTestMesh.value().getMesh().getIndices(),
                             lodTestMesh.value().getMesh().getNormals(),
                             lodTestMesh.value().getMesh().getUvs());
-                }));
-
-            controls.addKeyDownCallback(
-                GLFW_KEY_L, new KeyCallback([this](float deltaTime) {
-                    this->getScene()
-                        .getMesh(this->lodTestMeshId)
-                        .value()
-                        ->applyLOD();
                 }));
 
         } else {
@@ -269,8 +270,7 @@ class Moteur : public GameEngine {
                     .scale(BALL_RADIUS));
         }
 
-        continuousLOD.get()->update(deltaTime, this->getCamera().getPosition(),
-                                    distance);
+        continuousLOD.get()->update(deltaTime, this->getCamera().getPosition());
 
         auto lodOpt = ECSManager::getManager().getComponentOfEntity<LOD>(
             this->lodTestMeshEntityId);
@@ -362,10 +362,6 @@ int main(void) {
     SystemId verletId = ECSManager::getManager().registerSystem(verlet);
     ECSManager::getManager().registerComponentToSystem<Positionable>(verletId);
     ECSManager::getManager().registerComponentToSystem<VerletBody>(verletId);
-
-    SystemId lodId = ECSManager::getManager().registerSystem(continuousLOD);
-    ECSManager::getManager().registerComponentToSystem<LOD>(lodId);
-    ECSManager::getManager().registerComponentToSystem<Positionable>(lodId);
 
     Moteur engine(window, width, height);
 

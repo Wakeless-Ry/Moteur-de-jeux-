@@ -79,7 +79,7 @@ class Mesh {
                         const std::vector<glm::vec3> &normals,
                         const std::vector<glm::vec2> &uvs);
 
-    void applyLOD();
+    void applyLOD(float resolution);
 };
 
 #endif // MESH

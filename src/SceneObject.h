@@ -71,7 +71,6 @@ class SceneObject : public Subject<glm::vec3> {
                         const std::vector<uint> &indices,
                         const std::vector<glm::vec3> &normals,
                         const std::vector<glm::vec2> &uvs);
-    void applyLOD();
 };
 
 #endif // SCENE_OBJECT
