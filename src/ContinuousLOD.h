@@ -38,13 +38,33 @@ class ContinuousLOD : public System {
 
   private:
     void simplifyMesh(LOD &lod, float distance) {
-        if (abs(lod.current_distance - distance) > 10) {
-            lod.current_distance = distance;
-            lod.applyLOD(distance / 100);
-            this->scene.getMesh(lod.id).value()->updateMeshData(
-                lod.current_vertices, lod.current_indices, lod.current_normals,
-                lod.current_uvs);
+        LODLevel newLevel = LOD::levelFromDistance(distance);
+
+        if (newLevel == lod.current_level)
+            return;
+
+        lod.current_level = newLevel;
+
+        float resolution;
+        switch (newLevel) {
+        case LODLevel::HIGH:
+            resolution = 0.1f;
+            break;
+        case LODLevel::MEDIUM:
+            resolution = 0.5f;
+            break;
+        case LODLevel::LOW:
+            resolution = 2.0f;
+            break;
+        default:
+            resolution = 1.0f;
+            break;
         }
+
+        lod.applyLOD(resolution);
+        this->scene.getMesh(lod.id).value()->updateMeshData(
+            lod.current_vertices, lod.current_indices, lod.current_normals,
+            lod.current_uvs);
     }
 };
 

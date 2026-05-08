@@ -9,6 +9,8 @@
 
 using uint = unsigned int;
 
+enum class LODLevel { HIGH, MEDIUM, LOW, NONE };
+
 struct LOD {
     NodeId id;
 
@@ -22,7 +24,7 @@ struct LOD {
     std::vector<glm::vec3> current_normals;
     std::vector<glm::vec2> current_uvs;
 
-    float current_distance = 0;
+    LODLevel current_level = LODLevel::NONE;
 
     LOD() {}
 
@@ -36,6 +38,14 @@ struct LOD {
         current_indices = original_indices;
         current_normals = original_normals;
         current_uvs = original_uvs;
+    }
+
+    static LODLevel levelFromDistance(float distance) {
+        if (distance < 25.f)
+            return LODLevel::HIGH;
+        if (distance < 60.f)
+            return LODLevel::MEDIUM;
+        return LODLevel::LOW;
     }
 
     using grid_c = std::tuple<int, int, int>;
