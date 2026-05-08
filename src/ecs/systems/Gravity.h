@@ -5,6 +5,7 @@
 
 #include <glm/ext.hpp>
 
+#include "src/ecs/ECSManager.h"
 #include "src/ecs/components/Attracted.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/systems/SystemUpdater.h"
@@ -19,23 +20,24 @@ class Gravity : public UpdatableSystem {
 
     void update(float deltaTime) override {
         static const float GRAVITATIONAL_CONSTANT = 1;
-        ECSManager &ecs = ECSManager::getManager();
         const std::set<EntityId> entities = this->getEntities();
 
         for (EntityId entity : entities) {
-            glm::vec3 pos = ecs.getComponentOfEntity<Positionable>(entity)
-                                .value()
-                                .get()
-                                .pos;
+            glm::vec3 pos =
+                ECSManager::getComponentOfEntity<Positionable>(entity)
+                    .value()
+                    .get()
+                    .pos;
             VerletBody &verletBody =
-                ecs.getComponentOfEntity<VerletBody>(entity).value();
+                ECSManager::getComponentOfEntity<VerletBody>(entity).value();
             Attracted &attracted =
-                ecs.getComponentOfEntity<Attracted>(entity).value();
+                ECSManager::getComponentOfEntity<Attracted>(entity).value();
 
             for (Attraction const &attraction : attracted.getAttractions()) {
 
                 glm::vec3 bodyPos =
-                    ecs.getComponentOfEntity<Positionable>(attraction.body)
+                    ECSManager::getComponentOfEntity<Positionable>(
+                        attraction.body)
                         .value()
                         .get()
                         .pos;
@@ -53,9 +55,9 @@ class Gravity : public UpdatableSystem {
     }
 
     void registerComponents(SystemId id) override {
-        ECSManager::getManager().registerComponentToSystem<Positionable>(id);
-        ECSManager::getManager().registerComponentToSystem<VerletBody>(id);
-        ECSManager::getManager().registerComponentToSystem<Attracted>(id);
+        ECSManager::registerComponentToSystem<Positionable>(id);
+        ECSManager::registerComponentToSystem<VerletBody>(id);
+        ECSManager::registerComponentToSystem<Attracted>(id);
     }
 };
 

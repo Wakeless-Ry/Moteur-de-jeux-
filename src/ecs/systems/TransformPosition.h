@@ -17,14 +17,14 @@ class TransformPosition : public UpdatableSystem {
     TransformPosition(GlobalScene &scene) : scene(scene) {}
 
     void update(float deltaTime) override {
-        ECSManager &ecs = ECSManager::getManager();
-
         for (EntityId entity : this->getEntities()) {
             Positionable &position =
-                ecs.getComponentOfEntity<Positionable>(entity).value();
+                ECSManager::getComponentOfEntity<Positionable>(entity).value();
 
-            NodeId nodeId =
-                ecs.getComponentOfEntity<Noded>(entity).value().get().id;
+            NodeId nodeId = ECSManager::getComponentOfEntity<Noded>(entity)
+                                .value()
+                                .get()
+                                .id;
 
             if (position.shouldTransform) {
                 this->scene.setTransform(nodeId, translate(position.pos));
@@ -35,16 +35,13 @@ class TransformPosition : public UpdatableSystem {
     }
 
     void registerComponents(SystemId id) override {
-        ECSManager::getManager().registerComponentToSystem<Positionable>(id);
-        ECSManager::getManager().registerComponentToSystem<Noded>(id);
+        ECSManager::registerComponentToSystem<Positionable>(id);
+        ECSManager::registerComponentToSystem<Noded>(id);
     }
 
     std::optional<glm::vec3> getPosition(EntityId entityId) {
-        NodeId nodeId = ECSManager::getManager()
-                            .getComponentOfEntity<Noded>(entityId)
-                            .value()
-                            .get()
-                            .id;
+        NodeId nodeId =
+            ECSManager::getComponentOfEntity<Noded>(entityId).value().get().id;
 
         return this->scene.getTransform(nodeId).value().getPosition();
     }

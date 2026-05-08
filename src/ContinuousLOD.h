@@ -21,16 +21,16 @@ class ContinuousLOD : public UpdatableSystem {
         : scene(scene), camera(camera) {}
 
     void registerComponents(SystemId id) override {
-        ECSManager::getManager().registerComponentToSystem<Positionable>(id);
-        ECSManager::getManager().registerComponentToSystem<LOD>(id);
+        ECSManager::registerComponentToSystem<Positionable>(id);
+        ECSManager::registerComponentToSystem<LOD>(id);
     }
 
     void update(float deltaTime) override {
-        ECSManager &ecs = ECSManager::getManager();
 
         for (EntityId entity : this->getEntities()) {
-            auto lodOpt = ecs.getComponentOfEntity<LOD>(entity);
-            auto posOpt = ecs.getComponentOfEntity<Positionable>(entity);
+            auto lodOpt = ECSManager::getComponentOfEntity<LOD>(entity);
+            auto posOpt =
+                ECSManager::getComponentOfEntity<Positionable>(entity);
 
             if (lodOpt.has_value() && posOpt.has_value()) {
                 LOD &lod = lodOpt.value();

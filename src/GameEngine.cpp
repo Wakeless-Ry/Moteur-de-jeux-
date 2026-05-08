@@ -11,7 +11,7 @@ void GameEngine::initInternal() {
     glBindVertexArray(VertexArrayID);
 
     this->systemUpdater = std::make_shared<SystemUpdater>();
-    SystemId id = ECSManager::getManager().registerSystem(this->systemUpdater);
+    SystemId id = ECSManager::registerSystem(this->systemUpdater);
     this->systemUpdater->registerComponents(id);
 
     this->init();

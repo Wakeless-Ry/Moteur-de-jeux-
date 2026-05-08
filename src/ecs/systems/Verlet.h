@@ -23,20 +23,20 @@ class Verlet : public UpdatableSystem {
     }
 
     void registerComponents(SystemId id) override {
-        ECSManager::getManager().registerComponentToSystem<Positionable>(id);
-        ECSManager::getManager().registerComponentToSystem<VerletBody>(id);
+        ECSManager::registerComponentToSystem<Positionable>(id);
+        ECSManager::registerComponentToSystem<VerletBody>(id);
     }
 
     void applyGravity() {}
 
     void solveCollisions() {
-        ECSManager &ecs = ECSManager::getManager();
         const std::set<EntityId> entities = this->getEntities();
 
         for (auto it1 = entities.begin(); it1 != entities.end(); it1++) {
             EntityId id1 = *it1;
-            auto posOpt1 = ecs.getComponentOfEntity<Positionable>(id1);
-            auto verletBodyOpt1 = ecs.getComponentOfEntity<VerletBody>(id1);
+            auto posOpt1 = ECSManager::getComponentOfEntity<Positionable>(id1);
+            auto verletBodyOpt1 =
+                ECSManager::getComponentOfEntity<VerletBody>(id1);
 
             if (posOpt1.has_value() && verletBodyOpt1.has_value()) {
                 Positionable &pos1 = posOpt1.value();
@@ -46,9 +46,10 @@ class Verlet : public UpdatableSystem {
                 it2++;
                 for (; it2 != entities.end(); it2++) {
                     EntityId id2 = *it2;
-                    auto posOpt2 = ecs.getComponentOfEntity<Positionable>(id2);
+                    auto posOpt2 =
+                        ECSManager::getComponentOfEntity<Positionable>(id2);
                     auto verletBodyOpt2 =
-                        ecs.getComponentOfEntity<VerletBody>(id2);
+                        ECSManager::getComponentOfEntity<VerletBody>(id2);
 
                     if (posOpt2.has_value() && verletBodyOpt2.has_value()) {
                         Positionable &pos2 = posOpt2.value();
@@ -104,10 +105,11 @@ class Verlet : public UpdatableSystem {
     void updateBallPositions(float deltaTime) {
         static const float AIR_FRICTION = 0.3f;
 
-        ECSManager &ecs = ECSManager::getManager();
         for (EntityId entity : this->getEntities()) {
-            auto posOpt = ecs.getComponentOfEntity<Positionable>(entity);
-            auto verletBodyOpt = ecs.getComponentOfEntity<VerletBody>(entity);
+            auto posOpt =
+                ECSManager::getComponentOfEntity<Positionable>(entity);
+            auto verletBodyOpt =
+                ECSManager::getComponentOfEntity<VerletBody>(entity);
 
             if (posOpt.has_value() && verletBodyOpt.has_value() &&
                 !verletBodyOpt.value().get().unmovable) {

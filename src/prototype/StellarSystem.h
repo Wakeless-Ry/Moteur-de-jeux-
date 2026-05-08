@@ -71,18 +71,16 @@ class StellarSystem {
 
         nodeParent = scene.addBasicNodeAsChild(parent).value();
         node = scene.addMeshAsChild(nodeParent, celestialObject).value();
-        entity = ECSManager::getManager().generateEntityId();
-        ECSManager::getManager().setComponentToEntity(Noded(node), entity);
+        entity = ECSManager::generateEntityId();
+        ECSManager::setComponentToEntity(Noded(node), entity);
 
         glm::vec3 pos = {0, 0, 0};
 
-        ECSManager::getManager().setComponentToEntity(Positionable(pos, false),
-                                                      entity);
-        ECSManager::getManager().setComponentToEntity(
-            VerletBody(pos, {}, size, true), entity);
+        ECSManager::setComponentToEntity(Positionable(pos, false), entity);
+        ECSManager::setComponentToEntity(VerletBody(pos, {}, size, true),
+                                         entity);
 
-        ECSManager::getManager().setComponentToEntity(LOD(ballMesh, node),
-                                                      entity);
+        ECSManager::setComponentToEntity(LOD(ballMesh, node), entity);
     }
 
   public:
@@ -132,15 +130,12 @@ class StellarSystem {
     }
 
     void setSystemAttraction(EntityId id) {
-        if (!ECSManager::getManager()
-                 .getComponentOfEntity<Attracted>(id)
-                 .has_value()) {
-            ECSManager::getManager().setComponentToEntity(Attracted(), id);
+        if (!ECSManager::getComponentOfEntity<Attracted>(id).has_value()) {
+            ECSManager::setComponentToEntity(Attracted(), id);
         }
 
-        Attracted &attracted = ECSManager::getManager()
-                                   .getComponentOfEntity<Attracted>(id)
-                                   .value();
+        Attracted &attracted =
+            ECSManager::getComponentOfEntity<Attracted>(id).value();
         attracted.addAttraction(this->starEntityId, AttractionMode::INWARD,
                                 starMass);
         attracted.addAttraction(this->planetEntityId, AttractionMode::INWARD,

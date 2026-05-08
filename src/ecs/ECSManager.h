@@ -140,55 +140,64 @@ class ECSManager {
 
     ECSManager();
 
-  public:
-    static ECSManager &getManager();
+    inline static ECSManager &getManager() {
+        static ECSManager instance;
+        return instance;
+    }
 
-    EntityId generateEntityId();
-    void removeEntity(EntityId entity);
+  public:
+    static EntityId generateEntityId();
+    static void removeEntity(EntityId entity);
 
     template <typename T>
-    void setComponentToEntity(T &&component, EntityId entity) {
+    static void setComponentToEntity(T &&component, EntityId entity) {
+        ECSManager &ecs = ECSManager::getManager();
         static_assert(is_in_tuple<T, ComponentTypes>::value,
                       "Component type T is not registered in ComponentTypes. "
                       "Did you forget to add it to the tuple in Component.h?");
         using C = std::remove_reference_t<T>;
-        this->getList<C>().set(std::forward<T>(component), entity);
-        this->entityManager.registerComponent(entity,
-                                              componentIndices.at(typeid(C)));
-        this->entityComponentsChanged(entity);
-    }
-
-    template <typename T> void removeComponentFromEntity(EntityId entity) {
-        static_assert(is_in_tuple<T, ComponentTypes>::value,
-                      "Component type T is not registered in ComponentTypes. "
-                      "Did you forget to add it to the tuple in Component.h?");
-        this->getList<T>().remove(entity);
-        this->entityManager.unregisterComponent(entity,
-                                                componentIndices.at(typeid(T)));
-        this->entityComponentsChanged(entity);
+        ecs.getList<C>().set(std::forward<T>(component), entity);
+        ecs.entityManager.registerComponent(entity,
+                                            ecs.componentIndices.at(typeid(C)));
+        ecs.entityComponentsChanged(entity);
     }
 
     template <typename T>
-    std::optional<std::reference_wrapper<T>>
-    getComponentOfEntity(EntityId entity) {
+    static void removeComponentFromEntity(EntityId entity) {
+        ECSManager &ecs = ECSManager::getManager();
         static_assert(is_in_tuple<T, ComponentTypes>::value,
                       "Component type T is not registered in ComponentTypes. "
                       "Did you forget to add it to the tuple in Component.h?");
-        return this->getList<T>().get(entity);
+        ecs.getList<T>().remove(entity);
+        ecs.entityManager.unregisterComponent(
+            entity, ecs.componentIndices.at(typeid(T)));
+        ecs.entityComponentsChanged(entity);
     }
 
-    SystemId registerSystem(std::shared_ptr<System> system);
+    template <typename T>
+    static std::optional<std::reference_wrapper<T>>
+    getComponentOfEntity(EntityId entity) {
+        ECSManager &ecs = ECSManager::getManager();
+        static_assert(is_in_tuple<T, ComponentTypes>::value,
+                      "Component type T is not registered in ComponentTypes. "
+                      "Did you forget to add it to the tuple in Component.h?");
+        return ecs.getList<T>().get(entity);
+    }
 
-    template <typename T> void registerComponentToSystem(SystemId system) {
-        this->systemManager.registerComponent(system,
-                                              componentIndices.at(typeid(T)));
-        ECS::Signature signature = this->systemManager.getSignature(system);
+    static SystemId registerSystem(std::shared_ptr<System> system);
+
+    template <typename T>
+    static void registerComponentToSystem(SystemId system) {
+        ECSManager &ecs = ECSManager::getManager();
+        ecs.systemManager.registerComponent(system,
+                                            ecs.componentIndices.at(typeid(T)));
+        ECS::Signature signature = ecs.systemManager.getSignature(system);
         std::set<EntityId> compatible =
-            this->entityManager.getAllCompatible(signature);
-        this->systems[system]->setEntities(compatible);
+            ecs.entityManager.getAllCompatible(signature);
+        ecs.systems[system]->setEntities(compatible);
     }
 
-    void removeSystem(SystemId system);
+    static void removeSystem(SystemId system);
 };
 
 #endif // ECS_MANAGER

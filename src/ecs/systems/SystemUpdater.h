@@ -22,11 +22,11 @@ class SystemUpdater : public UpdatableSystem {
     SystemUpdater() {}
 
     void update(float deltaTime) override {
-        ECSManager &ecs = ECSManager::getManager();
-
         for (EntityId entity : this->getEntities()) {
-            SystemId id =
-                ecs.getComponentOfEntity<Systemized>(entity).value().get().id;
+            SystemId id = ECSManager::getComponentOfEntity<Systemized>(entity)
+                              .value()
+                              .get()
+                              .id;
             if (this->systems.count(id) != 0) {
                 if (this->enabled[id]) {
                     this->systems[id]->update(deltaTime);
@@ -36,16 +36,15 @@ class SystemUpdater : public UpdatableSystem {
     }
 
     void registerComponents(SystemId id) override {
-        ECSManager::getManager().registerComponentToSystem<Systemized>(id);
+        ECSManager::registerComponentToSystem<Systemized>(id);
     }
 
     SystemId addSystem(std::shared_ptr<UpdatableSystem> system) {
-        SystemId systemId = ECSManager::getManager().registerSystem(system);
+        SystemId systemId = ECSManager::registerSystem(system);
 
         system->registerComponents(systemId);
-        EntityId entityId = ECSManager::getManager().generateEntityId();
-        ECSManager::getManager().setComponentToEntity(Systemized(systemId),
-                                                      entityId);
+        EntityId entityId = ECSManager::generateEntityId();
+        ECSManager::setComponentToEntity(Systemized(systemId), entityId);
 
         this->systems[systemId] = system;
         this->enabled[systemId] = true;
@@ -56,8 +55,8 @@ class SystemUpdater : public UpdatableSystem {
 
     void removeSystem(SystemId system) {
         if (this->systems.count(system) != 0) {
-            ECSManager::getManager().removeSystem(system);
-            ECSManager::getManager().removeEntity(this->entityIds[system]);
+            ECSManager::removeSystem(system);
+            ECSManager::removeEntity(this->entityIds[system]);
 
             this->systems.erase(system);
             this->enabled.erase(system);
