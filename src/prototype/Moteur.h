@@ -5,6 +5,7 @@
 
 #include "glm/detail/type_vec.hpp"
 #include "src/AssetManager.h"
+#include "src/ContinuousLOD.h"
 #include "src/Controls.h"
 #include "src/GameEngine.h"
 #include "src/ecs/ECSManager.h"
@@ -43,6 +44,9 @@ class Moteur : public GameEngine {
 
         this->getSystemUpdater()->addSystem(
             std::make_shared<Gravity>(transformPosition));
+
+        this->getSystemUpdater()->addSystem(std::make_shared<ContinuousLOD>(
+            this->getScene(), this->getCamera()));
 
         this->stellarSystem = new StellarSystem(this->getScene());
     }

@@ -7,13 +7,14 @@
 #include <glm/ext.hpp>
 
 #include "src/ecs/components/Attracted.h"
+#include "src/ecs/components/LOD.h"
 #include "src/ecs/components/Noded.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/Systemized.h"
 #include "src/ecs/components/VerletBody.h"
 
 using ComponentTypes =
-    std::tuple<Systemized, Noded, Positionable, VerletBody, Attracted>;
+    std::tuple<Systemized, Noded, Positionable, VerletBody, Attracted, LOD>;
 
 template <typename Tuple> struct VariantFromTuple;
 

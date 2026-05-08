@@ -7,6 +7,7 @@
 #include "src/Transform.h"
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/Attracted.h"
+#include "src/ecs/components/LOD.h"
 #include "src/ecs/components/Noded.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/VerletBody.h"
@@ -79,6 +80,9 @@ class StellarSystem {
                                                       entity);
         ECSManager::getManager().setComponentToEntity(
             VerletBody(pos, {}, size, true), entity);
+
+        ECSManager::getManager().setComponentToEntity(LOD(ballMesh, node),
+                                                      entity);
     }
 
   public:
