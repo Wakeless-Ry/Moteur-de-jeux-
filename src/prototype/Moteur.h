@@ -153,6 +153,10 @@ class Moteur : public GameEngine {
                 body.last_position = pos;
                 body.acceleration = {};
             }));
+
+        controls.addKeyPressedCallback(
+            GLFW_KEY_P,
+            new KeyCallback([this](float deltaTime) { this->collected += 1; }));
     }
 
     void processInput(float deltaTime) override {}
@@ -175,7 +179,14 @@ class Moteur : public GameEngine {
         hud.beginFrame((int)this->getCamera().getScreenWidth(),
                        (int)this->getCamera().getScreenHeight());
 
-        hud.drawCollectibleCounter(collected, totalCollectibles);
+        int marginX = 40;
+        int marginY = 40;
+        int iconSize = 64;
+        int spacing = 6;
+        int maxWidth = (int)this->getCamera().getScreenWidth() - 2 * marginX;
+
+        hud.draw(collected, totalCollectibles, marginX, marginY, iconSize,
+                 spacing, maxWidth);
 
         hud.endFrame();
     }
