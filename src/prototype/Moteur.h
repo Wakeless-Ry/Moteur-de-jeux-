@@ -8,6 +8,7 @@
 #include "src/ContinuousLOD.h"
 #include "src/Controls.h"
 #include "src/GameEngine.h"
+#include "src/Hud.h"
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/VerletBody.h"
@@ -26,11 +27,18 @@ class Moteur : public GameEngine {
 
     std::optional<StellarSystem *> stellarSystem;
 
+    float speed = 1.;
+
+    Hud hud;
+    int collected = 0;
+    int totalCollectibles = 10;
+
     void init() override {
         this->initSystems();
         this->initScene();
         this->initInputs();
         this->getCamera().setTargetDistance(10);
+        this->hud.init();
     }
 
     void initSystems() {
@@ -162,9 +170,16 @@ class Moteur : public GameEngine {
         if (pos.has_value()) {
             this->getCamera().setTarget(pos.value().pos);
         }
+
+        hud.beginFrame((int)this->getCamera().getScreenWidth(),
+                       (int)this->getCamera().getScreenHeight());
+
+        hud.drawCollectibleCounter(collected, totalCollectibles);
+
+        hud.endFrame();
     }
 
-    void cleanUp() override {}
+    void cleanUp() override { hud.cleanup(); }
 
   public:
     Moteur(GLFWwindow *window, uint width, uint height)
