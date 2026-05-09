@@ -1,43 +1,42 @@
 #pragma once
-
 #include <GL/glew.h>
-#include <string>
 #include <vector>
+
+#include "src/Texture.h"
 
 class Hud {
   public:
-    void init(const char *vsHud = "shaders/hud_vs.glsl",
-              const char *fsHud = "shaders/hud_fs.glsl");
+    void init(const char *vsPath = "shaders/hud_vs.glsl",
+              const char *fsPath = "shaders/hud_fs.glsl",
+              const char *spritePath = "assets/textures/star.png");
 
     void beginFrame(int screenWidth, int screenHeight);
-    void drawCollectibleCounter(int collected, int total);
+
+    void draw(int collected, int total, int originX, int originY,
+              int iconSizePx, int spacingPx, int maxWidthPx);
+
     void endFrame();
     void cleanup();
 
   private:
-    struct Vertex {
+    struct Vtx {
         float x, y;
+        float u, v;
         float r, g, b, a;
     };
 
     GLuint programId = 0;
     GLuint vao = 0;
     GLuint vbo = 0;
+    GLint samplerLoc = -1;
 
-    int w = 1;
-    int h = 1;
+    int w = 1, h = 1;
 
-    std::vector<Vertex> vertices;
+    Texture sprite;
+    GLuint spriteId = 0;
 
-    void pushRectPx(float x, float y, float width, float height, float r,
-                    float g, float b, float a);
+    std::vector<Vtx> vertices;
 
-    void drawDigit7Seg(int digit, int x, int y, int heightPx, int thicknessPx,
-                       float r, float g, float b, float a);
-
-    int drawNumber(int value, int x, int y, int heightPx, int thicknessPx,
-                   int spacingPx, float r, float g, float b, float a);
-
-    int drawSlash(int x, int y, int heightPx, int thicknessPx, int spacingPx,
-                  float r, float g, float b, float a);
+    void pushQuadPx(float x, float y, float size, float r, float g, float b,
+                    float a);
 };
