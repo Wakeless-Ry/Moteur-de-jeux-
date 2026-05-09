@@ -53,7 +53,8 @@ add_executable(moteur
     src/GameEngine.cpp
     src/Texture.cpp
     src/SceneObject.cpp
-    src/Mesh.cpp
+    src/Mesh.cpp    
+    src/Hud.cpp
 
     src/ecs/ECSManager.cpp
     src/ecs/System.cpp
