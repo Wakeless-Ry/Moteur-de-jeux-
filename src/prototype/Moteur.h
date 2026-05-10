@@ -9,6 +9,7 @@
 #include "src/Controls.h"
 #include "src/GameEngine.h"
 #include "src/Hud.h"
+#include "src/VelocityIndicatorHud.h"
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/VerletBody.h"
@@ -32,6 +33,7 @@ class Moteur : public GameEngine {
     Hud hud;
     int collected = 0;
     int totalCollectibles = 10;
+    VelocityIndicatorHud velHud;
 
     void init() override {
         this->initSystems();
@@ -39,6 +41,7 @@ class Moteur : public GameEngine {
         this->initInputs();
         this->getCamera().setTargetDistance(10);
         this->hud.init();
+        this->velHud.init();
     }
 
     void initSystems() {
@@ -188,6 +191,7 @@ class Moteur : public GameEngine {
                  spacing, maxWidth);
 
         hud.endFrame();
+        velHud.render(this->getCamera(), this->characterEntityId, deltaTime);
     }
 
     void cleanUp() override { hud.cleanup(); }
