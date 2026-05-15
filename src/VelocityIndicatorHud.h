@@ -16,10 +16,16 @@
 #include <glm/ext.hpp>
 #include <optional>
 
+/*
+TODO:
+-Les flèches devraient se déplacer relatif en fonction du monde comme l'affichge
+des axes comme en blender La sphère est la pour illustrer l'objet
+*/
+
 class VelocityIndicatorHud {
   public:
     const char *sphereMeshPath = "assets/meshes/big_sphere.obj";
-    const char *arrowMeshPath = "assets/meshes/arrow.obj";
+    const char *arrowMeshPath = "assets/meshes/fleche.obj";
 
     const char *vsPath = "shaders/PBR_vs.glsl";
     const char *fsPath = "shaders/PBR_fs.glsl";
