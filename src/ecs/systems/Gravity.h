@@ -1,23 +1,15 @@
 #ifndef GRAVITY
 #define GRAVITY
 
-#include <memory>
-
 #include <glm/ext.hpp>
 
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/Attracted.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/systems/SystemUpdater.h"
-#include "src/ecs/systems/TransformPosition.h"
 
 class Gravity : public UpdatableSystem {
-    std::shared_ptr<TransformPosition> transformPosition;
-
   public:
-    Gravity(std::shared_ptr<TransformPosition> transformPosition)
-        : transformPosition(transformPosition) {}
-
     void update(float deltaTime) override {
         static const float GRAVITATIONAL_CONSTANT = 1;
         const std::set<EntityId> entities = this->getEntities();
@@ -48,8 +40,8 @@ class Gravity : public UpdatableSystem {
                     direction * GRAVITATIONAL_CONSTANT *
                     (attraction.force / (distance * distance));
 
-                // verletBody.acceleration +=
-                //     acceleration * (attraction.mode == INWARD ? 1 : -1);
+                verletBody.acceleration +=
+                    acceleration * (attraction.mode == INWARD ? 1 : -1);
             }
         }
     }

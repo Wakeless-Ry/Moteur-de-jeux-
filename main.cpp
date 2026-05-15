@@ -58,8 +58,6 @@ int main(void) {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 

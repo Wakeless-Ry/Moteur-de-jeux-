@@ -25,8 +25,6 @@ class Moteur : public GameEngine {
 
     std::optional<StellarSystem *> stellarSystem;
 
-    float speed = 1.;
-
     void init() override {
         this->initSystems();
         this->initScene();
@@ -38,12 +36,10 @@ class Moteur : public GameEngine {
         this->verlet =
             this->getSystemUpdater()->addSystem(std::make_shared<Verlet>());
 
-        auto transformPosition =
-            std::make_shared<TransformPosition>(this->getScene());
-        this->getSystemUpdater()->addSystem(transformPosition);
-
         this->getSystemUpdater()->addSystem(
-            std::make_shared<Gravity>(transformPosition));
+            std::make_shared<TransformPosition>(this->getScene()));
+
+        this->getSystemUpdater()->addSystem(std::make_shared<Gravity>());
 
         this->getSystemUpdater()->addSystem(std::make_shared<ContinuousLOD>(
             this->getScene(), this->getCamera()));
@@ -55,7 +51,7 @@ class Moteur : public GameEngine {
         this->getScene().addLightToScene(
             Light(glm::vec3(0, 0, 0), glm::vec3(10000)));
 
-        Mesh *ballMesh =
+        std::shared_ptr<Mesh> ballMesh =
             AssetManager::loadMesh("assets/meshes/big_sphere.obj").value();
 
         SceneObject character = SceneObject("shaders/PBR_vs.glsl",
@@ -69,7 +65,7 @@ class Moteur : public GameEngine {
         this->characterEntityId = ECSManager::generateEntityId();
         ECSManager::setComponentToEntity(
             Noded(this->getScene().addMesh(character)), characterEntityId);
-        glm::vec3 pos = {200, 200, 200};
+        glm::vec3 pos = {1000, 400, 0};
         ECSManager::setComponentToEntity(Positionable(pos), characterEntityId);
         ECSManager::setComponentToEntity(VerletBody(pos, {0, 0, 0}, 1, 0),
                                          characterEntityId);
@@ -107,15 +103,15 @@ class Moteur : public GameEngine {
                 body.acceleration -= this->getCamera().getFront() * 10;
             }));
 
-        controls.addKeyDownCallback(
-            GLFW_KEY_Q, new KeyCallback([this](float deltaTime) {
-                this->getCamera().tilt(deltaTime, false);
-            }));
-
-        controls.addKeyDownCallback(GLFW_KEY_E,
+        controls.addKeyDownCallback(GLFW_KEY_Q,
                                     new KeyCallback([this](float deltaTime) {
                                         this->getCamera().tilt(deltaTime, true);
                                     }));
+
+        controls.addKeyDownCallback(
+            GLFW_KEY_E, new KeyCallback([this](float deltaTime) {
+                this->getCamera().tilt(deltaTime, false);
+            }));
 
         controls.addKeyPressedCallback(
             GLFW_KEY_SPACE, new KeyCallback([this](float deltaTime) {
