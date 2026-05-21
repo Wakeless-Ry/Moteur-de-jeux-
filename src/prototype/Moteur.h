@@ -116,10 +116,9 @@ class Moteur : public GameEngine {
         ECSManager::setComponentToEntity(Positionable(collectiblePosition),
                                          collectibleEntityId);
 
-        VerletBody collectibleBody(collectiblePosition, glm::vec3(0.0f),
-                                   collectibleRadius, true);
-        collectibleBody.isTrigger = true;
-        ECSManager::setComponentToEntity(collectibleBody, collectibleEntityId);
+        ECSManager::setComponentToEntity(VerletBody(collectiblePosition, glm::vec3(0.0f),
+                                   collectibleRadius, true), collectibleEntityId);
+                                   ECSManager::getComponentOfEntity<VerletBody>(collectibleEntityId).value().get().isTrigger = true;
         ECSManager::setComponentToEntity(Collectible(1), collectibleEntityId);
     }
 
