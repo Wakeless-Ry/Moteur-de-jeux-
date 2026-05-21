@@ -8,6 +8,7 @@ struct VerletBody {
     glm::vec3 acceleration;
     float size;
     bool unmovable;
+    bool isTrigger = false;
 
     VerletBody() {}
 
