@@ -11,13 +11,14 @@
 #include "src/Hud.h"
 #include "src/VelocityIndicatorHud.h"
 #include "src/ecs/ECSManager.h"
+#include "src/ecs/components/Collectible.h"
 #include "src/ecs/components/Inventory.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/VerletBody.h"
+#include "src/ecs/systems/CollectibleSystem.h"
 #include "src/ecs/systems/Gravity.h"
 #include "src/ecs/systems/TransformPosition.h"
 #include "src/ecs/systems/Verlet.h"
-
 #include "src/ecs/utils.h"
 #include "src/prototype/StellarSystem.h"
 
@@ -39,6 +40,10 @@ class Moteur : public GameEngine {
     void init() override {
         this->initSystems();
         this->initScene();
+
+        this->getSystemUpdater()->addSystem(std::make_shared<CollectibleSystem>(
+            this->getScene(), this->characterEntityId));
+
         this->initInputs();
         this->getCamera().setTargetDistance(10);
         this->hud.init();
@@ -115,9 +120,14 @@ class Moteur : public GameEngine {
         ECSManager::setComponentToEntity(Positionable(collectiblePosition),
                                          collectibleEntityId);
 
-        ECSManager::setComponentToEntity(VerletBody(collectiblePosition, glm::vec3(0.0f),
-                                   collectibleRadius, true), collectibleEntityId);
-                                   ECSManager::getComponentOfEntity<VerletBody>(collectibleEntityId).value().get().isTrigger = true;
+        ECSManager::setComponentToEntity(VerletBody(collectiblePosition,
+                                                    glm::vec3(0.0f),
+                                                    collectibleRadius, true),
+                                         collectibleEntityId);
+        ECSManager::getComponentOfEntity<VerletBody>(collectibleEntityId)
+            .value()
+            .get()
+            .isTrigger = true;
         ECSManager::setComponentToEntity(Collectible(1), collectibleEntityId);
     }
 
