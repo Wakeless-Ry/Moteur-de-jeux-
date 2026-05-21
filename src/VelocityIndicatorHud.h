@@ -16,15 +16,8 @@
 #include <glm/ext.hpp>
 #include <optional>
 
-/*
-TODO:
--Les flèches devraient se déplacer relatif en fonction du monde comme l'affichge
-des axes comme en blender La sphère est la pour illustrer l'objet
-*/
-
 class VelocityIndicatorHud {
   public:
-    const char *sphereMeshPath = "assets/meshes/big_sphere.obj";
     const char *arrowMeshPath = "assets/meshes/fleche.obj";
 
     const char *vsPath = "shaders/PBR_vs.glsl";
@@ -41,26 +34,9 @@ class VelocityIndicatorHud {
 
     float smoothingK = 12.0f;
 
-    int hudYawSteps = 8;
-    int hudPitchSteps = 6;
-
-    float widgetYawDeg = 35.0f;
-    float widgetPitchDeg = -25.0f;
-
-    bool invertRightAxis = true;
-    bool invertFrontAxis = true;
-    bool invertUpAxis = false;
-
     void init() {
         if (initialized)
             return;
-
-        auto sphereMeshOpt = AssetManager::loadMesh(sphereMeshPath);
-        if (!sphereMeshOpt.has_value()) {
-            return;
-        }
-
-        sphere.emplace(vsPath, fsPath, *sphereMeshOpt.value());
 
         auto arrowMeshOpt = AssetManager::loadMesh(arrowMeshPath);
         if (!arrowMeshOpt.has_value()) {
@@ -69,10 +45,6 @@ class VelocityIndicatorHud {
         arrowRight.emplace(vsPath, fsPath, *arrowMeshOpt.value());
         arrowFront.emplace(vsPath, fsPath, *arrowMeshOpt.value());
         arrowUp.emplace(vsPath, fsPath, *arrowMeshOpt.value());
-
-        sphere->setAlbedo(glm::vec3(0.08f, 0.08f, 0.10f));
-        sphere->setMetallic(0.0f);
-        sphere->setRoughness(0.9f);
 
         arrowRight->setMetallic(0.0f);
         arrowRight->setRoughness(0.6f);
@@ -87,13 +59,6 @@ class VelocityIndicatorHud {
         hudCam.setZNear(0.01f);
         hudCam.setZFar(50.0f);
 
-        for (int i = 0; i < hudYawSteps; ++i) {
-            hudCam.rotateWithMouse(-50.0f, 0.0f);
-        }
-        for (int i = 0; i < hudPitchSteps; ++i) {
-            hudCam.rotateWithMouse(0.0f, -50.0f);
-        }
-
         lights.clear();
         lights.push_back(
             Light(glm::vec3(-1.5f, -1.5f, -2.0f), glm::vec3(30.0f)));
@@ -105,8 +70,8 @@ class VelocityIndicatorHud {
                 float deltaTime) {
         if (!initialized)
             return;
-        if (!sphere.has_value() || !arrowRight.has_value() ||
-            !arrowFront.has_value() || !arrowUp.has_value())
+        if (!arrowRight.has_value() || !arrowFront.has_value() ||
+            !arrowUp.has_value())
             return;
 
         glm::vec3 velocityWorld(0.0f);
@@ -123,24 +88,9 @@ class VelocityIndicatorHud {
             velocityWorld = (currentPosition - previousPosition) / deltaTime;
         }
 
-        const glm::vec3 cameraRight = glm::normalize(mainCam.getRight());
-        const glm::vec3 cameraFront = glm::normalize(mainCam.getFront());
-        const glm::vec3 cameraUp = glm::normalize(mainCam.getUp());
-
-        float velocityRight = glm::dot(velocityWorld, cameraRight);
-        if (invertRightAxis) {
-            velocityRight = -velocityRight;
-        }
-
-        float velocityFront = glm::dot(velocityWorld, cameraFront);
-        if (invertFrontAxis) {
-            velocityFront = -velocityFront;
-        }
-
-        float velocityUp = glm::dot(velocityWorld, cameraUp);
-        if (invertUpAxis) {
-            velocityUp = -velocityUp;
-        }
+        float velocityRight = velocityWorld.x;
+        float velocityUp = velocityWorld.y;
+        float velocityFront = velocityWorld.z;
 
         auto normalizeMagnitude = [&](float componentValue) {
             return std::clamp(std::abs(componentValue) / maxVelocity, 0.0f,
@@ -184,17 +134,7 @@ class VelocityIndicatorHud {
         hudCam.setScreenHeight((uint)viewportSizePx);
         hudCam.update(deltaTime);
 
-        Transform base = makeWidgetBaseTransform();
-
-        {
-            Transform sphereTransform;
-            sphereTransform.transform(base);
-            sphereTransform.scale(sphereScale);
-            sphere->setTransform(sphereTransform);
-
-            glEnable(GL_DEPTH_TEST);
-            sphere->draw(hudCam, lights);
-        }
+        Transform base = makeWidgetBaseTransform(mainCam);
 
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_FALSE);
@@ -218,7 +158,6 @@ class VelocityIndicatorHud {
 
     bool initialized = false;
 
-    std::optional<SceneObject> sphere;
     std::optional<SceneObject> arrowRight, arrowFront, arrowUp;
 
     Camera hudCam{1, 1};
@@ -232,10 +171,17 @@ class VelocityIndicatorHud {
         return minArrowLen + a01 * (maxArrowLen - minArrowLen);
     }
 
-    Transform makeWidgetBaseTransform() const {
+    Transform makeWidgetBaseTransform(const Camera &mainCam) const {
+
+        const glm::vec3 cameraRight = glm::normalize(mainCam.getRight());
+        const glm::vec3 cameraUp = glm::normalize(mainCam.getUp());
+        const glm::vec3 cameraFront = glm::normalize(mainCam.getFront());
+
+        const glm::mat3 cameraRotation(cameraRight, cameraUp, cameraFront);
+        const glm::mat3 inverseCameraRotation = glm::transpose(cameraRotation);
+
         Transform base;
-        base.rotationY(widgetYawDeg);
-        base.rotationX(widgetPitchDeg);
+        base.skew(inverseCameraRotation);
         return base;
     }
 
