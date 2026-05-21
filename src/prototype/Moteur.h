@@ -11,11 +11,13 @@
 #include "src/Hud.h"
 #include "src/VelocityIndicatorHud.h"
 #include "src/ecs/ECSManager.h"
+#include "src/ecs/components/Inventory.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/VerletBody.h"
 #include "src/ecs/systems/Gravity.h"
 #include "src/ecs/systems/TransformPosition.h"
 #include "src/ecs/systems/Verlet.h"
+
 #include "src/ecs/utils.h"
 #include "src/prototype/StellarSystem.h"
 
@@ -31,7 +33,6 @@ class Moteur : public GameEngine {
     float speed = 1.;
 
     Hud hud;
-    int collected = 0;
     int totalCollectibles = 10;
     VelocityIndicatorHud velHud;
 
@@ -81,8 +82,44 @@ class Moteur : public GameEngine {
         ECSManager::setComponentToEntity(Positionable(pos), characterEntityId);
         ECSManager::setComponentToEntity(VerletBody(pos, {0, 0, 0}, 1, 0),
                                          characterEntityId);
+        ECSManager::setComponentToEntity(Inventory{}, characterEntityId);
         this->stellarSystem.value()->setSystemAttraction(
             this->characterEntityId);
+
+        ////////////////////////////////////////Collectible//////////////////////////////////
+
+        this->totalCollectibles = 1;
+
+        auto starMeshOpt = AssetManager::loadMesh("assets/meshes/star.obj");
+        if (!starMeshOpt.has_value()) {
+            return;
+        }
+
+        SceneObject starObject("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
+                               *starMeshOpt.value());
+
+        starObject.setAlbedo(glm::vec3(1.0f, 0.9f, 0.2f));
+        starObject.setMetallic(0.0f);
+        starObject.setRoughness(0.6f);
+
+        NodeId collectibleNodeId = this->getScene().addMesh(starObject);
+
+        EntityId collectibleEntityId = ECSManager::generateEntityId();
+
+        glm::vec3 collectiblePosition = glm::vec3(205.0f, 200.0f, 200.0f);
+
+        float collectibleRadius = 1.0f;
+
+        ECSManager::setComponentToEntity(Noded(collectibleNodeId),
+                                         collectibleEntityId);
+        ECSManager::setComponentToEntity(Positionable(collectiblePosition),
+                                         collectibleEntityId);
+
+        VerletBody collectibleBody(collectiblePosition, glm::vec3(0.0f),
+                                   collectibleRadius, true);
+        collectibleBody.isTrigger = true;
+        ECSManager::setComponentToEntity(collectibleBody, collectibleEntityId);
+        ECSManager::setComponentToEntity(Collectible(1), collectibleEntityId);
     }
 
     void initInputs() {
@@ -187,7 +224,15 @@ class Moteur : public GameEngine {
         int spacing = 6;
         int maxWidth = (int)this->getCamera().getScreenWidth() - 2 * marginX;
 
-        hud.draw(collected, totalCollectibles, marginX, marginY, iconSize,
+        int collectedCount = 0;
+        auto inventoryOpt = ECSManager::getComponentOfEntity<Inventory>(
+            this->characterEntityId);
+
+        if (inventoryOpt.has_value()) {
+            collectedCount = inventoryOpt.value().get().collected;
+        }
+
+        hud.draw(collectedCount, totalCollectibles, marginX, marginY, iconSize,
                  spacing, maxWidth);
 
         hud.endFrame();

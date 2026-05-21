@@ -52,6 +52,10 @@ class Verlet : public UpdatableSystem {
                         Positionable &pos2 = posOpt2.value();
                         VerletBody &verletBody2 = verletBodyOpt2.value();
 
+                        if (verletBody1.isTrigger || verletBody2.isTrigger) {
+                            continue;
+                        }
+
                         glm::vec3 collisionAxis = pos1.pos - pos2.pos;
                         float dist = glm::length(collisionAxis);
 
