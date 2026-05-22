@@ -8,6 +8,7 @@
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/LOD.h"
 #include "src/ecs/components/Positionable.h"
+#include "src/ecs/components/VerletBody.h"
 #include "src/ecs/systems/SystemUpdater.h"
 
 using uint = unsigned int;
@@ -23,6 +24,7 @@ class ContinuousLOD : public UpdatableSystem {
     void registerComponents(SystemId id) override {
         ECSManager::registerComponentToSystem<Positionable>(id);
         ECSManager::registerComponentToSystem<LOD>(id);
+        ECSManager::registerComponentToSystem<VerletBody>(id);
     }
 
     void update(float deltaTime) override {
@@ -32,21 +34,48 @@ class ContinuousLOD : public UpdatableSystem {
             auto posOpt =
                 ECSManager::getComponentOfEntity<Positionable>(entity);
 
-            if (lodOpt.has_value() && posOpt.has_value()) {
+            auto bodyOpt = ECSManager::getComponentOfEntity<VerletBody>(entity);
+
+            if (lodOpt.has_value() && posOpt.has_value() &&
+                bodyOpt.has_value()) {
                 LOD &lod = lodOpt.value();
                 Positionable &pos = posOpt.value();
+                VerletBody &body = bodyOpt.value().get();
 
-                float distance =
-                    glm::length(pos.pos - this->camera.getPosition());
+                const glm::vec3 cameraFront =
+                    glm::normalize(this->camera.getFront());
+                const glm::vec3 cameraPosition =
+                    this->camera.getTarget() -
+                    cameraFront * this->camera.getTargetDistance();
 
-                this->simplifyMesh(lod, distance);
+                const glm::vec3 cameraToObject = pos.pos - cameraPosition;
+                float depth = glm::dot(cameraToObject, cameraFront);
+
+                if (depth <= 0.001f) {
+                    this->simplifyMesh(lod, 0.0f,
+                                       (int)this->camera.getScreenHeight());
+                    continue;
+                }
+
+                float fovRad = glm::radians(this->camera.getFov());
+                float screenHeight = (float)this->camera.getScreenHeight();
+                float focalPx = (screenHeight * 0.5f) / std::tan(fovRad * 0.5f);
+
+                float radiusWorld = body.size;
+
+                float radiusPx = focalPx * (radiusWorld / depth);
+                float diameterPx = 2.f * radiusPx;
+
+                this->simplifyMesh(lod, diameterPx,
+                                   (int)this->camera.getScreenHeight());
             }
         }
     }
 
   private:
-    void simplifyMesh(LOD &lod, float distance) {
-        LODLevel newLevel = LOD::levelFromDistance(distance);
+    void simplifyMesh(LOD &lod, float diameterPx, int screenHeightPx) {
+        LODLevel newLevel =
+            LOD::levelFromScreenDiameterPx(diameterPx, (float)screenHeightPx);
 
         if (newLevel == lod.current_level)
             return;
