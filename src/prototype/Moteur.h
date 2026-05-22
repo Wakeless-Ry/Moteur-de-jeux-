@@ -196,10 +196,6 @@ class Moteur : public GameEngine {
                                     new KeyCallback([this](float deltaTime) {
                                         this->getCamera().getFurther(deltaTime);
                                     }));
-
-        controls.addKeyPressedCallback(
-            GLFW_KEY_P,
-            new KeyCallback([this](float deltaTime) { this->collected += 1; }));
     }
 
     void processInput(float deltaTime) override {}
