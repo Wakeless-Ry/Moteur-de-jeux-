@@ -10,6 +10,7 @@
 #include "src/Hud.h"
 #include "src/VelocityIndicatorHud.h"
 #include "src/ecs/ECSManager.h"
+#include "src/ecs/components/Attracted.h"
 #include "src/ecs/components/Collectible.h"
 #include "src/ecs/components/Inventory.h"
 #include "src/ecs/components/Positionable.h"
@@ -196,6 +197,15 @@ class Moteur : public GameEngine {
                                     new KeyCallback([this](float deltaTime) {
                                         this->getCamera().getFurther(deltaTime);
                                     }));
+
+        controls.addKeyPressedCallback(
+            GLFW_KEY_C, new KeyCallback([this](float deltaTime) {
+                Attracted &att = ECSManager::getComponentOfEntity<Attracted>(
+                                     this->characterEntityId)
+                                     .value();
+                att.clear();
+                att.addDirectionAttraction({-1, 0, 0}, 20);
+            }));
     }
 
     void processInput(float deltaTime) override {}

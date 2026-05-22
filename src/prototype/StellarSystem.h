@@ -198,11 +198,11 @@ class StellarSystem {
 
         Attracted &attracted =
             ECSManager::getComponentOfEntity<Attracted>(id).value();
-        attracted.addAttraction(this->starEntityId, AttractionMode::INWARD,
-                                starMass);
-        attracted.addAttraction(this->planetEntityId, AttractionMode::INWARD,
-                                planetMass);
-        attracted.addAttraction(this->moonEntityId, AttractionMode::INWARD,
-                                moonMass);
+        attracted.addBodyAttraction(this->starEntityId, AttractionMode::INWARD,
+                                    starMass);
+        attracted.addBodyAttraction(this->planetEntityId,
+                                    AttractionMode::INWARD, planetMass);
+        attracted.addBodyAttraction(this->moonEntityId, AttractionMode::INWARD,
+                                    moonMass);
     }
 };

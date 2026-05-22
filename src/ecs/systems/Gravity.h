@@ -26,22 +26,44 @@ class Gravity : public UpdatableSystem {
                 ECSManager::getComponentOfEntity<Attracted>(entity).value();
 
             for (Attraction const &attraction : attracted.getAttractions()) {
+                glm::vec3 acceleration;
+                switch (attraction.mode) {
+                case INWARD: {
+                    glm::vec3 bodyPos =
+                        ECSManager::getComponentOfEntity<Positionable>(
+                            attraction.body.value())
+                            .value()
+                            .get()
+                            .pos;
 
-                glm::vec3 bodyPos =
-                    ECSManager::getComponentOfEntity<Positionable>(
-                        attraction.body)
-                        .value()
-                        .get()
-                        .pos;
+                    float distance = glm::distance(pos, bodyPos);
+                    glm::vec3 direction = glm::normalize(bodyPos - pos);
+                    acceleration = direction * GRAVITATIONAL_CONSTANT *
+                                   (attraction.force / (distance * distance));
+                    break;
+                }
+                case OUTWARD: {
+                    glm::vec3 bodyPos =
+                        ECSManager::getComponentOfEntity<Positionable>(
+                            attraction.body.value())
+                            .value()
+                            .get()
+                            .pos;
 
-                float distance = glm::distance(pos, bodyPos);
-                glm::vec3 direction = glm::normalize(bodyPos - pos);
-                glm::vec3 acceleration =
-                    direction * GRAVITATIONAL_CONSTANT *
-                    (attraction.force / (distance * distance));
+                    float distance = glm::distance(pos, bodyPos);
+                    glm::vec3 direction = glm::normalize(bodyPos - pos);
+                    acceleration = direction * GRAVITATIONAL_CONSTANT *
+                                   (attraction.force / (distance * distance));
+                    break;
+                }
+                case VECTOR:
+                    glm::vec3 direction = attraction.direction.value();
+                    acceleration =
+                        direction * GRAVITATIONAL_CONSTANT * attraction.force;
+                    break;
+                }
 
-                verletBody.acceleration +=
-                    acceleration * (attraction.mode == INWARD ? 1 : -1);
+                verletBody.acceleration += acceleration;
             }
         }
     }
