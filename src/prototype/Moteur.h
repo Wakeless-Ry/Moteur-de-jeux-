@@ -5,7 +5,6 @@
 
 #include "glm/detail/type_vec.hpp"
 #include "src/AssetManager.h"
-#include "src/ContinuousLOD.h"
 #include "src/Controls.h"
 #include "src/GameEngine.h"
 #include "src/Hud.h"
@@ -16,6 +15,7 @@
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/VerletBody.h"
 #include "src/ecs/systems/CollectibleSystem.h"
+#include "src/ecs/systems/ContinuousLOD.h"
 #include "src/ecs/systems/Gravity.h"
 #include "src/ecs/systems/TransformPosition.h"
 #include "src/ecs/systems/Verlet.h"

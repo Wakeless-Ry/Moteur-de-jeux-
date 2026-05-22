@@ -40,10 +40,14 @@ struct LOD {
         current_uvs = original_uvs;
     }
 
-    static LODLevel levelFromDistance(float distance) {
-        if (distance < 25.f)
+    static LODLevel levelFromScreenDiameterPx(float diameterPx,
+                                              float screenHeightPx) {
+        float highThreshold = 0.35f * screenHeightPx;
+        float mediumThreshold = 0.15f * screenHeightPx;
+
+        if (diameterPx >= highThreshold)
             return LODLevel::HIGH;
-        if (distance < 60.f)
+        if (diameterPx >= mediumThreshold)
             return LODLevel::MEDIUM;
         return LODLevel::LOW;
     }
