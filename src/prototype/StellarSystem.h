@@ -1,10 +1,10 @@
 #include <memory>
 #include <optional>
 
-#include <glm/ext.hpp>
-
 #include "glm/detail/func_geometric.hpp"
 #include "glm/detail/type_vec.hpp"
+#include <glm/ext.hpp>
+
 #include "src/AssetManager.h"
 #include "src/GlobalScene.h"
 #include "src/Transform.h"
@@ -44,7 +44,7 @@ class StellarSystem {
     const float moonMass = 50000;
     const float moonSize = 25;
 
-    const float speed = 0.01;
+    const float speed = 0;
 
     const float starRotationRatio = 0.2;
 
@@ -119,21 +119,43 @@ class StellarSystem {
             this->moon, this->moonPipe, this->moonEntityId, moonSize);
     }
 
-    void update(float deltaTime) {
+    void update(float deltaTime, const glm::vec3 pos) {
         float deltaSpeed = deltaTime * speed;
 
-        this->starRotationAngle += starRotationRatio * deltaSpeed;
+        glm::vec3 starPos =
+            ECSManager::getComponentOfEntity<Positionable>(this->starEntityId)
+                .value()
+                .get()
+                .pos;
+        glm::vec3 planetPos =
+            ECSManager::getComponentOfEntity<Positionable>(this->planetEntityId)
+                .value()
+                .get()
+                .pos;
+        glm::vec3 moonPos =
+            ECSManager::getComponentOfEntity<Positionable>(this->moonEntityId)
+                .value()
+                .get()
+                .pos;
+
+        if (glm::distance(starPos, pos) > this->starSize * 1.5) {
+            this->starRotationAngle += starRotationRatio * deltaSpeed;
+        }
+
         this->scene.setTransform(
             this->star, rotationY(this->starRotationAngle).scale(starSize));
         this->scene.setTransform(
             this->starPipe,
             translate(1, 0, 0).rotationZ(90).scale(1.f / starSize));
 
-        this->planetRevolutionAngle += planetRevolutionRatio * deltaSpeed;
+        if (glm::distance(planetPos, pos) > this->planetSize * 1.5) {
+            this->planetRevolutionAngle += planetRevolutionRatio * deltaSpeed;
+            this->planetRotationAngle += planetRotationRatio * deltaSpeed;
+        }
+
         this->scene.setTransform(
             this->planetParent,
             rotationY(this->planetRevolutionAngle).translate(1000, 0, 0));
-        this->planetRotationAngle += planetRotationRatio * deltaSpeed;
         this->scene.setTransform(this->planet,
                                  rotationX(23)
                                      .rotationX(90)
@@ -144,11 +166,14 @@ class StellarSystem {
             this->planetPipe,
             translate(1, 0, 0).rotationZ(90).scale(1.f / planetSize));
 
-        this->moonRevolutionAngle += moonRevolutionRatio * deltaSpeed;
+        if (glm::distance(moonPos, pos) > this->moonSize * 1.5) {
+            this->moonRevolutionAngle += moonRevolutionRatio * deltaSpeed;
+            this->moonRotationAngle += moonRotationRatio * deltaSpeed;
+        }
+
         this->scene.setTransform(
             this->moonParent,
             rotationY(this->moonRevolutionAngle).translate(200, 0, 0));
-        this->moonRotationAngle += moonRotationRatio * deltaSpeed;
         this->scene.setTransform(this->moon, scale(moonSize));
         this->scene.setTransform(
             this->moonPipe,

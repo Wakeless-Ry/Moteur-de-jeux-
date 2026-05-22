@@ -22,6 +22,7 @@ class Moteur : public GameEngine {
     SystemId verlet;
 
     EntityId characterEntityId;
+    NodeId characterNodeId;
 
     std::optional<StellarSystem *> stellarSystem;
 
@@ -103,15 +104,15 @@ class Moteur : public GameEngine {
                 body.acceleration -= this->getCamera().getFront() * 10;
             }));
 
-        controls.addKeyDownCallback(GLFW_KEY_Q,
+        controls.addKeyDownCallback(
+            GLFW_KEY_Q, new KeyCallback([this](float deltaTime) {
+                this->getCamera().tilt(deltaTime, false);
+            }));
+
+        controls.addKeyDownCallback(GLFW_KEY_E,
                                     new KeyCallback([this](float deltaTime) {
                                         this->getCamera().tilt(deltaTime, true);
                                     }));
-
-        controls.addKeyDownCallback(
-            GLFW_KEY_E, new KeyCallback([this](float deltaTime) {
-                this->getCamera().tilt(deltaTime, false);
-            }));
 
         controls.addKeyPressedCallback(
             GLFW_KEY_SPACE, new KeyCallback([this](float deltaTime) {
@@ -129,27 +130,27 @@ class Moteur : public GameEngine {
                 body.acceleration = {};
             }));
 
-        controls.addKeyDownCallback(
-            GLFW_KEY_X, new KeyCallback([this](float deltaTime) {
-                glm::vec3 &pos = ECSManager::getComponentOfEntity<Positionable>(
-                                     this->characterEntityId)
-                                     .value()
-                                     .get()
-                                     .pos;
-                VerletBody &body = ECSManager::getComponentOfEntity<VerletBody>(
-                                       this->characterEntityId)
-                                       .value();
+        controls.addKeyDownCallback(GLFW_KEY_KP_ADD,
+                                    new KeyCallback([this](float deltaTime) {
+                                        this->getCamera().getCloser(deltaTime);
+                                    }));
 
-                body.last_position = pos;
-                body.acceleration = {};
-            }));
+        controls.addKeyDownCallback(GLFW_KEY_KP_SUBTRACT,
+                                    new KeyCallback([this](float deltaTime) {
+                                        this->getCamera().getFurther(deltaTime);
+                                    }));
     }
 
     void processInput(float deltaTime) override {}
 
     void update(float deltaTime) override {
         if (this->stellarSystem.has_value()) {
-            this->stellarSystem.value()->update(deltaTime);
+            this->stellarSystem.value()->update(
+                deltaTime, ECSManager::getComponentOfEntity<Positionable>(
+                               this->characterEntityId)
+                               .value()
+                               .get()
+                               .pos);
         }
     }
 

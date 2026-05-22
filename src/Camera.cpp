@@ -135,3 +135,11 @@ void Camera::down(float deltaTime) {
     this->position +=
         normalize(vec3(.0f, -1.0f, 0.0f)) * this->translationSpeed * deltaTime;
 }
+
+void Camera::getCloser(float deltaTime) {
+    this->targetDistance -= deltaTime * 1;
+}
+
+void Camera::getFurther(float deltaTime) {
+    this->targetDistance += deltaTime * 1;
+}
