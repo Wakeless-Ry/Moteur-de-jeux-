@@ -4,6 +4,7 @@
 
 #include <cstdlib>
 #include <optional>
+#include <vector>
 
 #include "glm/detail/func_geometric.hpp"
 #include <glm/ext.hpp>
@@ -12,8 +13,11 @@
 #include "src/ecs/components/VerletBody.h"
 #include "src/ecs/systems/SystemUpdater.h"
 #include "src/ecs/utils.h"
+#include "src/prototype/Cuboid.h"
 
 class Verlet : public UpdatableSystem {
+
+    std::vector<Cuboid> cuboids;
 
   public:
     void update(float deltaTime) override {
