@@ -138,11 +138,13 @@ class Verlet : public UpdatableSystem {
                 VerletBody &verletBody = verletBodyOpt.value();
                 glm::vec3 velocity = pos.pos - verletBody.last_position;
 
-                if (glm::length(velocity) >= 0.02 * deltaTime) {
+                if (glm::length(velocity) >= 0.5 * deltaTime) {
                     velocity *= (1. - (AIR_FRICTION * deltaTime));
                 } else {
-                    velocity = {0, 0, 0};
+                    velocity *= (AIR_FRICTION * deltaTime);
                 }
+
+                std::cout << glm::length(velocity) << std::endl;
 
                 verletBody.last_position = pos.pos;
 
