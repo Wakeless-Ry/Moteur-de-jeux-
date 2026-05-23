@@ -25,12 +25,11 @@
 
 class Moteur : public GameEngine {
 
-    SystemId verlet;
-
     EntityId characterEntityId;
     NodeId characterNodeId;
 
     std::optional<StellarSystem *> stellarSystem;
+    std::optional<std::shared_ptr<Verlet>> verletSystem;
 
     float speed = 1.;
 
@@ -52,8 +51,8 @@ class Moteur : public GameEngine {
     }
 
     void initSystems() {
-        this->verlet =
-            this->getSystemUpdater()->addSystem(std::make_shared<Verlet>());
+        this->verletSystem = std::make_shared<Verlet>();
+        this->getSystemUpdater()->addSystem(this->verletSystem.value());
 
         this->getSystemUpdater()->addSystem(
             std::make_shared<TransformPosition>(this->getScene()));
@@ -102,6 +101,8 @@ class Moteur : public GameEngine {
                        glm::vec3{1005, 395, 5}, glm::vec3{1005, 395, 0}});
 
         this->getScene().addMesh(cuboid.getSceneObject().value());
+
+        this->verletSystem.value()->addCuboid(cuboid);
 
         ////////////////////////////////////////Collectible//////////////////////////////////
 

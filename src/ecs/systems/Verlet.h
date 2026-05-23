@@ -10,6 +10,7 @@
 #include <glm/ext.hpp>
 
 #include "src/ecs/ECSManager.h"
+#include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/VerletBody.h"
 #include "src/ecs/systems/SystemUpdater.h"
 #include "src/ecs/utils.h"
@@ -32,6 +33,21 @@ class Verlet : public UpdatableSystem {
 
     void solveCollisions() {
         const std::set<EntityId> entities = this->getEntities();
+
+        for (EntityId entity : entities) {
+            Positionable &pos =
+                ECSManager::getComponentOfEntity<Positionable>(entity).value();
+            VerletBody &body =
+                ECSManager::getComponentOfEntity<VerletBody>(entity).value();
+
+            for (const Cuboid &cuboid : this->cuboids) {
+                std::optional<glm::vec3> intersection =
+                    cuboid.intersectsSphere(pos.pos, body.size);
+                if (intersection.has_value()) {
+                    pos.pos += intersection.value();
+                }
+            }
+        }
 
         for (auto it1 = entities.begin(); it1 != entities.end(); it1++) {
             EntityId id1 = *it1;
@@ -137,6 +153,8 @@ class Verlet : public UpdatableSystem {
             }
         }
     }
+
+    void addCuboid(Cuboid cuboid) { this->cuboids.push_back(cuboid); }
 };
 
 #endif // VERLET

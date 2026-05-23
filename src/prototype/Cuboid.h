@@ -1,9 +1,12 @@
+#include "glm/detail/func_geometric.hpp"
 #include "glm/detail/type_vec.hpp"
+#include "glm/gtx/simd_vec4.hpp"
 #include "src/Mesh.h"
 #include "src/SceneObject.h"
 #include <array>
 
 #include <glm/ext.hpp>
+#include <iostream>
 #include <optional>
 
 //   F-----G
@@ -14,6 +17,8 @@
 // A-----B
 class Cuboid {
     std::array<glm::vec3, 8> corners;
+    glm::vec3 center;
+
     std::optional<SceneObject> sceneObject;
 
   public:
@@ -23,33 +28,20 @@ class Cuboid {
         : corners(corners) {
 
         std::vector<glm::vec3> normals;
-        glm::vec3 center;
 
         for (glm::vec3 corner : corners) {
-            center += corner;
+            this->center += corner;
         }
-        center /= 8;
+        this->center /= 8;
 
         for (glm::vec3 corner : corners) {
-            normals.push_back(glm::normalize(corner - center));
+            normals.push_back(glm::normalize(corner - this->center));
         }
 
         Mesh mesh =
             Mesh(std::vector(this->corners.begin(), this->corners.end()),
-                 {
-                    0, 1, 3, 
-                    1, 2, 3, 
-                    7, 6, 1, 
-                    6, 2, 1, 
-                    6, 5, 2, 
-                    5, 3, 2,
-                  4, 7, 0, 
-                  7, 1, 0, 
-                  5, 6, 4, 
-                  6, 7, 4, 
-                  5, 4, 3, 
-                  4, 0, 3
-                },
+                 {0, 1, 3, 1, 2, 3, 7, 6, 1, 6, 2, 1, 6, 5, 2, 5, 3, 2,
+                  4, 7, 0, 7, 1, 0, 5, 6, 4, 6, 7, 4, 5, 4, 3, 4, 0, 3},
                  normals);
 
         this->sceneObject =
@@ -70,4 +62,38 @@ class Cuboid {
         : Cuboid(color, std::array{c1, c2, c3, c4, c5, c6, c7, c8}) {}
 
     std::optional<SceneObject> getSceneObject() { return this->sceneObject; }
+
+    std::optional<glm::vec3> intersectsSphere(glm::vec3 position,
+                                              float size) const {
+        static const std::array<std::array<int, 3>, 6> faces(
+            {std::array{0, 1, 3}, std::array{0, 1, 4}, std::array{0, 3, 4},
+             std::array{6, 7, 5}, std::array{6, 7, 2}, std::array{6, 5, 2}});
+
+        float minPenetration = std::numeric_limits<float>::max();
+        glm::vec3 mtvAxis;
+
+        for (std::array<int, 3> face : faces) {
+            glm::vec3 normal = glm::normalize(
+                glm::cross(this->corners[face[1]] - this->corners[face[0]],
+                           this->corners[face[2]] - this->corners[face[0]]));
+
+            if (glm::dot(normal, center - corners[face[0]]) > 0) {
+                normal = -normal;
+            }
+
+            glm::vec3 v = position - this->corners[face[0]];
+            float d = glm::dot(v, normal) - size;
+
+            if (d > 0) {
+                return std::nullopt;
+            }
+
+            if (std::abs(d) < minPenetration) {
+                minPenetration = std::abs(d);
+                mtvAxis = normal;
+            }
+        }
+
+        return mtvAxis * minPenetration;
+    }
 };
