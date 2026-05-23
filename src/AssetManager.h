@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -19,7 +20,7 @@
 class AssetManager {
 
     std::vector<Texture> textures;
-    std::vector<Mesh> meshes;
+    std::vector<std::shared_ptr<Mesh>> meshes;
 
     std::unordered_map<std::string, std::size_t> texture_map;
     std::unordered_map<std::string, std::size_t> mesh_map;
@@ -209,7 +210,7 @@ class AssetManager {
     }
 
   public:
-    static std::optional<Mesh *> loadMesh(const char *filepath) {
+    static std::optional<std::shared_ptr<Mesh>> loadMesh(const char *filepath) {
         AssetManager &manager = AssetManager::getAssetManager();
 
         std::string name(filepath);
@@ -219,20 +220,21 @@ class AssetManager {
             std::optional<Mesh> mesh = AssetManager::buildMeshFromOBJ(filepath);
 
             if (mesh.has_value()) {
-                manager.meshes.push_back(mesh.value());
+                manager.meshes.push_back(std::make_shared<Mesh>(mesh.value()));
             } else {
                 std::optional<Mesh> mesh =
                     AssetManager::buildMeshFromOFF(filepath);
 
                 if (mesh.has_value()) {
-                    manager.meshes.push_back(mesh.value());
+                    manager.meshes.push_back(
+                        std::make_shared<Mesh>(mesh.value()));
                 } else {
                     return std::nullopt;
                 }
             }
         }
 
-        return &manager.meshes[manager.mesh_map[name]];
+        return manager.meshes[manager.mesh_map[name]];
     }
 
     static Texture &loadTexture(const char *filepath) {

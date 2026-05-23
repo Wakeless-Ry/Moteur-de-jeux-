@@ -86,6 +86,9 @@ class Camera : public Observer<vec3> {
     void backward(float deltaTime);
     void up(float deltaTime);
     void down(float deltaTime);
+
+    void getCloser(float deltaTime);
+    void getFurther(float deltaTime);
 };
 
 #endif // CAMERA

@@ -1,21 +1,32 @@
 #ifndef ATTRACTED
 #define ATTRACTED
 
-#include "src/ecs/utils.h"
+#include <optional>
 #include <vector>
+
+#include <glm/ext.hpp>
+
+#include "glm/detail/type_vec.hpp"
+#include "src/ecs/utils.h"
 
 enum AttractionMode {
     INWARD,
     OUTWARD,
+    VECTOR,
 };
 
 struct Attraction {
-    EntityId body;
     AttractionMode mode;
     float force;
 
+    std::optional<EntityId> body;
+    std::optional<glm::vec3> direction;
+
     Attraction(EntityId body, AttractionMode mode, float force)
-        : body(body), mode(mode), force(force) {}
+        : mode(mode), force(force), body(body) {}
+
+    Attraction(glm::vec3 direction, float force)
+        : mode(VECTOR), force(force), direction(direction) {}
 };
 
 class Attracted {
@@ -27,8 +38,12 @@ class Attracted {
         return this->attractions;
     }
 
-    void addAttraction(EntityId body, AttractionMode mode, float force) {
+    void addBodyAttraction(EntityId body, AttractionMode mode, float force) {
         this->attractions.push_back({body, mode, force});
+    }
+
+    void addDirectionAttraction(glm::vec3 direction, float force) {
+        this->attractions.push_back({direction, force});
     }
 
     void clear() { this->attractions.clear(); }

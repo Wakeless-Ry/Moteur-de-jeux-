@@ -203,6 +203,12 @@ class GlobalScene {
                     nodes.push(current->node);
                 }
 
+                if (this->parents.count(current->node)) {
+                    current = &this->nodes[this->parents[current->node]];
+                    transforms.push(current->cumulativeTransform);
+                    nodes.push(current->node);
+                }
+
                 Transform cumulative = transforms.top();
                 transforms.pop();
                 nodes.pop();

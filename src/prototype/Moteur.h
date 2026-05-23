@@ -10,6 +10,7 @@
 #include "src/Hud.h"
 #include "src/VelocityIndicatorHud.h"
 #include "src/ecs/ECSManager.h"
+#include "src/ecs/components/Attracted.h"
 #include "src/ecs/components/Collectible.h"
 #include "src/ecs/components/Inventory.h"
 #include "src/ecs/components/Positionable.h"
@@ -27,6 +28,7 @@ class Moteur : public GameEngine {
     SystemId verlet;
 
     EntityId characterEntityId;
+    NodeId characterNodeId;
 
     std::optional<StellarSystem *> stellarSystem;
 
@@ -53,12 +55,10 @@ class Moteur : public GameEngine {
         this->verlet =
             this->getSystemUpdater()->addSystem(std::make_shared<Verlet>());
 
-        auto transformPosition =
-            std::make_shared<TransformPosition>(this->getScene());
-        this->getSystemUpdater()->addSystem(transformPosition);
-
         this->getSystemUpdater()->addSystem(
-            std::make_shared<Gravity>(transformPosition));
+            std::make_shared<TransformPosition>(this->getScene()));
+
+        this->getSystemUpdater()->addSystem(std::make_shared<Gravity>());
 
         this->getSystemUpdater()->addSystem(std::make_shared<ContinuousLOD>(
             this->getScene(), this->getCamera()));
@@ -70,7 +70,7 @@ class Moteur : public GameEngine {
         this->getScene().addLightToScene(
             Light(glm::vec3(0, 0, 0), glm::vec3(10000)));
 
-        Mesh *ballMesh =
+        std::shared_ptr<Mesh> ballMesh =
             AssetManager::loadMesh("assets/meshes/big_sphere.obj").value();
 
         SceneObject character = SceneObject("shaders/PBR_vs.glsl",
@@ -84,7 +84,7 @@ class Moteur : public GameEngine {
         this->characterEntityId = ECSManager::generateEntityId();
         ECSManager::setComponentToEntity(
             Noded(this->getScene().addMesh(character)), characterEntityId);
-        glm::vec3 pos = {200, 200, 200};
+        glm::vec3 pos = {1000, 400, 0};
         ECSManager::setComponentToEntity(Positionable(pos), characterEntityId);
         ECSManager::setComponentToEntity(VerletBody(pos, {0, 0, 0}, 1, 0),
                                          characterEntityId);
@@ -188,19 +188,23 @@ class Moteur : public GameEngine {
                 body.acceleration = {};
             }));
 
-        controls.addKeyDownCallback(
-            GLFW_KEY_X, new KeyCallback([this](float deltaTime) {
-                glm::vec3 &pos = ECSManager::getComponentOfEntity<Positionable>(
-                                     this->characterEntityId)
-                                     .value()
-                                     .get()
-                                     .pos;
-                VerletBody &body = ECSManager::getComponentOfEntity<VerletBody>(
-                                       this->characterEntityId)
-                                       .value();
+        controls.addKeyDownCallback(GLFW_KEY_KP_ADD,
+                                    new KeyCallback([this](float deltaTime) {
+                                        this->getCamera().getCloser(deltaTime);
+                                    }));
 
-                body.last_position = pos;
-                body.acceleration = {};
+        controls.addKeyDownCallback(GLFW_KEY_KP_SUBTRACT,
+                                    new KeyCallback([this](float deltaTime) {
+                                        this->getCamera().getFurther(deltaTime);
+                                    }));
+
+        controls.addKeyPressedCallback(
+            GLFW_KEY_C, new KeyCallback([this](float deltaTime) {
+                Attracted &att = ECSManager::getComponentOfEntity<Attracted>(
+                                     this->characterEntityId)
+                                     .value();
+                att.clear();
+                att.addDirectionAttraction({-1, 0, 0}, 20);
             }));
     }
 
@@ -208,7 +212,12 @@ class Moteur : public GameEngine {
 
     void update(float deltaTime) override {
         if (this->stellarSystem.has_value()) {
-            this->stellarSystem.value()->update(deltaTime);
+            this->stellarSystem.value()->update(
+                deltaTime, ECSManager::getComponentOfEntity<Positionable>(
+                               this->characterEntityId)
+                               .value()
+                               .get()
+                               .pos);
         }
     }
 

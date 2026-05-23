@@ -17,7 +17,6 @@ class Verlet : public UpdatableSystem {
 
   public:
     void update(float deltaTime) override {
-        this->applyGravity();
         this->solveCollisions();
         this->updateBallPositions(deltaTime);
     }
@@ -26,8 +25,6 @@ class Verlet : public UpdatableSystem {
         ECSManager::registerComponentToSystem<Positionable>(id);
         ECSManager::registerComponentToSystem<VerletBody>(id);
     }
-
-    void applyGravity() {}
 
     void solveCollisions() {
         const std::set<EntityId> entities = this->getEntities();
