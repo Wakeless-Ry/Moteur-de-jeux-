@@ -25,12 +25,11 @@
 
 class Moteur : public GameEngine {
 
-    SystemId verlet;
-
     EntityId characterEntityId;
     NodeId characterNodeId;
 
     std::optional<StellarSystem *> stellarSystem;
+    std::optional<std::shared_ptr<Verlet>> verletSystem;
 
     float speed = 1.;
 
@@ -52,8 +51,8 @@ class Moteur : public GameEngine {
     }
 
     void initSystems() {
-        this->verlet =
-            this->getSystemUpdater()->addSystem(std::make_shared<Verlet>());
+        this->verletSystem = std::make_shared<Verlet>();
+        this->getSystemUpdater()->addSystem(this->verletSystem.value());
 
         this->getSystemUpdater()->addSystem(
             std::make_shared<TransformPosition>(this->getScene()));
@@ -69,6 +68,8 @@ class Moteur : public GameEngine {
     void initScene() {
         this->getScene().addLightToScene(
             Light(glm::vec3(0, 0, 0), glm::vec3(10000)));
+        this->getScene().addLightToScene(
+            Light(glm::vec3(1000, 400, 0), glm::vec3(100)));
 
         std::shared_ptr<Mesh> ballMesh =
             AssetManager::loadMesh("assets/meshes/big_sphere.obj").value();
@@ -91,6 +92,17 @@ class Moteur : public GameEngine {
         ECSManager::setComponentToEntity(Inventory{}, characterEntityId);
         this->stellarSystem.value()->setSystemAttraction(
             this->characterEntityId);
+
+        Cuboid cuboid(
+            {0.2, 0.8, 0.2},
+            std::array{glm::vec3{1000, 390, 0}, glm::vec3{1005, 390, 0},
+                       glm::vec3{1005, 390, 5}, glm::vec3{1000, 390, 5},
+                       glm::vec3{1000, 395, 0}, glm::vec3{1000, 395, 5},
+                       glm::vec3{1005, 395, 5}, glm::vec3{1005, 395, 0}});
+
+        this->getScene().addMesh(cuboid.getSceneObject().value());
+
+        this->verletSystem.value()->addCuboid(cuboid);
 
         ////////////////////////////////////////Collectible//////////////////////////////////
 
