@@ -40,6 +40,10 @@ class Verlet : public UpdatableSystem {
             VerletBody &body =
                 ECSManager::getComponentOfEntity<VerletBody>(entity).value();
 
+            if (body.unmovable || body.isTrigger) {
+                continue;
+            }
+
             for (const Cuboid &cuboid : this->cuboids) {
                 std::optional<glm::vec3> intersection =
                     cuboid.intersectsSphere(pos.pos, body.size);
@@ -144,7 +148,7 @@ class Verlet : public UpdatableSystem {
                     velocity *= (AIR_FRICTION * deltaTime);
                 }
 
-                std::cout << glm::length(velocity) << std::endl;
+                // std::cout << glm::length(velocity) << std::endl;
 
                 verletBody.last_position = pos.pos;
 

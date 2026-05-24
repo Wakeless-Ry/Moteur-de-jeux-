@@ -14,10 +14,14 @@
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/VerletBody.h"
 #include "src/ecs/utils.h"
+#include <cstdlib>
+
+#include "src/ecs/components/Collectible.h"
+#include "src/ecs/systems/Verlet.h"
+#include "src/prototype/Cuboid.h"
 
 class StellarSystem {
     GlobalScene &scene;
-
     NodeId stellarSystem;
 
     NodeId starParent;
@@ -100,6 +104,282 @@ class StellarSystem {
         pipe = scene.addMeshAsChild(node, pipeObject).value();
         EntityId pipeId = ECSManager::generateEntityId();
         ECSManager::setComponentToEntity(Noded(pipe), pipeId);
+    }
+
+    struct EarthInteriorContext {
+        glm::vec3 earthCenter;
+        float floorY;
+        float halfSize;
+        NodeId interiorRoot;
+        NodeId ballPitRoot;
+        NodeId pbrRoot;
+        NodeId collectRoot;
+    };
+
+    std::array<glm::vec3, 8> cornersFromAabb(const glm::vec3 &mn,
+                                             const glm::vec3 &mx) {
+        return std::array<glm::vec3, 8>{
+            glm::vec3(mn.x, mn.y, mn.z), glm::vec3(mx.x, mn.y, mn.z),
+            glm::vec3(mx.x, mn.y, mx.z), glm::vec3(mn.x, mn.y, mx.z),
+            glm::vec3(mn.x, mx.y, mn.z), glm::vec3(mn.x, mx.y, mx.z),
+            glm::vec3(mx.x, mx.y, mx.z), glm::vec3(mx.x, mx.y, mn.z)};
+    }
+
+    void addStaticColliderCuboid(Verlet &verletSystem, NodeId parent,
+                                 const glm::vec3 &color, const glm::vec3 &mn,
+                                 const glm::vec3 &mx) {
+        Cuboid c(color, cornersFromAabb(mn, mx));
+        auto soOpt = c.getSceneObject();
+        if (soOpt.has_value()) {
+            scene.addMeshAsChild(parent, soOpt.value()).value();
+        }
+        verletSystem.addCuboid(c);
+    }
+
+    EarthInteriorContext buildEarthInteriorBase(Verlet &verletSystem) {
+        EarthInteriorContext ctx{};
+
+        this->update(0.0f, glm::vec3(0.0f));
+        auto earthT = scene.getTransform(this->planet);
+        if (!earthT.has_value()) {
+            return ctx;
+        }
+
+        ctx.earthCenter = earthT.value().getPosition();
+        ctx.floorY = ctx.earthCenter.y - 20.0f;
+        ctx.halfSize = 22.0f;
+
+        scene.addLightToScene(
+            Light(ctx.earthCenter + glm::vec3(0, 15, 0), glm::vec3(250.0f)));
+
+        ctx.interiorRoot = scene.addBasicNode();
+        ctx.ballPitRoot = scene.addBasicNodeAsChild(ctx.interiorRoot).value();
+        ctx.pbrRoot = scene.addBasicNodeAsChild(ctx.interiorRoot).value();
+        ctx.collectRoot = scene.addBasicNodeAsChild(ctx.interiorRoot).value();
+
+        auto groundMeshOpt = AssetManager::loadMesh("assets/meshes/ground.obj");
+        if (groundMeshOpt.has_value()) {
+            SceneObject ground("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
+                               *groundMeshOpt.value());
+            ground.addAlbedoMap(
+                AssetManager::loadTexture("assets/textures/grass.png"));
+            ground.setMetallic(0.0f);
+            ground.setRoughness(0.95f);
+
+            NodeId groundNode =
+                scene.addMeshAsChild(ctx.interiorRoot, ground).value();
+
+            scene.setTransform(
+                groundNode,
+                translate(ctx.earthCenter.x, ctx.floorY, ctx.earthCenter.z)
+                    .rotationX(90.0f)
+                    .scale(ctx.halfSize));
+        }
+
+        const float floorThickness = 2.0f;
+        addStaticColliderCuboid(
+            verletSystem, ctx.interiorRoot, glm::vec3(0.25f, 0.25f, 0.25f),
+            ctx.earthCenter + glm::vec3(-ctx.halfSize,
+                                        ctx.floorY - floorThickness,
+                                        -ctx.halfSize),
+            ctx.earthCenter +
+                glm::vec3(+ctx.halfSize, ctx.floorY, +ctx.halfSize));
+
+        return ctx;
+    }
+
+    void buildBallPitRoom(Verlet &verletSystem,
+                          const EarthInteriorContext &ctx) {
+        const glm::vec3 pitCenter =
+            ctx.earthCenter + glm::vec3(-14.0f, 0.0f, 0.0f);
+        const float pitHalfX = 9.0f;
+        const float pitHalfZ = 14.0f;
+        const float wallT = 2.0f;
+        const float wallH = 14.0f;
+
+        const float pitMinX = pitCenter.x - pitHalfX;
+        const float pitMaxX = pitCenter.x + pitHalfX;
+        const float pitMinZ = pitCenter.z - pitHalfZ;
+        const float pitMaxZ = pitCenter.z + pitHalfZ;
+
+        addStaticColliderCuboid(
+            ctx.ballPitRoot ? verletSystem : verletSystem, ctx.ballPitRoot,
+            glm::vec3(0.15f), glm::vec3(pitMinX - wallT, ctx.floorY, pitMinZ),
+            glm::vec3(pitMinX, ctx.floorY + wallH, pitMaxZ));
+
+        addStaticColliderCuboid(
+            verletSystem, ctx.ballPitRoot, glm::vec3(0.15f),
+            glm::vec3(pitMaxX, ctx.floorY, pitMinZ),
+            glm::vec3(pitMaxX + wallT, ctx.floorY + wallH, pitMaxZ));
+
+        addStaticColliderCuboid(
+            verletSystem, ctx.ballPitRoot, glm::vec3(0.15f),
+            glm::vec3(pitMinX - wallT, ctx.floorY, pitMinZ - wallT),
+            glm::vec3(pitMaxX + wallT, ctx.floorY + wallH, pitMinZ));
+
+        addStaticColliderCuboid(
+            verletSystem, ctx.ballPitRoot, glm::vec3(0.15f),
+            glm::vec3(pitMinX - wallT, ctx.floorY, pitMaxZ),
+            glm::vec3(pitMaxX + wallT, ctx.floorY + wallH, pitMaxZ + wallT));
+
+        addStaticColliderCuboid(
+            verletSystem, ctx.ballPitRoot, glm::vec3(0.35f, 0.1f, 0.1f),
+            pitCenter + glm::vec3(-3.0f, ctx.floorY, -3.0f),
+            pitCenter + glm::vec3(-1.0f, ctx.floorY + 6.0f, -1.0f));
+
+        addStaticColliderCuboid(
+            verletSystem, ctx.ballPitRoot, glm::vec3(0.1f, 0.35f, 0.1f),
+            pitCenter + glm::vec3(2.0f, ctx.floorY, 4.0f),
+            pitCenter + glm::vec3(4.0f, ctx.floorY + 8.0f, 6.0f));
+
+        auto sphereMeshOpt = AssetManager::loadMesh("assets/meshes/sphere.obj");
+        if (!sphereMeshOpt.has_value())
+            return;
+
+        std::srand(0);
+
+        const int ballCount = 25;
+        const float ballRadius = 1.2f;
+        const float gravityForce = 30.0f;
+
+        auto makeGravity = [&](float force) {
+            Attracted tmp;
+            tmp.addDirectionAttraction(glm::vec3(0, -1, 0), force);
+            return tmp;
+        };
+
+        for (int i = 0; i < ballCount; ++i) {
+            SceneObject ball("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
+                             *sphereMeshOpt.value());
+
+            float r = 0.2f + (std::rand() / (float)RAND_MAX) * 0.8f;
+            float g = 0.2f + (std::rand() / (float)RAND_MAX) * 0.8f;
+            float b = 0.2f + (std::rand() / (float)RAND_MAX) * 0.8f;
+            ball.setAlbedo(glm::vec3(r, g, b));
+            ball.setMetallic(0.0f);
+            ball.setRoughness(0.6f);
+
+            NodeId nodeId = scene.addMeshAsChild(ctx.ballPitRoot, ball).value();
+            EntityId e = ECSManager::generateEntityId();
+
+            float rx = (std::rand() / (float)RAND_MAX);
+            float rz = (std::rand() / (float)RAND_MAX);
+            float ry = (std::rand() / (float)RAND_MAX);
+
+            glm::vec3 p;
+            p.x = (pitMinX + ballRadius) +
+                  rx * ((pitMaxX - ballRadius) - (pitMinX + ballRadius));
+            p.z = (pitMinZ + ballRadius) +
+                  rz * ((pitMaxZ - ballRadius) - (pitMinZ + ballRadius));
+            p.y = (ctx.floorY + 4.0f) + ry * 8.0f;
+
+            ECSManager::setComponentToEntity(Noded(nodeId), e);
+            ECSManager::setComponentToEntity(Positionable(p), e);
+            ECSManager::setComponentToEntity(
+                VerletBody(p, glm::vec3(0.0f), ballRadius, false), e);
+            ECSManager::setComponentToEntity(makeGravity(gravityForce), e);
+        }
+    }
+
+    void buildPbrRoom(const EarthInteriorContext &ctx) {
+        const glm::vec3 pbrCenter = ctx.earthCenter;
+
+        auto addPbrStatic = [&](const char *meshPath, const glm::vec3 &pos,
+                                const char *albedo, const char *normal,
+                                const char *metallic, const char *roughness,
+                                const char *ao) {
+            auto meshOpt = AssetManager::loadMesh(meshPath);
+            if (!meshOpt.has_value())
+                return;
+
+            SceneObject obj("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
+                            *meshOpt.value());
+
+            if (albedo)
+                obj.addAlbedoMap(AssetManager::loadTexture(albedo));
+            if (normal)
+                obj.addNormalMap(AssetManager::loadTexture(normal));
+            if (metallic)
+                obj.addMetallicMap(AssetManager::loadTexture(metallic));
+            if (roughness)
+                obj.addRoughnessMap(AssetManager::loadTexture(roughness));
+            if (ao)
+                obj.addAoMap(AssetManager::loadTexture(ao));
+
+            obj.setMetallic(0.0f);
+            obj.setRoughness(0.4f);
+
+            NodeId id = scene.addMeshAsChild(ctx.pbrRoot, obj).value();
+            scene.setTransform(id, translate(pos).scale(4.0f));
+        };
+
+        addPbrStatic("assets/meshes/cube.obj",
+                     pbrCenter + glm::vec3(-4.0f, ctx.floorY + 3.0f, -12.0f),
+                     "assets/textures/rustediron2_albedo.png",
+                     "assets/textures/rustediron2_normal.png",
+                     "assets/textures/rustediron2_metallic.png",
+                     "assets/textures/rustediron2_roughness.png", nullptr);
+
+        addPbrStatic("assets/meshes/sphere.obj",
+                     pbrCenter + glm::vec3(4.0f, ctx.floorY + 3.0f, -4.0f),
+                     "assets/textures/fancy-carved-wood_albedo.png",
+                     "assets/textures/fancy-carved-wood_normal.png",
+                     "assets/textures/fancy-carved-wood_metallic.png",
+                     "assets/textures/fancy-carved-wood_roughness.png",
+                     "assets/textures/fancy-carved-wood_ao.png");
+
+        addPbrStatic("assets/meshes/star.obj",
+                     pbrCenter + glm::vec3(-4.0f, ctx.floorY + 3.0f, 4.0f),
+                     "assets/textures/character.jpg", nullptr, nullptr, nullptr,
+                     nullptr);
+
+        addPbrStatic("assets/meshes/pipe.obj",
+                     pbrCenter + glm::vec3(4.0f, ctx.floorY + 3.0f, 12.0f),
+                     "assets/textures/earth.jpg", nullptr, nullptr, nullptr,
+                     nullptr);
+    }
+
+    void buildCollectiblesRoom(const EarthInteriorContext &ctx,
+                               int &totalCollectibles) {
+        const glm::vec3 cCenter =
+            ctx.earthCenter + glm::vec3(14.0f, 0.0f, 0.0f);
+
+        auto starMeshOpt = AssetManager::loadMesh("assets/meshes/star.obj");
+        if (!starMeshOpt.has_value())
+            return;
+
+        const float collectibleRadius = 1.0f;
+
+        auto spawnCollectible = [&](const glm::vec3 &p) {
+            SceneObject starObj("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
+                                *starMeshOpt.value());
+            starObj.setAlbedo(glm::vec3(1.0f, 0.9f, 0.2f));
+            starObj.setMetallic(0.0f);
+            starObj.setRoughness(0.6f);
+
+            NodeId nodeId =
+                scene.addMeshAsChild(ctx.collectRoot, starObj).value();
+            EntityId e = ECSManager::generateEntityId();
+
+            ECSManager::setComponentToEntity(Noded(nodeId), e);
+            ECSManager::setComponentToEntity(Positionable(p), e);
+            ECSManager::setComponentToEntity(
+                VerletBody(p, glm::vec3(0.0f), collectibleRadius, true), e);
+
+            ECSManager::getComponentOfEntity<VerletBody>(e)
+                .value()
+                .get()
+                .isTrigger = true;
+            ECSManager::setComponentToEntity(Collectible(1), e);
+        };
+
+        spawnCollectible(cCenter + glm::vec3(0.0f, ctx.floorY + 4.0f, 0.0f));
+        spawnCollectible(cCenter + glm::vec3(4.0f, ctx.floorY + 4.0f, 0.0f));
+        spawnCollectible(cCenter + glm::vec3(-4.0f, ctx.floorY + 4.0f, 0.0f));
+        spawnCollectible(cCenter + glm::vec3(0.0f, ctx.floorY + 4.0f, 4.0f));
+        spawnCollectible(cCenter + glm::vec3(0.0f, ctx.floorY + 4.0f, -4.0f));
+
+        totalCollectibles += 5;
     }
 
   public:
@@ -254,5 +534,15 @@ class StellarSystem {
                                     AttractionMode::INWARD, planetMass / 10);
         attracted.addBodyAttraction(this->moonEntityId, AttractionMode::INWARD,
                                     moonMass);
+    }
+
+    void initEarthInterior(Verlet &verletSystem, int &totalCollectibles) {
+        EarthInteriorContext ctx = buildEarthInteriorBase(verletSystem);
+        if (ctx.interiorRoot == 0)
+            return;
+
+        // buildBallPitRoom(verletSystem, ctx);
+        // buildPbrRoom(ctx);
+        buildCollectiblesRoom(ctx, totalCollectibles);
     }
 };

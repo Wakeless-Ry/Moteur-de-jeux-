@@ -1,3 +1,6 @@
+#ifndef PROTOTYPE_CUBOID_H
+#define PROTOTYPE_CUBOID_H
+
 #include "glm/detail/func_geometric.hpp"
 #include "glm/detail/type_vec.hpp"
 #include "glm/gtx/simd_vec4.hpp"
@@ -97,3 +100,5 @@ class Cuboid {
         return mtvAxis * minPenetration;
     }
 };
+
+#endif

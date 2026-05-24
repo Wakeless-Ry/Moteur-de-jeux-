@@ -35,7 +35,7 @@ class Moteur : public GameEngine {
     bool gravityToggled = false;
 
     Hud hud;
-    int totalCollectibles = 10;
+    int totalCollectibles = 5;
     VelocityIndicatorHud velHud;
 
     Hud pressXHud;
@@ -98,55 +98,63 @@ class Moteur : public GameEngine {
         this->stellarSystem.value()->setSystemAttraction(
             this->characterEntityId);
 
-        Cuboid cuboid(
-            {0.2, 0.8, 0.2},
-            std::array{glm::vec3{1000, 390, 0}, glm::vec3{1005, 390, 0},
-                       glm::vec3{1005, 390, 5}, glm::vec3{1000, 390, 5},
-                       glm::vec3{1000, 395, 0}, glm::vec3{1000, 395, 5},
-                       glm::vec3{1005, 395, 5}, glm::vec3{1005, 395, 0}});
+        // Cuboid cuboid(
+        //     {0.2, 0.8, 0.2},
+        //     std::array{glm::vec3{1000, 390, 0}, glm::vec3{1005, 390, 0},
+        //                glm::vec3{1005, 390, 5}, glm::vec3{1000, 390, 5},
+        //                glm::vec3{1000, 395, 0}, glm::vec3{1000, 395, 5},
+        //                glm::vec3{1005, 395, 5}, glm::vec3{1005, 395, 0}});
 
-        this->getScene().addMesh(cuboid.getSceneObject().value());
+        // this->getScene().addMesh(cuboid.getSceneObject().value());
 
-        this->verletSystem.value()->addCuboid(cuboid);
+        // this->verletSystem.value()->addCuboid(cuboid);
 
         ////////////////////////////////////////Collectible//////////////////////////////////
 
-        this->totalCollectibles = 1;
+        // this->totalCollectibles = 1;
 
-        auto starMeshOpt = AssetManager::loadMesh("assets/meshes/star.obj");
-        if (!starMeshOpt.has_value()) {
-            return;
+        // auto starMeshOpt = AssetManager::loadMesh("assets/meshes/star.obj");
+        // if (!starMeshOpt.has_value()) {
+        //     return;
+        // }
+
+        // SceneObject starObject("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
+        //                        *starMeshOpt.value());
+
+        // starObject.setAlbedo(glm::vec3(1.0f, 0.9f, 0.2f));
+        // starObject.setMetallic(0.0f);
+        // starObject.setRoughness(0.6f);
+
+        // NodeId collectibleNodeId = this->getScene().addMesh(starObject);
+
+        // EntityId collectibleEntityId = ECSManager::generateEntityId();
+
+        // glm::vec3 collectiblePosition = glm::vec3(205.0f, 200.0f, 200.0f);
+
+        // float collectibleRadius = 1.0f;
+
+        // ECSManager::setComponentToEntity(Noded(collectibleNodeId),
+        //                                  collectibleEntityId);
+        // ECSManager::setComponentToEntity(Positionable(collectiblePosition),
+        //                                  collectibleEntityId);
+
+        // ECSManager::setComponentToEntity(VerletBody(collectiblePosition,
+        //                                             glm::vec3(0.0f),
+        //                                             collectibleRadius, true),
+        //                                  collectibleEntityId);
+        // ECSManager::getComponentOfEntity<VerletBody>(collectibleEntityId)
+        //     .value()
+        //     .get()
+        //     .isTrigger = true;
+        // ECSManager::setComponentToEntity(Collectible(1),
+        // collectibleEntityId);
+
+        if (this->stellarSystem.has_value() &&
+            this->stellarSystem.value() != nullptr &&
+            this->verletSystem.has_value()) {
+            this->stellarSystem.value()->initEarthInterior(
+                *this->verletSystem.value(), this->totalCollectibles);
         }
-
-        SceneObject starObject("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
-                               *starMeshOpt.value());
-
-        starObject.setAlbedo(glm::vec3(1.0f, 0.9f, 0.2f));
-        starObject.setMetallic(0.0f);
-        starObject.setRoughness(0.6f);
-
-        NodeId collectibleNodeId = this->getScene().addMesh(starObject);
-
-        EntityId collectibleEntityId = ECSManager::generateEntityId();
-
-        glm::vec3 collectiblePosition = glm::vec3(205.0f, 200.0f, 200.0f);
-
-        float collectibleRadius = 1.0f;
-
-        ECSManager::setComponentToEntity(Noded(collectibleNodeId),
-                                         collectibleEntityId);
-        ECSManager::setComponentToEntity(Positionable(collectiblePosition),
-                                         collectibleEntityId);
-
-        ECSManager::setComponentToEntity(VerletBody(collectiblePosition,
-                                                    glm::vec3(0.0f),
-                                                    collectibleRadius, true),
-                                         collectibleEntityId);
-        ECSManager::getComponentOfEntity<VerletBody>(collectibleEntityId)
-            .value()
-            .get()
-            .isTrigger = true;
-        ECSManager::setComponentToEntity(Collectible(1), collectibleEntityId);
     }
 
     void initInputs() {
@@ -225,6 +233,22 @@ class Moteur : public GameEngine {
             }));
 
         controls.addKeyPressedCallback(
+            GLFW_KEY_T, new KeyCallback([this](float deltaTime) {
+                glm::vec3 &pos = ECSManager::getComponentOfEntity<Positionable>(
+                                     this->characterEntityId)
+                                     .value()
+                                     .get()
+                                     .pos;
+                VerletBody &body = ECSManager::getComponentOfEntity<VerletBody>(
+                                       this->characterEntityId)
+                                       .value();
+
+                pos = {1000, 400, 0};
+                body.last_position = pos;
+                body.acceleration = {};
+            }));
+
+        controls.addKeyPressedCallback(
             GLFW_KEY_X, new KeyCallback([this](float deltaTime) {
                 if (!this->stellarSystem.has_value() ||
                     this->stellarSystem.value() == nullptr)
@@ -265,7 +289,7 @@ class Moteur : public GameEngine {
 
                 att.clear();
                 if (gravityToggled) {
-                    att.addDirectionAttraction(glm::vec3(0, -1, 0), 20.0f);
+                    att.addDirectionAttraction(glm::vec3(-1, 0, 0), 20.0f);
                 } else {
                     this->stellarSystem.value()->setSystemAttraction(
                         this->characterEntityId);
