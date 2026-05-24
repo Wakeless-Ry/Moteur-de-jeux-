@@ -164,7 +164,7 @@ class StellarSystem {
 
         this->scene.setTransform(
             this->planetPipe,
-            translate(1, 0, 0).rotationZ(90).scale(1.f / planetSize));
+            translate(0.f, 0.f, -1.f).rotationX(90.f).scale(4.f / planetSize));
 
         if (glm::distance(moonPos, pos) > this->moonSize * 1.5) {
             this->moonRevolutionAngle += moonRevolutionRatio * deltaSpeed;
