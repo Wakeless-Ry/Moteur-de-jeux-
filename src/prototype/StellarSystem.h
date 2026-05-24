@@ -201,7 +201,7 @@ class StellarSystem {
         attracted.addBodyAttraction(this->starEntityId, AttractionMode::INWARD,
                                     starMass);
         attracted.addBodyAttraction(this->planetEntityId,
-                                    AttractionMode::INWARD, planetMass);
+                                    AttractionMode::INWARD, planetMass / 10);
         attracted.addBodyAttraction(this->moonEntityId, AttractionMode::INWARD,
                                     moonMass);
     }
