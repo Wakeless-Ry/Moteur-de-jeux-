@@ -191,6 +191,56 @@ class StellarSystem {
                 .pos;
     }
 
+    bool isNearPipe(const glm::vec3 &playerPos, float triggerDist) {
+        const float triggerDist2 = triggerDist * triggerDist;
+
+        auto nearPipe = [&](NodeId id) {
+            auto opt = this->scene.getTransform(id);
+            if (!opt.has_value()) {
+                return false;
+            }
+
+            const glm::vec3 pipePos = opt.value().getPosition();
+            const glm::vec3 d = pipePos - playerPos;
+            const float dist2 = glm::dot(d, d);
+            return dist2 <= triggerDist2;
+        };
+
+        return nearPipe(this->starPipe) || nearPipe(this->planetPipe) ||
+               nearPipe(this->moonPipe);
+    }
+
+    bool getNearestPipePos(const glm::vec3 &playerPos, float triggerDist,
+                           glm::vec3 &outPipePos) {
+        if (triggerDist <= 0.0f)
+            return false;
+
+        float bestDist2 = triggerDist * triggerDist;
+        bool found = false;
+
+        auto consider = [&](NodeId pipeNode) {
+            auto opt = scene.getTransform(pipeNode);
+            if (!opt.has_value())
+                return;
+
+            const glm::vec3 pipePos = opt.value().getPosition();
+            const glm::vec3 d = pipePos - playerPos;
+            const float dist2 = glm::dot(d, d);
+
+            if (dist2 <= bestDist2) {
+                bestDist2 = dist2;
+                outPipePos = pipePos;
+                found = true;
+            }
+        };
+
+        consider(starPipe);
+        consider(planetPipe);
+        consider(moonPipe);
+
+        return found;
+    }
+
     void setSystemAttraction(EntityId id) {
         if (!ECSManager::getComponentOfEntity<Attracted>(id).has_value()) {
             ECSManager::setComponentToEntity(Attracted(), id);

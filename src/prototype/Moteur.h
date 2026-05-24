@@ -32,10 +32,13 @@ class Moteur : public GameEngine {
     std::optional<std::shared_ptr<Verlet>> verletSystem;
 
     float speed = 1.;
+    bool gravityToggled = false;
 
     Hud hud;
     int totalCollectibles = 10;
     VelocityIndicatorHud velHud;
+
+    Hud pressXHud;
 
     void init() override {
         this->initSystems();
@@ -47,6 +50,8 @@ class Moteur : public GameEngine {
         this->initInputs();
         this->getCamera().setTargetDistance(10);
         this->hud.init();
+        this->pressXHud.init("shaders/hud_vs.glsl", "shaders/hud_fs.glsl",
+                             "assets/textures/press_x.png");
         this->velHud.init();
     }
 
@@ -218,6 +223,54 @@ class Moteur : public GameEngine {
                 att.clear();
                 att.addDirectionAttraction({-1, 0, 0}, 20);
             }));
+
+        controls.addKeyPressedCallback(
+            GLFW_KEY_X, new KeyCallback([this](float deltaTime) {
+                if (!this->stellarSystem.has_value() ||
+                    this->stellarSystem.value() == nullptr)
+                    return;
+
+                auto posOpt = ECSManager::getComponentOfEntity<Positionable>(
+                    this->characterEntityId);
+                auto bodyOpt = ECSManager::getComponentOfEntity<VerletBody>(
+                    this->characterEntityId);
+                auto attOpt = ECSManager::getComponentOfEntity<Attracted>(
+                    this->characterEntityId);
+
+                if (!posOpt.has_value() || !bodyOpt.has_value() ||
+                    !attOpt.has_value())
+                    return;
+
+                Positionable &p = posOpt.value().get();
+                VerletBody &b = bodyOpt.value();
+                Attracted &att = attOpt.value();
+
+                const glm::vec3 playerPos = p.pos;
+
+                glm::vec3 pipePos(0.0f);
+                const float triggerDist = 6.0f;
+                if (!this->stellarSystem.value()->getNearestPipePos(
+                        playerPos, triggerDist, pipePos))
+                    return;
+
+                const glm::vec3 teleportTargetPos = 2.0f * pipePos - playerPos;
+
+                p.pos = teleportTargetPos;
+                p.shouldTransform = true;
+
+                b.last_position = teleportTargetPos;
+                b.acceleration = glm::vec3(0.0f);
+
+                gravityToggled = !gravityToggled;
+
+                att.clear();
+                if (gravityToggled) {
+                    att.addDirectionAttraction(glm::vec3(0, -1, 0), 20.0f);
+                } else {
+                    this->stellarSystem.value()->setSystemAttraction(
+                        this->characterEntityId);
+                }
+            }));
     }
 
     void processInput(float deltaTime) override {}
@@ -263,10 +316,40 @@ class Moteur : public GameEngine {
                  spacing, maxWidth);
 
         hud.endFrame();
+
+        bool nearPipe = false;
+
+        auto posOpt = ECSManager::getComponentOfEntity<Positionable>(
+            this->characterEntityId);
+
+        if (posOpt.has_value() && this->stellarSystem.has_value() &&
+            this->stellarSystem.value() != nullptr) {
+
+            const glm::vec3 playerPos = posOpt.value().get().pos;
+            nearPipe = this->stellarSystem.value()->isNearPipe(playerPos, 6.0f);
+        }
+
+        if (nearPipe) {
+            const int screenW = (int)this->getCamera().getScreenWidth();
+            const int screenH = (int)this->getCamera().getScreenHeight();
+
+            const int sizePx = 96;
+            const int marginPx = 20;
+
+            const int x = screenW - marginPx - sizePx;
+            const int y = screenH - marginPx - sizePx;
+
+            pressXHud.beginFrame(screenW, screenH);
+            pressXHud.draw(1, 1, x, y, sizePx, 0, sizePx);
+            pressXHud.endFrame();
+        }
         velHud.render(this->getCamera(), this->characterEntityId, deltaTime);
     }
 
-    void cleanUp() override { hud.cleanup(); }
+    void cleanUp() override {
+        hud.cleanup();
+        pressXHud.cleanup();
+    }
 
   public:
     Moteur(GLFWwindow *window, uint width, uint height)
