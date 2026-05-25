@@ -77,7 +77,6 @@ class StellarSystem {
         SceneObject celestialObject = SceneObject(
             "shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl", *ballMesh);
 
-        // celestialObject.setAlbedo({1, 1, 1});
         celestialObject.addAlbedoMap(AssetManager::loadTexture(texturePath));
         celestialObject.setMetallic(0.5);
         celestialObject.setRoughness(0.4);
@@ -157,7 +156,6 @@ class StellarSystem {
         ctx.pbrRoot = scene.addBasicNodeAsChild(ctx.interiorRoot).value();
         ctx.collectRoot = scene.addBasicNodeAsChild(ctx.interiorRoot).value();
 
-        // --- floor ---
         const float floorThickness = 2.0f;
         addStaticColliderCuboid(
             verletSystem, ctx.interiorRoot, glm::vec3(0.1f, 1.0f, 0.1f),
@@ -167,7 +165,6 @@ class StellarSystem {
             ctx.earthCenter +
                 glm::vec3(+ctx.halfSize, ctx.floorY, +ctx.halfSize));
 
-        // --- outer walls (unchanged, 3 sides — front wall kept open) ---
         addStaticColliderCuboid(
             verletSystem, ctx.interiorRoot, glm::vec3(0.8f, 0.0f, 0.1f),
             ctx.earthCenter + glm::vec3(ctx.halfSize,
@@ -192,16 +189,10 @@ class StellarSystem {
             ctx.earthCenter +
                 glm::vec3(ctx.halfSize, ctx.floorY, -ctx.halfSize));
 
-        // ---------------------------------------------------------------
-        // Dividing walls — 10 units tall, floating 3 units above the floor
-        // They run along the two interior axes, stopping short of the
-        // platform edges so corridors remain open.
-        // ---------------------------------------------------------------
         const float wallHeight = 10.0f;
         const float wallThick = 2.0f;
-        const float wallGapFloor = 0.0f; // gap between floor and wall bottom
-        const float wallGapEdge =
-            8.0f; // gap between platform edge and wall end
+        const float wallGapFloor = 0.0f;
+        const float wallGapEdge = 8.0f;
 
         const float wallBottom = ctx.floorY + wallGapFloor;
         const float wallTop = wallBottom + wallHeight;
@@ -209,13 +200,11 @@ class StellarSystem {
         const float hs = ctx.halfSize;
         const glm::vec3 &C = ctx.earthCenter;
 
-        // Vertical divider (runs along Z axis, separates left/right columns)
         addStaticColliderCuboid(
             verletSystem, ctx.interiorRoot, glm::vec3(0.5f, 0.5f, 0.5f),
             C + glm::vec3(-wallThick * 0.5f, wallBottom, -hs + wallGapEdge),
             C + glm::vec3(+wallThick * 0.5f, wallTop, hs - wallGapEdge));
 
-        // Horizontal divider (runs along X axis, separates front/back rows)
         addStaticColliderCuboid(
             verletSystem, ctx.interiorRoot, glm::vec3(0.5f, 0.5f, 0.5f),
             C + glm::vec3(-hs + wallGapEdge, wallBottom, -wallThick * 0.5f),
@@ -226,7 +215,6 @@ class StellarSystem {
 
     void buildBallPitRoom(Verlet &verletSystem,
                           const EarthInteriorContext &ctx) {
-        // Bottom-left corner  (-X, -Z)
         const float cornerOffset = ctx.halfSize * 0.55f;
         const glm::vec3 pitCenter =
             ctx.earthCenter + glm::vec3(-cornerOffset, 0.0f, -cornerOffset);
