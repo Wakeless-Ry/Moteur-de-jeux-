@@ -308,15 +308,19 @@ class StellarSystem {
     }
 
     void buildPbrRoom(const EarthInteriorContext &ctx) {
-        // Top-left corner  (-X, +Z)
-        const float cornerOffset = ctx.halfSize * 0.55f;
         const glm::vec3 pbrCenter =
-            ctx.earthCenter + glm::vec3(-cornerOffset, 0.0f, +cornerOffset);
+            ctx.earthCenter +
+            glm::vec3(-ctx.halfSize * 0.5f, 0.0f, +ctx.halfSize * 0.5f);
+
+        // Lumière au centre
+        scene.addLightToScene(
+            Light(glm::vec3(pbrCenter.x, ctx.floorY + 10.0f, pbrCenter.z),
+                  glm::vec3(350.0f)));
 
         auto addPbrStatic = [&](const char *meshPath, const glm::vec3 &pos,
                                 const char *albedo, const char *normal,
                                 const char *metallic, const char *roughness,
-                                const char *ao) {
+                                const char *ao, const glm::vec3 &rotDeg) {
             auto meshOpt = AssetManager::loadMesh(meshPath);
             if (!meshOpt.has_value())
                 return;
@@ -336,36 +340,61 @@ class StellarSystem {
                 obj.addAoMap(AssetManager::loadTexture(ao));
 
             obj.setMetallic(0.0f);
-            obj.setRoughness(0.4f);
+            obj.setRoughness(0.6f);
 
             NodeId id = scene.addMeshAsChild(ctx.pbrRoot, obj).value();
-            scene.setTransform(id, translate(pos).scale(4.0f));
+            scene.setTransform(id, translate(pos)
+                                       .rotationX(rotDeg.x)
+                                       .rotationY(rotDeg.y)
+                                       .rotationZ(rotDeg.z)
+                                       .scale(4.0f));
         };
 
-        addPbrStatic("assets/meshes/cube.obj",
-                     pbrCenter + glm::vec3(-4.0f, ctx.floorY + 3.0f, -12.0f),
-                     "assets/textures/rustediron2_albedo.png",
-                     "assets/textures/rustediron2_normal.png",
-                     "assets/textures/rustediron2_metallic.png",
-                     "assets/textures/rustediron2_roughness.png", nullptr);
+        const float r = 12.0f;
+        const float y = ctx.floorY + 3.0f;
 
-        addPbrStatic("assets/meshes/sphere.obj",
-                     pbrCenter + glm::vec3(4.0f, ctx.floorY + 3.0f, -4.0f),
-                     "assets/textures/fancy-carved-wood_albedo.png",
-                     "assets/textures/fancy-carved-wood_normal.png",
-                     "assets/textures/fancy-carved-wood_metallic.png",
-                     "assets/textures/fancy-carved-wood_roughness.png",
-                     "assets/textures/fancy-carved-wood_ao.png");
+        const glm::vec3 p0(pbrCenter.x + r, y, pbrCenter.z);
+        const glm::vec3 p1(pbrCenter.x, y, pbrCenter.z + r);
+        const glm::vec3 p2(pbrCenter.x - r, y, pbrCenter.z);
+        const glm::vec3 p3(pbrCenter.x, y, pbrCenter.z - r);
 
-        addPbrStatic("assets/meshes/star.obj",
-                     pbrCenter + glm::vec3(-4.0f, ctx.floorY + 3.0f, 4.0f),
-                     "assets/textures/character.jpg", nullptr, nullptr, nullptr,
-                     nullptr);
+        addPbrStatic(
+            "assets/meshes/cube.obj", p0,
+            "assets/textures/MetalPlates/MetalPlates_Color.png",
+            "assets/textures/MetalPlates/MetalPlates_NormalGL.png",
+            "assets/textures/MetalPlates/MetalPlates_Metalness.png",
+            "assets/textures/MetalPlates/MetalPlates006_1K-PNG_Roughness.png",
+            nullptr, glm::vec3(0.0f, 0.0f, 0.0f));
 
-        addPbrStatic("assets/meshes/pipe.obj",
-                     pbrCenter + glm::vec3(4.0f, ctx.floorY + 3.0f, 12.0f),
-                     "assets/textures/earth.jpg", nullptr, nullptr, nullptr,
-                     nullptr);
+        addPbrStatic(
+            "assets/meshes/big_sphere.obj", p1,
+            "assets/textures/ornate-celtic-gold-bl/"
+            "ornate-celtic-gold-albedo.png",
+            "assets/textures/ornate-celtic-gold-bl/"
+            "ornate-celtic-gold-normal-ogl.png",
+            nullptr,
+            "assets/textures/ornate-celtic-gold-bl/"
+            "ornate-celtic-gold-roughness.png",
+            "assets/textures/ornate-celtic-gold-bl/ornate-celtic-gold-ao.png",
+            glm::vec3(90.0f, 0.0f, 0.0f));
+
+        addPbrStatic("assets/meshes/cube.obj", p2,
+                     "assets/textures/PaintedMetal/PaintedMetal_Color.png",
+                     "assets/textures/PaintedMetal/PaintedMetal_NormalGL.png",
+                     "assets/textures/PaintedMetal/PaintedMetal_Metalness.png",
+                     "assets/textures/PaintedMetal/PaintedMetal_Roughness.png",
+                     nullptr, glm::vec3(0.0f, 0.0f, 0.0f));
+
+        addPbrStatic("assets/meshes/big_sphere.obj", p3,
+                     "assets/textures/ChristmasTreeOrnament/"
+                     "ChristmasTreeOrnament_Color.png",
+                     "assets/textures/ChristmasTreeOrnament/"
+                     "ChristmasTreeOrnament_NormalGL.png",
+                     "assets/textures/ChristmasTreeOrnament/"
+                     "ChristmasTreeOrnament_Metalness.png",
+                     "assets/textures/ChristmasTreeOrnament/"
+                     "ChristmasTreeOrnament_Roughness.png",
+                     nullptr, glm::vec3(90.0f, 0.0f, 0.0f));
     }
 
     void buildCollectiblesRoom(const EarthInteriorContext &ctx,

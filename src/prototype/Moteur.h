@@ -11,6 +11,7 @@
 #include "src/VelocityIndicatorHud.h"
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/Attracted.h"
+#include "src/ecs/components/Collectible.h"
 #include "src/ecs/components/Inventory.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/VerletBody.h"
@@ -27,13 +28,14 @@ class Moteur : public GameEngine {
     EntityId characterEntityId;
     NodeId characterNodeId;
 
-    std::optional<std::shared_ptr<StellarSystem>> stellarSystem;
+    std::optional<StellarSystem *> stellarSystem;
     std::optional<std::shared_ptr<Verlet>> verletSystem;
 
     float speed = 1.;
+    bool gravityToggled = false;
 
     Hud hud;
-    int totalCollectibles = 5;
+    int totalCollectibles = 0;
     VelocityIndicatorHud velHud;
 
     Hud pressXHud;
@@ -65,12 +67,14 @@ class Moteur : public GameEngine {
         this->getSystemUpdater()->addSystem(std::make_shared<ContinuousLOD>(
             this->getScene(), this->getCamera()));
 
-        this->stellarSystem = std::make_shared<StellarSystem>(this->getScene());
+        this->stellarSystem = new StellarSystem(this->getScene());
     }
 
     void initScene() {
         this->getScene().addLightToScene(
             Light(glm::vec3(0, 0, 0), glm::vec3(10000)));
+        this->getScene().addLightToScene(
+            Light(glm::vec3(1000, 400, 0), glm::vec3(100)));
 
         std::shared_ptr<Mesh> ballMesh =
             AssetManager::loadMesh("assets/meshes/big_sphere.obj").value();
@@ -145,6 +149,9 @@ class Moteur : public GameEngine {
         // ECSManager::setComponentToEntity(Collectible(1),
         // collectibleEntityId);
 
+        // Le total est compté par initEarthInterior() selon les spawns réels.
+        this->totalCollectibles = 0;
+
         if (this->stellarSystem.has_value() &&
             this->stellarSystem.value() != nullptr &&
             this->verletSystem.has_value()) {
@@ -204,8 +211,9 @@ class Moteur : public GameEngine {
                                        this->characterEntityId)
                                        .value();
 
-                body.acceleration +=
-                    this->getCamera().getUp() * 500 * body.size;
+                pos += this->getCamera().getFront() * 10 * body.size;
+                body.last_position = pos;
+                body.acceleration = {};
             }));
 
         controls.addKeyDownCallback(GLFW_KEY_KP_ADD,
@@ -217,6 +225,15 @@ class Moteur : public GameEngine {
                                     new KeyCallback([this](float deltaTime) {
                                         this->getCamera().getFurther(deltaTime);
                                     }));
+
+        controls.addKeyPressedCallback(
+            GLFW_KEY_C, new KeyCallback([this](float deltaTime) {
+                Attracted &att = ECSManager::getComponentOfEntity<Attracted>(
+                                     this->characterEntityId)
+                                     .value();
+                att.clear();
+                att.addDirectionAttraction({-1, 0, 0}, 20);
+            }));
 
         controls.addKeyPressedCallback(
             GLFW_KEY_T, new KeyCallback([this](float deltaTime) {
@@ -232,11 +249,6 @@ class Moteur : public GameEngine {
                 pos = {1000, 400, 0};
                 body.last_position = pos;
                 body.acceleration = {};
-            }));
-
-        controls.addKeyPressedCallback(
-            GLFW_KEY_P, new KeyCallback([this](float deltaTime) {
-                this->verletSystem->get()->toggleCuboids(this->getScene());
             }));
 
         controls.addKeyPressedCallback(
@@ -268,23 +280,19 @@ class Moteur : public GameEngine {
                         playerPos, triggerDist, pipePos))
                     return;
 
-                Positionable planet =
-                    ECSManager::getComponentOfEntity<Positionable>(
-                        this->stellarSystem.value()->getPlanetId())
-                        .value();
+                const glm::vec3 teleportTargetPos = 2.0f * pipePos - playerPos;
 
-                p.pos = planet.pos;
+                p.pos = teleportTargetPos;
                 p.shouldTransform = true;
 
-                b.last_position = planet.pos;
+                b.last_position = teleportTargetPos;
                 b.acceleration = glm::vec3(0.0f);
 
-                static bool gravityToggled = false;
                 gravityToggled = !gravityToggled;
 
                 att.clear();
                 if (gravityToggled) {
-                    att.addDirectionAttraction(glm::vec3(0, -1, 0), 20.0f);
+                    att.addDirectionAttraction(glm::vec3(-1, 0, 0), 20.0f);
                 } else {
                     this->stellarSystem.value()->setSystemAttraction(
                         this->characterEntityId);
