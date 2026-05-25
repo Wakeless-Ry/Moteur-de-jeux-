@@ -1,3 +1,4 @@
+#include <cmath>
 #include <memory>
 #include <optional>
 
@@ -7,7 +8,6 @@
 
 #include "src/AssetManager.h"
 #include "src/GlobalScene.h"
-#include "src/Texture.h"
 #include "src/Transform.h"
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/Attracted.h"
@@ -148,7 +148,7 @@ class StellarSystem {
 
         ctx.earthCenter = earthT.value().getPosition();
         ctx.floorY = ctx.earthCenter.y - 20.0f;
-        ctx.halfSize = 22.0f;
+        ctx.halfSize = 60.0f / sqrt(2.f);
 
         scene.addLightToScene(
             Light(ctx.earthCenter + glm::vec3(0, 15, 0), glm::vec3(250.0f)));
@@ -167,6 +167,30 @@ class StellarSystem {
             ctx.earthCenter +
                 glm::vec3(+ctx.halfSize, ctx.floorY, +ctx.halfSize));
 
+        addStaticColliderCuboid(
+            verletSystem, ctx.interiorRoot, glm::vec3(0.8, 0, 0.1),
+            ctx.earthCenter + glm::vec3(ctx.halfSize,
+                                        ctx.floorY + floorThickness,
+                                        ctx.halfSize + floorThickness),
+            ctx.earthCenter +
+                glm::vec3(-ctx.halfSize, ctx.floorY, ctx.halfSize));
+
+        addStaticColliderCuboid(
+            verletSystem, ctx.interiorRoot, glm::vec3(0.8, 0, 0.1),
+            ctx.earthCenter + glm::vec3(ctx.halfSize,
+                                        ctx.floorY + floorThickness,
+                                        ctx.halfSize + floorThickness),
+            ctx.earthCenter +
+                glm::vec3(ctx.halfSize, ctx.floorY, -ctx.halfSize));
+
+        addStaticColliderCuboid(
+            verletSystem, ctx.interiorRoot, glm::vec3(0.8, 0, 0.1),
+            ctx.earthCenter + glm::vec3(-ctx.halfSize,
+                                        ctx.floorY + floorThickness,
+                                        -ctx.halfSize + floorThickness),
+            ctx.earthCenter +
+                glm::vec3(ctx.halfSize, ctx.floorY, -ctx.halfSize));
+
         return ctx;
     }
 
@@ -177,7 +201,7 @@ class StellarSystem {
         const float pitHalfX = 9.0f;
         const float pitHalfZ = 14.0f;
         const float wallT = 2.0f;
-        const float wallH = 14.0f;
+        const float wallH = 2.0f;
 
         const float pitMinX = pitCenter.x - pitHalfX;
         const float pitMaxX = pitCenter.x + pitHalfX;
@@ -523,8 +547,8 @@ class StellarSystem {
         if (ctx.interiorRoot == 0)
             return;
 
-        // buildBallPitRoom(verletSystem, ctx);
-        // buildPbrRoom(ctx);
+        buildBallPitRoom(verletSystem, ctx);
+        buildPbrRoom(ctx);
         buildCollectiblesRoom(ctx, totalCollectibles);
     }
 

@@ -219,15 +219,6 @@ class Moteur : public GameEngine {
                                     }));
 
         controls.addKeyPressedCallback(
-            GLFW_KEY_C, new KeyCallback([this](float deltaTime) {
-                Attracted &att = ECSManager::getComponentOfEntity<Attracted>(
-                                     this->characterEntityId)
-                                     .value();
-                att.clear();
-                att.addDirectionAttraction({-1, 0, 0}, 20);
-            }));
-
-        controls.addKeyPressedCallback(
             GLFW_KEY_T, new KeyCallback([this](float deltaTime) {
                 glm::vec3 &pos = ECSManager::getComponentOfEntity<Positionable>(
                                      this->characterEntityId)
