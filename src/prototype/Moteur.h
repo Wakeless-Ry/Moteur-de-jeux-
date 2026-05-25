@@ -3,6 +3,7 @@
 #include <memory>
 #include <optional>
 
+#include "glm/detail/func_geometric.hpp"
 #include "glm/detail/type_vec.hpp"
 #include "src/AssetManager.h"
 #include "src/Controls.h"
@@ -27,12 +28,12 @@ class Moteur : public GameEngine {
 
     EntityId characterEntityId;
     NodeId characterNodeId;
+    NodeId exteriorNodeId;
 
-    std::optional<StellarSystem *> stellarSystem;
+    std::optional<std::shared_ptr<StellarSystem>> stellarSystem;
     std::optional<std::shared_ptr<Verlet>> verletSystem;
 
-    float speed = 1.;
-    bool gravityToggled = false;
+    bool movementFloor = false;
 
     Hud hud;
     int totalCollectibles = 0;
@@ -67,7 +68,8 @@ class Moteur : public GameEngine {
         this->getSystemUpdater()->addSystem(std::make_shared<ContinuousLOD>(
             this->getScene(), this->getCamera()));
 
-        this->stellarSystem = new StellarSystem(this->getScene());
+        this->stellarSystem =
+            std::make_shared<StellarSystem>(this->getScene(), this->getPVS());
     }
 
     void initScene() {
@@ -158,6 +160,9 @@ class Moteur : public GameEngine {
             this->stellarSystem.value()->initEarthInterior(
                 *this->verletSystem.value(), this->totalCollectibles);
         }
+
+        this->exteriorNodeId = this->getPVS().addScene();
+        this->getPVS().init(this->exteriorNodeId);
     }
 
     void initInputs() {
@@ -178,7 +183,30 @@ class Moteur : public GameEngine {
                                        this->characterEntityId)
                                        .value();
 
-                body.acceleration += this->getCamera().getFront() * 10;
+                glm::vec3 front = this->getCamera().getFront();
+                if (this->movementFloor) {
+                    front = front - glm::dot(front, glm::vec3{0, 1, 0}) *
+                                        glm::vec3{0, 1, 0};
+                    front = glm::normalize(front);
+                }
+                body.acceleration += front * 10;
+            }));
+
+        controls.addKeyDownCallback(
+            GLFW_KEY_A, new KeyCallback([this](float deltaTime) {
+                VerletBody &body = ECSManager::getComponentOfEntity<VerletBody>(
+                                       this->characterEntityId)
+                                       .value();
+
+                glm::vec3 front = this->getCamera().getFront();
+                if (this->movementFloor) {
+                    front = front - glm::dot(front, glm::vec3{0, 1, 0}) *
+                                        glm::vec3{0, 1, 0};
+                    front = glm::normalize(front);
+                    front =
+                        glm::normalize(glm::cross(front, glm::vec3{0, 1, 0}));
+                }
+                body.acceleration -= front * 10;
             }));
 
         controls.addKeyDownCallback(
@@ -187,18 +215,31 @@ class Moteur : public GameEngine {
                                        this->characterEntityId)
                                        .value();
 
-                body.acceleration -= this->getCamera().getFront() * 10;
+                glm::vec3 front = this->getCamera().getFront();
+                if (this->movementFloor) {
+                    front = front - glm::dot(front, glm::vec3{0, 1, 0}) *
+                                        glm::vec3{0, 1, 0};
+                    front = glm::normalize(front);
+                }
+                body.acceleration -= front * 10;
             }));
 
         controls.addKeyDownCallback(
-            GLFW_KEY_Q, new KeyCallback([this](float deltaTime) {
-                this->getCamera().tilt(deltaTime, false);
-            }));
+            GLFW_KEY_D, new KeyCallback([this](float deltaTime) {
+                VerletBody &body = ECSManager::getComponentOfEntity<VerletBody>(
+                                       this->characterEntityId)
+                                       .value();
 
-        controls.addKeyDownCallback(GLFW_KEY_E,
-                                    new KeyCallback([this](float deltaTime) {
-                                        this->getCamera().tilt(deltaTime, true);
-                                    }));
+                glm::vec3 front = this->getCamera().getFront();
+                if (this->movementFloor) {
+                    front = front - glm::dot(front, glm::vec3{0, 1, 0}) *
+                                        glm::vec3{0, 1, 0};
+                    front = glm::normalize(front);
+                    front =
+                        glm::normalize(glm::cross(front, glm::vec3{0, 1, 0}));
+                }
+                body.acceleration += front * 10;
+            }));
 
         controls.addKeyPressedCallback(
             GLFW_KEY_SPACE, new KeyCallback([this](float deltaTime) {
@@ -215,6 +256,16 @@ class Moteur : public GameEngine {
                 body.last_position = pos;
                 body.acceleration = {};
             }));
+
+        controls.addKeyDownCallback(
+            GLFW_KEY_Q, new KeyCallback([this](float deltaTime) {
+                this->getCamera().tilt(deltaTime, false);
+            }));
+
+        controls.addKeyDownCallback(GLFW_KEY_E,
+                                    new KeyCallback([this](float deltaTime) {
+                                        this->getCamera().tilt(deltaTime, true);
+                                    }));
 
         controls.addKeyDownCallback(GLFW_KEY_KP_ADD,
                                     new KeyCallback([this](float deltaTime) {
@@ -252,6 +303,16 @@ class Moteur : public GameEngine {
             }));
 
         controls.addKeyPressedCallback(
+            GLFW_KEY_P, new KeyCallback([this](float deltaTime) {
+                this->stellarSystem.value()->toggleWalls();
+            }));
+
+        controls.addKeyPressedCallback(GLFW_KEY_O,
+                                       new KeyCallback([this](float deltaTime) {
+                                           this->stellarSystem.value()->next();
+                                       }));
+
+        controls.addKeyPressedCallback(
             GLFW_KEY_X, new KeyCallback([this](float deltaTime) {
                 if (!this->stellarSystem.has_value() ||
                     this->stellarSystem.value() == nullptr)
@@ -280,20 +341,27 @@ class Moteur : public GameEngine {
                         playerPos, triggerDist, pipePos))
                     return;
 
-                const glm::vec3 teleportTargetPos = 2.0f * pipePos - playerPos;
+                auto planet = ECSManager::getComponentOfEntity<Positionable>(
+                                  this->stellarSystem.value()->getPlanetId())
+                                  .value()
+                                  .get();
 
-                p.pos = teleportTargetPos;
-                p.shouldTransform = true;
+                glm::vec3 newPos = planet.pos + vec3(20, -0, 20);
+                p.pos = newPos;
+                b.last_position = newPos;
+                b.acceleration = {};
 
-                b.last_position = teleportTargetPos;
-                b.acceleration = glm::vec3(0.0f);
+                static bool isInside = false;
+                isInside = !isInside;
 
-                gravityToggled = !gravityToggled;
+                this->movementFloor = !this->movementFloor;
 
                 att.clear();
-                if (gravityToggled) {
-                    att.addDirectionAttraction(glm::vec3(-1, 0, 0), 20.0f);
+                if (isInside) {
+                    att.addDirectionAttraction(glm::vec3(0, -1, 0), 20.0f);
+                    this->stellarSystem.value()->enter();
                 } else {
+                    this->getPVS().enterScene(this->exteriorNodeId);
                     this->stellarSystem.value()->setSystemAttraction(
                         this->characterEntityId);
                 }

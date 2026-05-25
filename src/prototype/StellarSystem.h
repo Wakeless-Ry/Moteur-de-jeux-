@@ -8,6 +8,7 @@
 
 #include "src/AssetManager.h"
 #include "src/GlobalScene.h"
+#include "src/PVS.h"
 #include "src/Transform.h"
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/Attracted.h"
@@ -22,6 +23,7 @@
 #include "src/prototype/Cuboid.h"
 
 class StellarSystem {
+    PVS &pvs;
     GlobalScene &scene;
     NodeId stellarSystem;
 
@@ -49,7 +51,7 @@ class StellarSystem {
     const float moonMass = 50000;
     const float moonSize = 25;
 
-    const float speed = 0;
+    const float speed = 1;
 
     const float starRotationRatio = 0.2;
 
@@ -66,6 +68,10 @@ class StellarSystem {
 
     float moonRevolutionAngle = 0;
     float moonRotationAngle = 0;
+
+    std::array<NodeId, 4> roomId;
+    NodeId wallsId;
+    bool hiddenWalls;
 
     void registerCelestialObject(const char *texturePath, NodeId &parent,
                                  NodeId &nodeParent, NodeId &node, NodeId &pipe,
@@ -111,6 +117,7 @@ class StellarSystem {
         float floorY;
         float halfSize;
         NodeId interiorRoot;
+        NodeId spawnRoot;
         NodeId ballPitRoot;
         NodeId pbrRoot;
         NodeId collectRoot;
@@ -146,15 +153,30 @@ class StellarSystem {
 
         ctx.earthCenter = earthT.value().getPosition();
         ctx.floorY = ctx.earthCenter.y - 20.0f;
-        ctx.halfSize = 60.0f / sqrt(2.f);
+        ctx.halfSize = 58;
 
         scene.addLightToScene(
             Light(ctx.earthCenter + glm::vec3(0, 15, 0), glm::vec3(250.0f)));
 
-        ctx.interiorRoot = scene.addBasicNode();
-        ctx.ballPitRoot = scene.addBasicNodeAsChild(ctx.interiorRoot).value();
-        ctx.pbrRoot = scene.addBasicNodeAsChild(ctx.interiorRoot).value();
-        ctx.collectRoot = scene.addBasicNodeAsChild(ctx.interiorRoot).value();
+        ctx.interiorRoot = pvs.addScene();
+        ctx.spawnRoot = pvs.addScene();
+        this->roomId[0] = ctx.spawnRoot;
+        ctx.pbrRoot = pvs.addScene();
+        this->roomId[1] = ctx.pbrRoot;
+        ctx.ballPitRoot = pvs.addScene();
+        this->roomId[2] = ctx.ballPitRoot;
+        ctx.collectRoot = pvs.addScene();
+        this->roomId[3] = ctx.collectRoot;
+
+        pvs.linkScenes(ctx.spawnRoot, ctx.pbrRoot);
+        pvs.linkScenes(ctx.pbrRoot, ctx.ballPitRoot);
+        pvs.linkScenes(ctx.ballPitRoot, ctx.collectRoot);
+        pvs.linkScenes(ctx.collectRoot, ctx.spawnRoot);
+
+        pvs.linkScenes(ctx.spawnRoot, ctx.interiorRoot);
+        pvs.linkScenes(ctx.pbrRoot, ctx.interiorRoot);
+        pvs.linkScenes(ctx.ballPitRoot, ctx.interiorRoot);
+        pvs.linkScenes(ctx.collectRoot, ctx.interiorRoot);
 
         const float floorThickness = 2.0f;
         addStaticColliderCuboid(
@@ -164,30 +186,6 @@ class StellarSystem {
                                         -ctx.halfSize),
             ctx.earthCenter +
                 glm::vec3(+ctx.halfSize, ctx.floorY, +ctx.halfSize));
-
-        addStaticColliderCuboid(
-            verletSystem, ctx.interiorRoot, glm::vec3(0.8f, 0.0f, 0.1f),
-            ctx.earthCenter + glm::vec3(ctx.halfSize,
-                                        ctx.floorY + floorThickness,
-                                        ctx.halfSize + floorThickness),
-            ctx.earthCenter +
-                glm::vec3(-ctx.halfSize, ctx.floorY, ctx.halfSize));
-
-        addStaticColliderCuboid(
-            verletSystem, ctx.interiorRoot, glm::vec3(0.8f, 0.0f, 0.1f),
-            ctx.earthCenter + glm::vec3(ctx.halfSize,
-                                        ctx.floorY + floorThickness,
-                                        ctx.halfSize + floorThickness),
-            ctx.earthCenter +
-                glm::vec3(ctx.halfSize, ctx.floorY, -ctx.halfSize));
-
-        addStaticColliderCuboid(
-            verletSystem, ctx.interiorRoot, glm::vec3(0.8f, 0.0f, 0.1f),
-            ctx.earthCenter + glm::vec3(-ctx.halfSize,
-                                        ctx.floorY + floorThickness,
-                                        -ctx.halfSize + floorThickness),
-            ctx.earthCenter +
-                glm::vec3(ctx.halfSize, ctx.floorY, -ctx.halfSize));
 
         const float wallHeight = 10.0f;
         const float wallThick = 2.0f;
@@ -200,13 +198,16 @@ class StellarSystem {
         const float hs = ctx.halfSize;
         const glm::vec3 &C = ctx.earthCenter;
 
+        this->wallsId =
+            this->scene.addBasicNodeAsChild(ctx.interiorRoot).value();
+
         addStaticColliderCuboid(
-            verletSystem, ctx.interiorRoot, glm::vec3(0.5f, 0.5f, 0.5f),
+            verletSystem, this->wallsId, glm::vec3(0.5f, 0.5f, 0.5f),
             C + glm::vec3(-wallThick * 0.5f, wallBottom, -hs + wallGapEdge),
             C + glm::vec3(+wallThick * 0.5f, wallTop, hs - wallGapEdge));
 
         addStaticColliderCuboid(
-            verletSystem, ctx.interiorRoot, glm::vec3(0.5f, 0.5f, 0.5f),
+            verletSystem, this->wallsId, glm::vec3(0.5f, 0.5f, 0.5f),
             C + glm::vec3(-hs + wallGapEdge, wallBottom, -wallThick * 0.5f),
             C + glm::vec3(hs - wallGapEdge, wallTop, +wallThick * 0.5f));
 
@@ -443,7 +444,7 @@ class StellarSystem {
     }
 
   public:
-    StellarSystem(GlobalScene &scene) : scene(scene) {
+    StellarSystem(GlobalScene &scene, PVS &pvs) : scene(scene), pvs(pvs) {
         this->stellarSystem = scene.addBasicNode();
 
         this->registerCelestialObject(
@@ -479,7 +480,7 @@ class StellarSystem {
                 .pos;
 
         if (glm::distance(starPos, pos) > this->starSize * 1.5) {
-            this->starRotationAngle += starRotationRatio * deltaSpeed;
+            // this->starRotationAngle += starRotationRatio * deltaSpeed;
         }
 
         this->scene.setTransform(
@@ -489,8 +490,9 @@ class StellarSystem {
             translate(1, 0, 0).rotationZ(90).scale(1.f / starSize));
 
         if (glm::distance(planetPos, pos) > this->planetSize * 1.5) {
-            this->planetRevolutionAngle += planetRevolutionRatio * deltaSpeed;
-            this->planetRotationAngle += planetRotationRatio * deltaSpeed;
+            // this->planetRevolutionAngle += planetRevolutionRatio *
+            // deltaSpeed; this->planetRotationAngle += planetRotationRatio *
+            // deltaSpeed;
         }
 
         this->scene.setTransform(
@@ -611,4 +613,20 @@ class StellarSystem {
     EntityId getPlanetId() { return this->planetEntityId; }
 
     EntityId getMoonId() { return this->moonEntityId; }
+
+    void enter() { this->pvs.enterScene(this->roomId[0]); }
+
+    void next() {
+        static size_t current = 0;
+
+        current++;
+        current = current % this->roomId.size();
+        this->pvs.enterScene(this->roomId[current]);
+
+        if (this->hiddenWalls) {
+            this->toggleWalls();
+        }
+    }
+
+    void toggleWalls() { this->scene.toggleNode(this->wallsId); }
 };

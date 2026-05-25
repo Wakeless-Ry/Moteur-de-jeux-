@@ -264,9 +264,9 @@ class GlobalScene {
                 !this->hidden[this->idNodeMap[id]];
         }
 
-        void show(NodeId id) { this->hidden[this->idNodeMap[id]] = true; }
+        void show(NodeId id) { this->hidden[this->idNodeMap[id]] = false; }
 
-        void hide(NodeId id) { this->hidden[this->idNodeMap[id]] = false; }
+        void hide(NodeId id) { this->hidden[this->idNodeMap[id]] = true; }
 
         bool hasId(NodeId id) { return this->idNodeMap.count(id); }
     };

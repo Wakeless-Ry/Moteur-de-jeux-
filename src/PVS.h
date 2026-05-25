@@ -33,6 +33,14 @@ class PVS {
   public:
     PVS(GlobalScene &globalScene) : globalScene(globalScene) {}
 
+    void init(NodeId startingScene) {
+        for (NodeId scene : this->scenes) {
+            this->globalScene.hideNode(scene);
+        }
+
+        this->enterScene(startingScene);
+    }
+
     void enterScene(NodeId scene) {
         if (this->currentScene.has_value()) {
             this->hideConnected(this->currentScene.value());
@@ -55,11 +63,16 @@ class PVS {
         NodeId newScene = this->globalScene.addBasicNode();
 
         this->scenes.insert(newScene);
+        this->globalScene.hideNode(newScene);
 
         return newScene;
     }
 
     void removeScene(NodeId scene) {
+        if (this->currentScene == scene) {
+            this->exitScene(scene);
+        }
+
         this->globalScene.removeNode(scene);
         this->scenes.erase(scene);
     }
@@ -67,6 +80,14 @@ class PVS {
     void linkScenes(NodeId first, NodeId second) {
         this->graph[first].insert(second);
         this->graph[second].insert(first);
+
+        if (this->currentScene == first) {
+            this->globalScene.showNode(second);
+        }
+
+        if (this->currentScene == second) {
+            this->globalScene.showNode(first);
+        }
     }
 
     std::optional<NodeId> getCurrentScene() { return currentScene; }
