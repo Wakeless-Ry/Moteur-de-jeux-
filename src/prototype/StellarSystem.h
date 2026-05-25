@@ -155,9 +155,6 @@ class StellarSystem {
         ctx.floorY = ctx.earthCenter.y - 20.0f;
         ctx.halfSize = 58;
 
-        scene.addLightToScene(
-            Light(ctx.earthCenter + glm::vec3(0, 15, 0), glm::vec3(250.0f)));
-
         ctx.interiorRoot = pvs.addScene();
         ctx.spawnRoot = pvs.addScene();
         this->roomId[0] = ctx.spawnRoot;
@@ -315,8 +312,7 @@ class StellarSystem {
 
         // Lumière au centre
         scene.addLightToScene(
-            Light(glm::vec3(pbrCenter.x, ctx.floorY + 10.0f, pbrCenter.z),
-                  glm::vec3(350.0f)));
+            Light(glm::vec3(970, -10, 30), glm::vec3(5000.0f)));
 
         auto addPbrStatic = [&](const char *meshPath, const glm::vec3 &pos,
                                 const char *albedo, const char *normal,

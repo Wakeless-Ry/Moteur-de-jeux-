@@ -74,9 +74,7 @@ class Moteur : public GameEngine {
 
     void initScene() {
         this->getScene().addLightToScene(
-            Light(glm::vec3(0, 0, 0), glm::vec3(10000)));
-        this->getScene().addLightToScene(
-            Light(glm::vec3(1000, 400, 0), glm::vec3(100)));
+            Light(glm::vec3(0, 0, 0), glm::vec3(1000000)));
 
         std::shared_ptr<Mesh> ballMesh =
             AssetManager::loadMesh("assets/meshes/big_sphere.obj").value();
@@ -252,9 +250,8 @@ class Moteur : public GameEngine {
                                        this->characterEntityId)
                                        .value();
 
-                pos += this->getCamera().getFront() * 10 * body.size;
-                body.last_position = pos;
-                body.acceleration = {};
+                body.acceleration +=
+                    this->getCamera().getUp() * 500 * body.size;
             }));
 
         controls.addKeyDownCallback(
@@ -276,15 +273,6 @@ class Moteur : public GameEngine {
                                     new KeyCallback([this](float deltaTime) {
                                         this->getCamera().getFurther(deltaTime);
                                     }));
-
-        controls.addKeyPressedCallback(
-            GLFW_KEY_C, new KeyCallback([this](float deltaTime) {
-                Attracted &att = ECSManager::getComponentOfEntity<Attracted>(
-                                     this->characterEntityId)
-                                     .value();
-                att.clear();
-                att.addDirectionAttraction({-1, 0, 0}, 20);
-            }));
 
         controls.addKeyPressedCallback(
             GLFW_KEY_T, new KeyCallback([this](float deltaTime) {
@@ -341,10 +329,10 @@ class Moteur : public GameEngine {
                         playerPos, triggerDist, pipePos))
                     return;
 
-                auto planet = ECSManager::getComponentOfEntity<Positionable>(
-                                  this->stellarSystem.value()->getPlanetId())
-                                  .value()
-                                  .get();
+                Positionable planet =
+                    ECSManager::getComponentOfEntity<Positionable>(
+                        this->stellarSystem.value()->getPlanetId())
+                        .value();
 
                 glm::vec3 newPos = planet.pos + vec3(20, -0, 20);
                 p.pos = newPos;
