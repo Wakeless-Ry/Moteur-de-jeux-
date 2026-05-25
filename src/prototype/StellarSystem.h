@@ -7,6 +7,7 @@
 
 #include "src/AssetManager.h"
 #include "src/GlobalScene.h"
+#include "src/Texture.h"
 #include "src/Transform.h"
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/Attracted.h"
@@ -131,7 +132,7 @@ class StellarSystem {
         Cuboid c(color, cornersFromAabb(mn, mx));
         auto soOpt = c.getSceneObject();
         if (soOpt.has_value()) {
-            scene.addMeshAsChild(parent, soOpt.value()).value();
+            c.id = scene.addMeshAsChild(parent, soOpt.value()).value();
         }
         verletSystem.addCuboid(c);
     }
@@ -157,28 +158,9 @@ class StellarSystem {
         ctx.pbrRoot = scene.addBasicNodeAsChild(ctx.interiorRoot).value();
         ctx.collectRoot = scene.addBasicNodeAsChild(ctx.interiorRoot).value();
 
-        auto groundMeshOpt = AssetManager::loadMesh("assets/meshes/ground.obj");
-        if (groundMeshOpt.has_value()) {
-            SceneObject ground("shaders/PBR_vs.glsl", "shaders/PBR_fs.glsl",
-                               *groundMeshOpt.value());
-            ground.addAlbedoMap(
-                AssetManager::loadTexture("assets/textures/grass.png"));
-            ground.setMetallic(0.0f);
-            ground.setRoughness(0.95f);
-
-            NodeId groundNode =
-                scene.addMeshAsChild(ctx.interiorRoot, ground).value();
-
-            scene.setTransform(
-                groundNode,
-                translate(ctx.earthCenter.x, ctx.floorY, ctx.earthCenter.z)
-                    .rotationX(90.0f)
-                    .scale(ctx.halfSize));
-        }
-
         const float floorThickness = 2.0f;
         addStaticColliderCuboid(
-            verletSystem, ctx.interiorRoot, glm::vec3(0.25f, 0.25f, 0.25f),
+            verletSystem, ctx.interiorRoot, glm::vec3(0.1, 1, 0.1),
             ctx.earthCenter + glm::vec3(-ctx.halfSize,
                                         ctx.floorY - floorThickness,
                                         -ctx.halfSize),
@@ -371,6 +353,8 @@ class StellarSystem {
                 .get()
                 .isTrigger = true;
             ECSManager::setComponentToEntity(Collectible(1), e);
+
+            totalCollectibles += 1;
         };
 
         spawnCollectible(cCenter + glm::vec3(0.0f, ctx.floorY + 4.0f, 0.0f));
@@ -378,8 +362,6 @@ class StellarSystem {
         spawnCollectible(cCenter + glm::vec3(-4.0f, ctx.floorY + 4.0f, 0.0f));
         spawnCollectible(cCenter + glm::vec3(0.0f, ctx.floorY + 4.0f, 4.0f));
         spawnCollectible(cCenter + glm::vec3(0.0f, ctx.floorY + 4.0f, -4.0f));
-
-        totalCollectibles += 5;
     }
 
   public:
@@ -545,4 +527,10 @@ class StellarSystem {
         // buildPbrRoom(ctx);
         buildCollectiblesRoom(ctx, totalCollectibles);
     }
+
+    EntityId getStarId() { return this->starEntityId; }
+
+    EntityId getPlanetId() { return this->planetEntityId; }
+
+    EntityId getMoonId() { return this->moonEntityId; }
 };

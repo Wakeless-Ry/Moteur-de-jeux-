@@ -403,6 +403,7 @@ class GlobalScene {
     void toggleNode(NodeId id) {
         for (NodeId child : this->tree.getAllChildren(id)) {
             this->meshList.toggle(child);
+            std::cout << "TOGGLED" << std::endl;
         }
     }
 

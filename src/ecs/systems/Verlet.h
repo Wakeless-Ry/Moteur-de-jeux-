@@ -9,6 +9,7 @@
 #include "glm/detail/func_geometric.hpp"
 #include <glm/ext.hpp>
 
+#include "src/GlobalScene.h"
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/VerletBody.h"
@@ -142,13 +143,11 @@ class Verlet : public UpdatableSystem {
                 VerletBody &verletBody = verletBodyOpt.value();
                 glm::vec3 velocity = pos.pos - verletBody.last_position;
 
-                if (glm::length(velocity) >= 0.5 * deltaTime) {
+                if (glm::length(velocity) >= 0.2 * deltaTime) {
                     velocity *= (1. - (AIR_FRICTION * deltaTime));
                 } else {
                     velocity *= (AIR_FRICTION * deltaTime);
                 }
-
-                // std::cout << glm::length(velocity) << std::endl;
 
                 verletBody.last_position = pos.pos;
 
@@ -161,6 +160,12 @@ class Verlet : public UpdatableSystem {
     }
 
     void addCuboid(Cuboid cuboid) { this->cuboids.push_back(cuboid); }
+
+    void toggleCuboids(GlobalScene &scene) {
+        for (Cuboid cuboid : this->cuboids) {
+            cuboid.toggle(scene);
+        }
+    }
 };
 
 #endif // VERLET

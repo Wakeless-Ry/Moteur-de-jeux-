@@ -3,13 +3,13 @@
 
 #include "glm/detail/func_geometric.hpp"
 #include "glm/detail/type_vec.hpp"
-#include "glm/gtx/simd_vec4.hpp"
+#include "src/GlobalScene.h"
 #include "src/Mesh.h"
 #include "src/SceneObject.h"
 #include <array>
 
+#include <functional>
 #include <glm/ext.hpp>
-#include <iostream>
 #include <optional>
 
 //   F-----G
@@ -25,6 +25,8 @@ class Cuboid {
     std::optional<SceneObject> sceneObject;
 
   public:
+    NodeId id;
+
     Cuboid() {}
 
     Cuboid(glm::vec3 color, std::array<glm::vec3, 8> corners)
@@ -64,7 +66,13 @@ class Cuboid {
            glm::vec3 c4, glm::vec3 c5, glm::vec3 c6, glm::vec3 c7, glm::vec3 c8)
         : Cuboid(color, std::array{c1, c2, c3, c4, c5, c6, c7, c8}) {}
 
-    std::optional<SceneObject> getSceneObject() { return this->sceneObject; }
+    std::optional<std::reference_wrapper<SceneObject>> getSceneObject() {
+        if (this->sceneObject.has_value()) {
+            return this->sceneObject.value();
+        } else {
+            return std::nullopt;
+        }
+    }
 
     std::optional<glm::vec3> intersectsSphere(glm::vec3 position,
                                               float size) const {
@@ -99,6 +107,8 @@ class Cuboid {
 
         return mtvAxis * minPenetration;
     }
+
+    void toggle(GlobalScene &scene) { scene.toggleNode(this->id); }
 };
 
 #endif

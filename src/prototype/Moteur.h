@@ -11,7 +11,6 @@
 #include "src/VelocityIndicatorHud.h"
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/Attracted.h"
-#include "src/ecs/components/Collectible.h"
 #include "src/ecs/components/Inventory.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/VerletBody.h"
@@ -28,11 +27,10 @@ class Moteur : public GameEngine {
     EntityId characterEntityId;
     NodeId characterNodeId;
 
-    std::optional<StellarSystem *> stellarSystem;
+    std::optional<std::shared_ptr<StellarSystem>> stellarSystem;
     std::optional<std::shared_ptr<Verlet>> verletSystem;
 
     float speed = 1.;
-    bool gravityToggled = false;
 
     Hud hud;
     int totalCollectibles = 5;
@@ -67,14 +65,12 @@ class Moteur : public GameEngine {
         this->getSystemUpdater()->addSystem(std::make_shared<ContinuousLOD>(
             this->getScene(), this->getCamera()));
 
-        this->stellarSystem = new StellarSystem(this->getScene());
+        this->stellarSystem = std::make_shared<StellarSystem>(this->getScene());
     }
 
     void initScene() {
         this->getScene().addLightToScene(
             Light(glm::vec3(0, 0, 0), glm::vec3(10000)));
-        this->getScene().addLightToScene(
-            Light(glm::vec3(1000, 400, 0), glm::vec3(100)));
 
         std::shared_ptr<Mesh> ballMesh =
             AssetManager::loadMesh("assets/meshes/big_sphere.obj").value();
@@ -208,9 +204,8 @@ class Moteur : public GameEngine {
                                        this->characterEntityId)
                                        .value();
 
-                pos += this->getCamera().getFront() * 10 * body.size;
-                body.last_position = pos;
-                body.acceleration = {};
+                body.acceleration +=
+                    this->getCamera().getUp() * 500 * body.size;
             }));
 
         controls.addKeyDownCallback(GLFW_KEY_KP_ADD,
@@ -249,6 +244,11 @@ class Moteur : public GameEngine {
             }));
 
         controls.addKeyPressedCallback(
+            GLFW_KEY_P, new KeyCallback([this](float deltaTime) {
+                this->verletSystem->get()->toggleCuboids(this->getScene());
+            }));
+
+        controls.addKeyPressedCallback(
             GLFW_KEY_X, new KeyCallback([this](float deltaTime) {
                 if (!this->stellarSystem.has_value() ||
                     this->stellarSystem.value() == nullptr)
@@ -277,19 +277,23 @@ class Moteur : public GameEngine {
                         playerPos, triggerDist, pipePos))
                     return;
 
-                const glm::vec3 teleportTargetPos = 2.0f * pipePos - playerPos;
+                Positionable planet =
+                    ECSManager::getComponentOfEntity<Positionable>(
+                        this->stellarSystem.value()->getPlanetId())
+                        .value();
 
-                p.pos = teleportTargetPos;
+                p.pos = planet.pos;
                 p.shouldTransform = true;
 
-                b.last_position = teleportTargetPos;
+                b.last_position = planet.pos;
                 b.acceleration = glm::vec3(0.0f);
 
+                static bool gravityToggled = false;
                 gravityToggled = !gravityToggled;
 
                 att.clear();
                 if (gravityToggled) {
-                    att.addDirectionAttraction(glm::vec3(-1, 0, 0), 20.0f);
+                    att.addDirectionAttraction(glm::vec3(0, -1, 0), 20.0f);
                 } else {
                     this->stellarSystem.value()->setSystemAttraction(
                         this->characterEntityId);
