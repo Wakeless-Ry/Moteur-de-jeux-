@@ -23,7 +23,7 @@ class Camera : public Observer<vec3> {
 
     float fov = 45;
     float zNear = .1;
-    float zFar = 1000;
+    float zFar = 10000;
 
     vec3 position = vec3(0, 0, 0);
     quat rotation = quat();

@@ -203,6 +203,8 @@ class Moteur : public GameEngine {
                     front = glm::normalize(front);
                     front =
                         glm::normalize(glm::cross(front, glm::vec3{0, 1, 0}));
+                } else {
+                    front = -this->getCamera().getRight();
                 }
                 body.acceleration -= front * 10;
             }));
@@ -235,6 +237,8 @@ class Moteur : public GameEngine {
                     front = glm::normalize(front);
                     front =
                         glm::normalize(glm::cross(front, glm::vec3{0, 1, 0}));
+                } else {
+                    front = -this->getCamera().getRight();
                 }
                 body.acceleration += front * 10;
             }));

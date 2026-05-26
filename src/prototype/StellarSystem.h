@@ -1,4 +1,3 @@
-#include <cmath>
 #include <memory>
 #include <optional>
 
@@ -12,6 +11,7 @@
 #include "src/Transform.h"
 #include "src/ecs/ECSManager.h"
 #include "src/ecs/components/Attracted.h"
+#include "src/ecs/components/LOD.h"
 #include "src/ecs/components/Noded.h"
 #include "src/ecs/components/Positionable.h"
 #include "src/ecs/components/VerletBody.h"
@@ -71,7 +71,7 @@ class StellarSystem {
 
     std::array<NodeId, 4> roomId;
     NodeId wallsId;
-    bool hiddenWalls;
+    bool hiddenWalls = false;
 
     void registerCelestialObject(const char *texturePath, NodeId &parent,
                                  NodeId &nodeParent, NodeId &node, NodeId &pipe,
@@ -110,6 +110,10 @@ class StellarSystem {
         pipe = scene.addMeshAsChild(node, pipeObject).value();
         EntityId pipeId = ECSManager::generateEntityId();
         ECSManager::setComponentToEntity(Noded(pipe), pipeId);
+
+        if (this->starSize == size) {
+            ECSManager::setComponentToEntity(LOD(*ballMesh, node), entity);
+        }
     }
 
     struct EarthInteriorContext {
@@ -624,5 +628,8 @@ class StellarSystem {
         }
     }
 
-    void toggleWalls() { this->scene.toggleNode(this->wallsId); }
+    void toggleWalls() {
+        this->scene.toggleNode(this->wallsId);
+        this->hiddenWalls = !this->hiddenWalls;
+    }
 };
