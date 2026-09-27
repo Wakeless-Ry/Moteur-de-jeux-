@@ -1,4 +1,4 @@
 ## Auteurs  
-Clément Potier
-Isaac Lluís
-Ryan Rodrigues
+Clément Potier  
+Isaac Lluís  
+Ryan Rodrigues  
